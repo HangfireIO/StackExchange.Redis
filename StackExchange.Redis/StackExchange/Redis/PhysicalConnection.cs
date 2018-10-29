@@ -138,7 +138,11 @@ namespace StackExchange.Redis
 
         public ConnectionMultiplexer Multiplexer { get; }
 
-        public long SubscriptionCount { get; set; }
+        public long SubscriptionCount
+        {
+            get => Interlocked.Read(ref _subscriptionCount);
+            set => Interlocked.Exchange(ref _subscriptionCount, value);
+        }
 
         public bool TransactionActive { get; internal set; }
 
@@ -748,6 +752,7 @@ namespace StackExchange.Redis
             }
         }
         int haveReader;
+        private long _subscriptionCount;
 
         internal int GetAvailableInboundBytes(out int activeReaders)
         {

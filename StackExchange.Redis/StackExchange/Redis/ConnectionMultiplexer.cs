@@ -2140,12 +2140,14 @@ namespace StackExchange.Redis
 
         private static string GetSystemCpuPercent()
         {
+#if FEATURE_PERFCOUNTERS
             float systemCPU;
             if (PerfCounterHelper.TryGetSystemCPU(out systemCPU))
             {
                 return Math.Round(systemCPU, 2) + "%";
             }
-            return "unavailable";
+#endif
+            return "unavailable"; 
         }
 
         private static int GetThreadPoolStats(out string iocp, out string worker)
@@ -2171,9 +2173,9 @@ namespace StackExchange.Redis
         }
 #endif
 
-        /// <summary>
-        /// Should exceptions include identifiable details? (key names, additional .Data annotations)
-        /// </summary>
+            /// <summary>
+            /// Should exceptions include identifiable details? (key names, additional .Data annotations)
+            /// </summary>
         public bool IncludeDetailInExceptions { get; set; }
 
         /// <summary>
