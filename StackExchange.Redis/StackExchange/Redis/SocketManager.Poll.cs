@@ -1,4 +1,4 @@
-﻿#if FEATURE_SOCKET_MODE_POLL
+﻿#if !NETSTANDARD1_5
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -10,7 +10,6 @@ namespace StackExchange.Redis
 {
     partial class SocketManager
     {
-        internal const SocketMode DefaultSocketMode = SocketMode.Poll;
         static readonly IntPtr[] EmptyPointers = new IntPtr[0];
         static readonly WaitCallback HelpProcessItems = state =>
         {
@@ -70,6 +69,11 @@ namespace StackExchange.Redis
         {
             if (socket == null) throw new ArgumentNullException(nameof(socket));
             if (callback == null) throw new ArgumentNullException(nameof(callback));
+
+            if (socketMode != SocketMode.Poll)
+            {
+                throw new NotSupportedException();
+            }
 
             lock (socketLookup)
             {
