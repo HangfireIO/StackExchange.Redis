@@ -34,6 +34,10 @@
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
 
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net46' or '$(TargetFramework)' == 'netstandard2.0' ">
+    <DefineConstants>$(DefineConstants);PLAT_SAFE_CONTINUATIONS</DefineConstants>
+  </PropertyGroup>
+
   <PropertyGroup Condition=" '$(TargetFramework)' == 'net40' or  '$(TargetFramework)' == 'net45' or '$(TargetFramework)' == 'net46'">
     <DefineConstants>$(DefineConstants);FEATURE_SERIALIZATION;FEATURE_PERFCOUNTERS</DefineConstants>
   </PropertyGroup>
