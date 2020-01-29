@@ -79,6 +79,7 @@ namespace StackExchange.Redis
                 exception = box.exception;
                 box.value = default(T);
                 box.exception = null;
+                box.stateOrCompletionSource = null;
                 if (recycle)
                 {
                     for (int i = 0; i < store.Length; i++)
