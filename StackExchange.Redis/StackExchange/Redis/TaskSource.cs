@@ -87,11 +87,7 @@ namespace StackExchange.Redis
         /// </summary>
         public static TaskCompletionSource<T> Create<T>(object asyncState)
         {
-#if PLAT_SAFE_CONTINUATIONS
-            return new TaskCompletionSource<T>(asyncState, TaskCreationOptions.RunContinuationsAsynchronously);
-#else
             return new TaskCompletionSource<T>(asyncState, TaskCreationOptions.None);
-#endif
         }        
 
         /// <summary>
@@ -99,9 +95,11 @@ namespace StackExchange.Redis
         /// </summary>
         public static TaskCompletionSource<T> CreateDenyExecSync<T>(object asyncState)
         {
-            var source = new TaskCompletionSource<T>(asyncState);
-            //DenyExecSync(source.Task);
-            return source;
+#if PLAT_SAFE_CONTINUATIONS
+            return new TaskCompletionSource<T>(asyncState, TaskCreationOptions.RunContinuationsAsynchronously);
+#else
+            return new TaskCompletionSource<T>(asyncState, TaskCreationOptions.None);
+#endif
         }
     }
 }
