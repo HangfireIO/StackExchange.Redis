@@ -93,13 +93,9 @@ namespace StackExchange.Redis
             RecordConnectionFailed_ShutdownSocket,
 
             CheckForStaleConnectionsDone,
-            EnqueueRead,
-            EnqueueError,
-            EnqueueReadFallback,
-            RequestAssistance,
-            ProcessQueues,
-            ProcessReadQueue,
-            ProcessErrorQueue,
+            ProcessRead,
+            ProcessError,
+            ProcessReadFallback
 
         }
         private static readonly ParameterizedThreadStart writeAllQueues = context =>

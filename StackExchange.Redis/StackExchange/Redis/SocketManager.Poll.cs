@@ -12,22 +12,10 @@ namespace StackExchange.Redis
     partial class SocketManager
     {
         static readonly IntPtr[] EmptyPointers = new IntPtr[0];
-        static readonly WaitCallback HelpProcessItems = state =>
-        {
-            var qdsl = state as QueueDrainSyncLock;
-            if (qdsl != null && qdsl.Consume())
-            {
-                var mgr = qdsl.Manager;
-                mgr.ProcessItems(false);
-                qdsl.Pulse();
-            }
-        };
 
         private static ParameterizedThreadStart read = state => ((SocketManager)state).Read();
 
-        readonly ConcurrentQueue<ISocketCallback> readQueue = new ConcurrentQueue<ISocketCallback>(), errorQueue = new ConcurrentQueue<ISocketCallback>();
-
-        private readonly ConcurrentDictionary<IntPtr, SocketPair> socketLookup = new ConcurrentDictionary<IntPtr, SocketPair>();
+        private readonly Dictionary<IntPtr, SocketPair> socketLookup = new Dictionary<IntPtr, SocketPair>();
 
         private int readerCount;
 
@@ -35,33 +23,20 @@ namespace StackExchange.Redis
         [DllImport("ws2_32.dll", SetLastError = true)]
         internal static extern int select([In] int ignoredParameter, [In, Out] IntPtr[] readfds, [In, Out] IntPtr[] writefds, [In, Out] IntPtr[] exceptfds, [In] ref TimeValue timeout);
 
-        private static void ProcessItems(ConcurrentQueue<ISocketCallback> queue, CallbackOperation operation)
+        private static void ProcessCallback(ISocketCallback callback, CallbackOperation operation)
 
         {
-            if (queue == null) return;
-            while (true)
+            try
             {
-                // get the next item (note we could be competing with a worker here, hence lock)
-                ISocketCallback callback;
-                if (!queue.TryDequeue(out callback))
+                switch (operation)
                 {
-                    break;
+                    case CallbackOperation.Read: callback.Read(); break;
+                    case CallbackOperation.Error: callback.Error(); break;
                 }
-                if (callback != null)
-                {
-                    try
-                    {
-                        switch (operation)
-                        {
-                            case CallbackOperation.Read: callback.Read(); break;
-                            case CallbackOperation.Error: callback.Error(); break;
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Trace.WriteLine(ex);
-                    }
-                }
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine(ex);
             }
         }
 
@@ -81,10 +56,7 @@ namespace StackExchange.Redis
 
                 var handle = socket.Handle;
                 if (handle == IntPtr.Zero) throw new ObjectDisposedException("socket");
-                if (!socketLookup.TryAdd(handle, new SocketPair(socket, callback)))
-                {
-                    throw new InvalidOperationException("Socket with the same handle was already added");
-                }
+                socketLookup.Add(handle, new SocketPair(socket, callback));
                 if (socketLookup.Count == 1)
                 {
                     Monitor.PulseAll(socketLookup);
@@ -108,17 +80,10 @@ namespace StackExchange.Redis
         {
             lock (socketLookup)
             {
-                socketLookup.TryRemove(socket.Handle, out _);
+                socketLookup.Remove(socket.Handle);
             }
         }
 
-        private void ProcessItems(bool setState)
-        {
-            if(setState) managerState = ManagerState.ProcessReadQueue;
-            ProcessItems(readQueue, CallbackOperation.Read);
-            if (setState) managerState = ManagerState.ProcessErrorQueue;
-            ProcessItems(errorQueue, CallbackOperation.Error);
-        }
         private void Read()
         {
             bool weAreReader = false;
@@ -158,8 +123,11 @@ namespace StackExchange.Redis
         }
         private ISocketCallback GetCallback(IntPtr key)
         {
-            SocketPair pair;
-            return socketLookup.TryGetValue(key, out pair) ? pair.Callback : null;
+            lock (socketLookup)
+            {
+                SocketPair pair;
+                return socketLookup.TryGetValue(key, out pair) ? pair.Callback : null;
+            }
         }
         private void ReadImpl()
         {
@@ -225,7 +193,7 @@ namespace StackExchange.Redis
                     if (dead != null && dead.Count != 0)
                     {
                         managerState = ManagerState.CullDeadSockets;
-                        foreach (var socket in dead) socketLookup.TryRemove(socket, out _);
+                        foreach (var socket in dead) socketLookup.Remove(socket);
                     }
                 }
                 int pollingSockets = active.Count;
@@ -298,13 +266,13 @@ namespace StackExchange.Redis
                 int queueCount = (int)readSockets[0];
                 if (queueCount != 0)
                 {
-                    managerState = ManagerState.EnqueueRead;
+                    managerState = ManagerState.ProcessRead;
                     for (int i = 1; i <= queueCount; i++)
                     {
                         var callback = GetCallback(readSockets[i]);
                         if (callback != null)
                         {
-                            readQueue.Enqueue(callback);
+                            ProcessCallback(callback, CallbackOperation.Read);
                             haveWork = true;
                         }
                     }
@@ -312,13 +280,13 @@ namespace StackExchange.Redis
                 queueCount = (int)errorSockets[0];
                 if (queueCount != 0)
                 {
-                    managerState = ManagerState.EnqueueError;
+                    managerState = ManagerState.ProcessError;
                     for (int i = 1; i <= queueCount; i++)
                     {
                         var callback = GetCallback(errorSockets[i]);
                         if (callback != null)
                         {
-                            errorQueue.Enqueue(callback);
+                            ProcessCallback(callback, CallbackOperation.Error);
                             haveWork = true;
                         }
                     }
@@ -326,40 +294,14 @@ namespace StackExchange.Redis
                 if(!haveWork)
                 {
                     // edge case: select is returning 0, but data could still be available
-                    managerState = ManagerState.EnqueueReadFallback;
+                    managerState = ManagerState.ProcessReadFallback;
                     foreach (var callback in activeCallbacks)
                     {
-                        if(callback.IsDataAvailable)
+                        if(callback != null && callback.IsDataAvailable)
                         {
-                            readQueue.Enqueue(callback);
+                            ProcessCallback(callback, CallbackOperation.Read);
                         }
                     }
-                }
-
-
-                if (ready >= 5) // number of sockets we should attempt to process by ourself before asking for help
-                {
-                    // seek help, work in parallel, then synchronize
-                    var obj = new QueueDrainSyncLock(this);
-                    lock (obj)
-                    {
-                        managerState = ManagerState.RequestAssistance;
-                        ThreadPool.QueueUserWorkItem(HelpProcessItems, obj);
-                        managerState = ManagerState.ProcessQueues;
-                        ProcessItems(true);
-                        if (!obj.Consume())
-                        {   // then our worker arrived and picked up work; we need
-                            // to let it finish; note that if it *didn't* get that far
-                            // yet, the Consume() call will mean that it never tries
-                            Monitor.Wait(obj);
-                        }
-                    }
-                }
-                else
-                {
-                    // just do it ourself
-                    managerState = ManagerState.ProcessQueues;
-                    ProcessItems(true);
                 }
             }
         }
@@ -394,28 +336,6 @@ namespace StackExchange.Redis
             {
                 Socket = socket;
                 Callback = callback;
-            }
-        }
-        sealed class QueueDrainSyncLock
-        {
-            private int workers;
-            public QueueDrainSyncLock(SocketManager manager)
-            {
-                Manager = manager;
-            }
-            public SocketManager Manager { get; }
-
-            internal bool Consume()
-            {
-                return Interlocked.CompareExchange(ref workers, 1, 0) == 0;
-            }
-
-            internal void Pulse()
-            {
-                lock (this)
-                {
-                    Monitor.PulseAll(this);
-                }
             }
         }
     }
