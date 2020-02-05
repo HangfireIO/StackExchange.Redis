@@ -375,7 +375,7 @@ namespace StackExchange.Redis
 
         private void StartReader()
         {
-            var thread = new Thread(read, 32*1024) // don't need a huge stack
+            var thread = new Thread(read, 64*1024) // don't need a huge stack
             {
                 Priority = useHighPrioritySocketThreads ? ThreadPriority.AboveNormal : ThreadPriority.Normal,
                 Name = name + ":Read",

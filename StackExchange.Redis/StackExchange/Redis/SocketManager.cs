@@ -152,7 +152,7 @@ namespace StackExchange.Redis
             // we need a dedicated writer, because when under heavy ambient load
             // (a busy asp.net site, for example), workers are not reliable enough
 #if !CORE_CLR
-            Thread dedicatedWriter = new Thread(writeAllQueues, 32 * 1024); // don't need a huge stack;
+            Thread dedicatedWriter = new Thread(writeAllQueues, 64 * 1024); // don't need a huge stack;
             dedicatedWriter.Priority = useHighPrioritySocketThreads ? ThreadPriority.AboveNormal : ThreadPriority.Normal;
 #else
             Thread dedicatedWriter = new Thread(writeAllQueues);
