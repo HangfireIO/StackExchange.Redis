@@ -7,9 +7,8 @@ namespace StackExchange.Redis
 {
     abstract partial class ResultBox
     {
-        protected readonly ManualResetEvent completedEvent = new ManualResetEvent(false);
+        protected volatile ManualResetEventSlim completedEvent;
         protected volatile bool completed;
-        protected volatile bool awaited;
         protected Exception exception;
 
         public void SetException(Exception exception)
@@ -27,18 +26,14 @@ namespace StackExchange.Redis
 
         public bool Wait(int milliseconds)
         {
-            var spinwait = new SpinWait();
-            while (!completed)
+            using (var compl = new ManualResetEventSlim(false))
             {
-                if (spinwait.NextSpinWillYield) break;
-                spinwait.SpinOnce();
+                completedEvent = compl;
+                if (completed) return true;
+                var waitResult = compl.Wait(milliseconds);
+                completedEvent = null;
+                return waitResult;
             }
-            if (completed)
-            {
-                awaited = true;
-                return true;
-            }
-            return completedEvent.WaitOne(milliseconds);
         }
 
         public abstract bool TryComplete(bool isAsync);
@@ -99,9 +94,7 @@ namespace StackExchange.Redis
                 box.value = default(T);
                 box.exception = null;
                 box.stateOrCompletionSource = null;
-                box.completedEvent.Reset();
                 box.completed = false;
-                box.awaited = false;
                 if (recycle)
                 {
                     for (int i = 0; i < store.Length; i++)
@@ -156,7 +149,14 @@ namespace StackExchange.Redis
                     
                     Monitor.PulseAll(this);
                 }*/
-                if (!awaited) completedEvent.Set();
+                try
+                {
+                    var ev = completedEvent;
+                    ev?.Set();
+                }
+                catch (ObjectDisposedException)
+                {
+                }
                 ConnectionMultiplexer.TraceWithoutContext("Pulsed", "Result");
                 return true;
             }
@@ -168,9 +168,7 @@ namespace StackExchange.Redis
             exception = null;
 
             this.stateOrCompletionSource = stateOrCompletionSource;
-            completedEvent.Reset();
             completed = false;
-            awaited = false;
         }
     }
 
