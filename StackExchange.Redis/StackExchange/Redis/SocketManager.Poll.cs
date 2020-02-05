@@ -1,5 +1,6 @@
 ﻿#if !NETSTANDARD1_5
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net.Sockets;
@@ -24,9 +25,9 @@ namespace StackExchange.Redis
 
         private static ParameterizedThreadStart read = state => ((SocketManager)state).Read();
 
-        readonly Queue<ISocketCallback> readQueue = new Queue<ISocketCallback>(), errorQueue = new Queue<ISocketCallback>();
+        readonly ConcurrentQueue<ISocketCallback> readQueue = new ConcurrentQueue<ISocketCallback>(), errorQueue = new ConcurrentQueue<ISocketCallback>();
 
-        private readonly Dictionary<IntPtr, SocketPair> socketLookup = new Dictionary<IntPtr, SocketPair>();
+        private readonly ConcurrentDictionary<IntPtr, SocketPair> socketLookup = new ConcurrentDictionary<IntPtr, SocketPair>();
 
         private int readerCount;
 
@@ -34,7 +35,7 @@ namespace StackExchange.Redis
         [DllImport("ws2_32.dll", SetLastError = true)]
         internal static extern int select([In] int ignoredParameter, [In, Out] IntPtr[] readfds, [In, Out] IntPtr[] writefds, [In, Out] IntPtr[] exceptfds, [In] ref TimeValue timeout);
 
-        private static void ProcessItems(Queue<ISocketCallback> queue, CallbackOperation operation)
+        private static void ProcessItems(ConcurrentQueue<ISocketCallback> queue, CallbackOperation operation)
 
         {
             if (queue == null) return;
@@ -42,10 +43,9 @@ namespace StackExchange.Redis
             {
                 // get the next item (note we could be competing with a worker here, hence lock)
                 ISocketCallback callback;
-                lock (queue)
+                if (!queue.TryDequeue(out callback))
                 {
-                    if (queue.Count == 0) break;
-                    callback = queue.Dequeue();
+                    break;
                 }
                 if (callback != null)
                 {
@@ -81,7 +81,10 @@ namespace StackExchange.Redis
 
                 var handle = socket.Handle;
                 if (handle == IntPtr.Zero) throw new ObjectDisposedException("socket");
-                socketLookup.Add(handle, new SocketPair(socket, callback));
+                if (!socketLookup.TryAdd(handle, new SocketPair(socket, callback)))
+                {
+                    throw new InvalidOperationException("Socket with the same handle was already added");
+                }
                 if (socketLookup.Count == 1)
                 {
                     Monitor.PulseAll(socketLookup);
@@ -105,7 +108,7 @@ namespace StackExchange.Redis
         {
             lock (socketLookup)
             {
-                socketLookup.Remove(socket.Handle);
+                socketLookup.TryRemove(socket.Handle, out _);
             }
         }
 
@@ -155,11 +158,8 @@ namespace StackExchange.Redis
         }
         private ISocketCallback GetCallback(IntPtr key)
         {
-            lock(socketLookup)
-            {
-                SocketPair pair;
-                return socketLookup.TryGetValue(key, out pair) ? pair.Callback : null;
-            }
+            SocketPair pair;
+            return socketLookup.TryGetValue(key, out pair) ? pair.Callback : null;
         }
         private void ReadImpl()
         {
@@ -225,7 +225,7 @@ namespace StackExchange.Redis
                     if (dead != null && dead.Count != 0)
                     {
                         managerState = ManagerState.CullDeadSockets;
-                        foreach (var socket in dead) socketLookup.Remove(socket);
+                        foreach (var socket in dead) socketLookup.TryRemove(socket, out _);
                     }
                 }
                 int pollingSockets = active.Count;
@@ -299,16 +299,13 @@ namespace StackExchange.Redis
                 if (queueCount != 0)
                 {
                     managerState = ManagerState.EnqueueRead;
-                    lock (readQueue)
+                    for (int i = 1; i <= queueCount; i++)
                     {
-                        for (int i = 1; i <= queueCount; i++)
+                        var callback = GetCallback(readSockets[i]);
+                        if (callback != null)
                         {
-                            var callback = GetCallback(readSockets[i]);
-                            if (callback != null)
-                            {
-                                readQueue.Enqueue(callback);
-                                haveWork = true;
-                            }
+                            readQueue.Enqueue(callback);
+                            haveWork = true;
                         }
                     }
                 }
@@ -316,16 +313,13 @@ namespace StackExchange.Redis
                 if (queueCount != 0)
                 {
                     managerState = ManagerState.EnqueueError;
-                    lock (errorQueue)
+                    for (int i = 1; i <= queueCount; i++)
                     {
-                        for (int i = 1; i <= queueCount; i++)
+                        var callback = GetCallback(errorSockets[i]);
+                        if (callback != null)
                         {
-                            var callback = GetCallback(errorSockets[i]);
-                            if (callback != null)
-                            {
-                                errorQueue.Enqueue(callback);
-                                haveWork = true;
-                            }
+                            errorQueue.Enqueue(callback);
+                            haveWork = true;
                         }
                     }
                 }
@@ -333,14 +327,11 @@ namespace StackExchange.Redis
                 {
                     // edge case: select is returning 0, but data could still be available
                     managerState = ManagerState.EnqueueReadFallback;
-                    lock (readQueue)
+                    foreach (var callback in activeCallbacks)
                     {
-                        foreach (var callback in activeCallbacks)
+                        if(callback.IsDataAvailable)
                         {
-                            if(callback.IsDataAvailable)
-                            {
-                                readQueue.Enqueue(callback);
-                            }
+                            readQueue.Enqueue(callback);
                         }
                     }
                 }
