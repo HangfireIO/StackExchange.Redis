@@ -530,6 +530,11 @@ namespace StackExchange.Redis
         internal bool WriteMessageDirect(PhysicalConnection tmp, Message next)
         {
             Trace("Writing: " + next);
+            if (next.sendingCanceled)
+            {
+                Trace("Message sending was canceled");
+                return true;
+            }
             if (next is IMultiMessage)
             {
                 SelectDatabase(tmp, next); // need to switch database *before* the transaction

@@ -2035,6 +2035,7 @@ namespace StackExchange.Redis
                     }
                     else
                     {
+                        message.sendingCanceled = true;
                         Trace("Timeout performing " + message.ToString());
                         Interlocked.Increment(ref syncTimeouts);
                         string errMessage;

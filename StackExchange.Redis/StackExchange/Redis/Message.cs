@@ -212,6 +212,7 @@ namespace StackExchange.Redis
         private ProfileStorage performance;
         internal DateTime createdDateTime;
         internal long createdTimestamp;
+        internal volatile bool sendingCanceled;
 
         protected Message(int db, CommandFlags flags, RedisCommand command)
         {
