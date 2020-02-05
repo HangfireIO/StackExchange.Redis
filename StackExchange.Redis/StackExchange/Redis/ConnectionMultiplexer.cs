@@ -2022,14 +2022,14 @@ namespace StackExchange.Redis
             {
                 var source = ResultBox<T>.Get(null);
 
-                lock (source)
+                //lock (source)
                 {
                     if (!TryPushMessageToBridge(message, processor, source, ref server))
                     {
                         throw ExceptionFactory.NoConnectionAvailable(IncludeDetailInExceptions, IncludePerformanceCountersInExceptions, message.Command, message, server, GetServerSnapshot());
                     }
 
-                    if (Monitor.Wait(source, timeoutMilliseconds))
+                    if (source.Wait(timeoutMilliseconds))
                     {
                         Trace("Timeley response to " + message.ToString());
                     }

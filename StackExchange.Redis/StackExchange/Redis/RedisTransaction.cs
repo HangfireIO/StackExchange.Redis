@@ -241,8 +241,8 @@ namespace StackExchange.Redis
                             // need to have locked them before sending them
                             // to guarantee that we see the pulse
                             ResultBox latestBox = conditions[i].GetBox();
-                            Monitor.Enter(latestBox);
-                            if (lastBox != null) Monitor.Exit(lastBox);
+                            //Monitor.Enter(latestBox);
+                            //if (lastBox != null) Monitor.Exit(lastBox);
                             lastBox = latestBox;
                             foreach (var msg in conditions[i].CreateMessages(Db))
                             {
@@ -256,7 +256,7 @@ namespace StackExchange.Redis
                             // need to get those sent ASAP; if they are stuck in the buffers, we die
                             multiplexer.Trace("Flushing and waiting for precondition responses");
                             connection.Flush();
-                            if (Monitor.Wait(lastBox, multiplexer.TimeoutMilliseconds))
+                            if (lastBox.Wait(multiplexer.TimeoutMilliseconds))
                             {
                                 if (!AreAllConditionsSatisfied(multiplexer))
                                     command = RedisCommand.UNWATCH; // somebody isn't happy
@@ -266,7 +266,7 @@ namespace StackExchange.Redis
                                 multiplexer.Trace("Timeout checking preconditions");
                                 command = RedisCommand.UNWATCH;
                             }
-                            Monitor.Exit(lastBox);
+                            //Monitor.Exit(lastBox);
                             lastBox = null;
                         }
                     }
@@ -291,8 +291,8 @@ namespace StackExchange.Redis
                                 ResultBox thisBox = op.ResultBox;
                                 if (thisBox != null)
                                 {
-                                    Monitor.Enter(thisBox);
-                                    if (lastBox != null) Monitor.Exit(lastBox);
+                                    //Monitor.Enter(thisBox);
+                                    //if (lastBox != null) Monitor.Exit(lastBox);
                                     lastBox = thisBox;
                                 }
                             }
@@ -303,7 +303,7 @@ namespace StackExchange.Redis
                         {
                             multiplexer.Trace("Flushing and waiting for precondition+queued responses");
                             connection.Flush(); // make sure they get sent, so we can check for QUEUED (and the pre-conditions if necessary)
-                            if (Monitor.Wait(lastBox, multiplexer.TimeoutMilliseconds))
+                            if (lastBox.Wait(multiplexer.TimeoutMilliseconds))
                             {
                                 if (!AreAllConditionsSatisfied(multiplexer))
                                 {
@@ -328,14 +328,14 @@ namespace StackExchange.Redis
                                 multiplexer.Trace("Aborting: timeout checking queued messages");
                                 command = RedisCommand.DISCARD;
                             }
-                            Monitor.Exit(lastBox);
+                            //Monitor.Exit(lastBox);
                             lastBox = null;
                         }
                     }
                 }
                 finally
                 {
-                    if (lastBox != null) Monitor.Exit(lastBox);
+                    //if (lastBox != null) Monitor.Exit(lastBox);
                 }
                 if (IsAborted)
                 {
