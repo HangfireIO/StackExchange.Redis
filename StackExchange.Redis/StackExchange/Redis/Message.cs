@@ -777,7 +777,7 @@ namespace StackExchange.Redis
             { // these have specific meaning; don't wrap
                 throw;
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!(ex is OutOfMemoryException))
             {
                 physical?.OnInternalError(ex);
                 Fail(ConnectionFailureType.InternalFailure, ex);

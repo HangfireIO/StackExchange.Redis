@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using Exception = System.Exception;
 
 namespace StackExchange.Redis
 {
@@ -19,7 +20,7 @@ namespace StackExchange.Redis
                 {
                     try
                     { sub.Invoke(sender, args); }
-                    catch
+                    catch (Exception ex) when (!(ex is OutOfMemoryException))
                     { }
                 }
                 return true;

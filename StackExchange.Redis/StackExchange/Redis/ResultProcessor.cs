@@ -766,7 +766,7 @@ namespace StackExchange.Redis
                         string nodes = result.GetString();
                         try
                         { ClusterNodesProcessor.Parse(connection, nodes); }
-                        catch
+                        catch (Exception ex) when (!(ex is OutOfMemoryException))
                         { /* tralalalala */}
                         SetResult(message, nodes);
                         return true;

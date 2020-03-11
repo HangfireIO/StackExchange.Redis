@@ -172,7 +172,7 @@ namespace StackExchange.Redis
                 }
                 return false;
             }
-            catch
+            catch (Exception ex) when (!(ex is OutOfMemoryException))
             {
                 return false;
             }

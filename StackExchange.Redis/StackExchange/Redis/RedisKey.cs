@@ -231,7 +231,7 @@ namespace StackExchange.Redis
             {
                 return Encoding.UTF8.GetString(arr);
             }
-            catch
+            catch (Exception ex) when (!(ex is OutOfMemoryException))
             {
                 return BitConverter.ToString(arr);
             }

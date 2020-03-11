@@ -308,7 +308,7 @@ namespace StackExchange.Redis
                 return compareInfo.Compare((string)this, (string)other, System.Globalization.CompareOptions.Ordinal);
 #endif
             }
-            catch(Exception ex)
+            catch(Exception ex) when (!(ex is OutOfMemoryException))
             {
                 ConnectionMultiplexer.TraceWithoutContext(ex.Message);
             }
@@ -536,7 +536,7 @@ namespace StackExchange.Redis
             {
                 return Encoding.UTF8.GetString(valueBlob);
             }
-            catch
+            catch (Exception ex) when (!(ex is OutOfMemoryException))
             {
                 return BitConverter.ToString(valueBlob);
             }

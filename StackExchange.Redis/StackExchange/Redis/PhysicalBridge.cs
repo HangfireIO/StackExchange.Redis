@@ -284,7 +284,7 @@ namespace StackExchange.Redis
                 {
                     connection.Dispose();
                 }
-                catch
+                catch (Exception ex) when (!(ex is OutOfMemoryException))
                 { }
             }
         }
@@ -360,7 +360,7 @@ namespace StackExchange.Redis
             }
             else
             {
-                try { connection.Dispose(); } catch { }
+                try { connection.Dispose(); } catch (Exception ex) when (!(ex is OutOfMemoryException)) { }
             }
         }
 
@@ -464,7 +464,7 @@ namespace StackExchange.Redis
                         break;
                 }
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!(ex is OutOfMemoryException))
             {
                 OnInternalError(ex);
                 Trace("OnHeartbeat error: " + ex.Message);
@@ -627,7 +627,7 @@ namespace StackExchange.Redis
                 }
                 AbortUnsent();
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!(ex is OutOfMemoryException))
             {
                 AbortUnsent();
                 OnInternalError(ex);
@@ -706,7 +706,7 @@ namespace StackExchange.Redis
                     }
                     return null;
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (!(ex is OutOfMemoryException))
                 {
                     Multiplexer.LogLocked(log, "Connect {0} failed: {1}", Name, ex.Message);
                     Multiplexer.Trace("Connect failed: " + ex.Message, Name);
@@ -840,7 +840,7 @@ namespace StackExchange.Redis
                 }
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!(ex is OutOfMemoryException))
             {
                 Trace("Write failed: " + ex.Message);
                 message.Fail(ConnectionFailureType.InternalFailure, ex);

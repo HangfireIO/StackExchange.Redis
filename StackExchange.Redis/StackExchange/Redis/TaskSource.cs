@@ -74,7 +74,7 @@ namespace StackExchange.Redis
 					}
 				}
 			}
-			catch (Exception)
+			catch (Exception ex) when (!(ex is OutOfMemoryException))
 			{
 				IsSyncSafe = null;
 			}

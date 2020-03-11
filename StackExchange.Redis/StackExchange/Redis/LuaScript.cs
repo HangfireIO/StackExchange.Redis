@@ -64,7 +64,7 @@ namespace StackExchange.Redis
                 WeakReference ignored;
                 Cache.TryRemove(OriginalScript, out ignored);
             }
-            catch { }
+            catch (Exception ex) when (!(ex is OutOfMemoryException)) { }
         }
 
         /// <summary>

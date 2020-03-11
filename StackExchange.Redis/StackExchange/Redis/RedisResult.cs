@@ -44,7 +44,7 @@ namespace StackExchange.Redis
                     default:
                         return null;
                 }
-            } catch(Exception ex)
+            } catch(Exception ex) when (!(ex is OutOfMemoryException))
             {
                 connection?.OnInternalError(ex);
                 return null; // will be logged as a protocol fail by the processor

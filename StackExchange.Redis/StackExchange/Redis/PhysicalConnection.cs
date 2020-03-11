@@ -41,7 +41,7 @@ namespace StackExchange.Redis
                     physical.Multiplexer.Trace("Completed asynchronously: processing in callback", physical.physicalName);
                     if (physical.EndReading(result)) physical.BeginReading();
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (!(ex is OutOfMemoryException))
                 {
                     physical.RecordConnectionFailed(ConnectionFailureType.InternalFailure, ex);
                 }
@@ -57,7 +57,7 @@ namespace StackExchange.Redis
                 physical.Multiplexer.Trace("Completed asynchronously: processing in callback", physical.physicalName);
                 if (physical.EndReading(result)) physical.BeginReading();
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!(ex is OutOfMemoryException))
             {
                 physical.RecordConnectionFailed(ConnectionFailureType.InternalFailure, ex);
             }
@@ -152,17 +152,17 @@ namespace StackExchange.Redis
             {
                 Multiplexer.Trace("Disconnecting...", physicalName);
 #if !CORE_CLR
-                try { outStream.Close(); } catch { }
+                try { outStream.Close(); } catch (Exception ex) when (!(ex is OutOfMemoryException)) { }
 #endif
-                try { outStream.Dispose(); } catch { }
+                try { outStream.Dispose(); } catch (Exception ex) when (!(ex is OutOfMemoryException)) { }
                 outStream = null;
             }
             if (netStream != null)
             {
 #if !CORE_CLR
-                try { netStream.Close(); } catch { }
+                try { netStream.Close(); } catch (Exception ex) when (!(ex is OutOfMemoryException)) { }
 #endif
-                try { netStream.Dispose(); } catch { }
+                try { netStream.Dispose(); } catch (Exception ex) when (!(ex is OutOfMemoryException)) { }
                 netStream = null;
             }
             if (socketToken.HasValue)
@@ -209,7 +209,7 @@ namespace StackExchange.Redis
                 {
                     @in = GetAvailableInboundBytes(out ar);
                 }
-                catch { /* best effort only */ }
+                catch (Exception ex) when (!(ex is OutOfMemoryException)) { /* best effort only */ }
             }
 
             if (isCurrent && Interlocked.CompareExchange(ref failureReported, 1, 0) == 0)
@@ -784,7 +784,7 @@ namespace StackExchange.Redis
                 {
                     return delegate { return new X509Certificate2(pfxPath, pfxPassword ?? "", flags ?? X509KeyStorageFlags.DefaultKeySet); };
                 }
-            } catch
+            } catch (Exception ex) when (!(ex is OutOfMemoryException))
             { }
             return null;
         }
@@ -838,7 +838,7 @@ namespace StackExchange.Redis
                 Bridge.OnConnected(this, log);
                 return socketMode;
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!(ex is OutOfMemoryException))
             {
                 RecordConnectionFailed(ConnectionFailureType.InternalFailure, ex); // includes a bridge.OnDisconnected
                 Multiplexer.Trace("Could not connect: " + ex.Message, physicalName);
@@ -855,7 +855,7 @@ namespace StackExchange.Redis
                 int bytesRead = tmp == null ? 0 : result.Result; // note we expect this to be completed
                 return ProcessReadBytes(bytesRead);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!(ex is OutOfMemoryException))
             {
                 RecordConnectionFailed(ConnectionFailureType.InternalFailure, ex);
                 return false;
@@ -869,7 +869,7 @@ namespace StackExchange.Redis
                 int bytesRead = netStream?.EndRead(result) ?? 0;
                 return ProcessReadBytes(bytesRead);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!(ex is OutOfMemoryException))
             {
                 RecordConnectionFailed(ConnectionFailureType.InternalFailure, ex);
                 return false;
@@ -911,7 +911,7 @@ namespace StackExchange.Redis
                                 blame = Format.TryParseEndPoint(items[2].GetString());
                             }
                         }
-                        catch { /* no biggie */ }
+                        catch (Exception ex) when (!(ex is OutOfMemoryException)) { /* no biggie */ }
                         Multiplexer.Trace("Configuration changed: " + Format.ToString(blame), physicalName);
                         Multiplexer.ReconfigureIfNeeded(blame, true, "broadcast");
                     }
@@ -963,7 +963,7 @@ namespace StackExchange.Redis
             {
                 Bridge.OnHeartbeat(true); // all the fun code is here
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!(ex is OutOfMemoryException))
             {
                 OnInternalError(ex);
             }
@@ -1041,7 +1041,7 @@ namespace StackExchange.Redis
                 Multiplexer.Trace("Buffer exhausted", physicalName);
                 // ^^^ note that the socket manager will call us again when there is something to do
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!(ex is OutOfMemoryException))
             {
                 RecordConnectionFailed(ConnectionFailureType.InternalFailure, ex);
             }finally
@@ -1055,7 +1055,7 @@ namespace StackExchange.Redis
             get
             {
                 try { return socketToken.Available > 0; }
-                catch { return false; }
+                catch (Exception ex) when (!(ex is OutOfMemoryException)) { return false; }
             }
         }
         private RawResult ReadArray(byte[] buffer, ref int offset, ref int count)

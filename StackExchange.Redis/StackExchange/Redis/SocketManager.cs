@@ -100,13 +100,13 @@ namespace StackExchange.Redis
         }
         private static readonly ParameterizedThreadStart writeAllQueues = context =>
         {
-            try { ((SocketManager)context).WriteAllQueues(); } catch { }
+            try { ((SocketManager)context).WriteAllQueues(); } catch (Exception ex) when (!(ex is OutOfMemoryException)) { }
         };
 
         private static readonly WaitCallback writeOneQueue = context =>
         {
 
-            try { ((SocketManager)context).WriteOneQueue(); } catch { }
+            try { ((SocketManager)context).WriteOneQueue(); } catch (Exception ex) when (!(ex is OutOfMemoryException)) { }
         };
 
         private readonly string name;
@@ -352,7 +352,7 @@ namespace StackExchange.Redis
                         multiplexer.LogLocked(log, "Starting read");
                         try
                         { callback.StartReading(); }
-                        catch (Exception ex)
+                        catch (Exception ex) when (!(ex is OutOfMemoryException))
                         {
                             ConnectionMultiplexer.TraceWithoutContext(ex.Message);
                             Shutdown(socket);
@@ -371,20 +371,20 @@ namespace StackExchange.Redis
                 {
                     try
                     { tuple.Item2.Error(); }
-                    catch (Exception inner)
+                    catch (Exception inner) when (!(inner is OutOfMemoryException))
                     {
                         ConnectionMultiplexer.TraceWithoutContext(inner.Message);
                     }
                 }
             }
-            catch(Exception outer)
+            catch(Exception outer) when (!(outer is OutOfMemoryException))
             {
                 ConnectionMultiplexer.TraceWithoutContext(outer.Message);
                 if (tuple != null)
                 {
                     try
                     { tuple.Item2.Error(); }
-                    catch (Exception inner)
+                    catch (Exception inner) when (!(inner is OutOfMemoryException))
                     {
                         ConnectionMultiplexer.TraceWithoutContext(inner.Message);
                     }
@@ -405,11 +405,11 @@ namespace StackExchange.Redis
             if (socket != null)
             {
                 OnShutdown(socket);
-                try { socket.Shutdown(SocketShutdown.Both); } catch { }
+                try { socket.Shutdown(SocketShutdown.Both); } catch (Exception ex) when (!(ex is OutOfMemoryException)) { }
 #if !CORE_CLR
-                try { socket.Close(); } catch { }
+                try { socket.Close(); } catch (Exception ex) when (!(ex is OutOfMemoryException)) { }
 #endif
-                try { socket.Dispose(); } catch { }
+                try { socket.Dispose(); } catch (Exception ex) when (!(ex is OutOfMemoryException)) { }
             }
         }
 

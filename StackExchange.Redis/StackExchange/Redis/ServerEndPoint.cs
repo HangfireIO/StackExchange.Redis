@@ -484,7 +484,7 @@ namespace StackExchange.Redis
                 if (connection == null) return;
                 Handshake(connection, log);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!(ex is OutOfMemoryException))
             {
                 connection.RecordConnectionFailed(ConnectionFailureType.InternalFailure, ex);
             }
@@ -502,7 +502,7 @@ namespace StackExchange.Redis
                 }
                 multiplexer.OnConnectionRestored(endpoint, bridge.ConnectionType);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!(ex is OutOfMemoryException))
             {
                 connection.RecordConnectionFailed(ConnectionFailureType.InternalFailure, ex);
             }
@@ -550,7 +550,7 @@ namespace StackExchange.Redis
                     interactive?.OnHeartbeat(false);
                     subscription?.OnHeartbeat(false);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (!(ex is OutOfMemoryException))
                 {
                     multiplexer.OnInternalError(ex, EndPoint);
                 }

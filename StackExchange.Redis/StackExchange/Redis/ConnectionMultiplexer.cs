@@ -138,7 +138,7 @@ namespace StackExchange.Redis
                     roleInstanceId = null;
                 }
             }
-            catch (Exception)
+            catch (Exception ex) when (!(ex is OutOfMemoryException))
             {
                 //silently ignores the exception
                 roleInstanceId = null;
@@ -181,7 +181,7 @@ namespace StackExchange.Redis
                     );
                 }
             }
-            catch
+            catch (Exception ex) when (!(ex is OutOfMemoryException))
             { // our internal error event failed; whatcha gonna do, exactly?
             }
         }
@@ -363,7 +363,7 @@ namespace StackExchange.Redis
             try
             {
                 srv.Ping(flags); // if it isn't happy, we're not happy
-            } catch (Exception ex)
+            } catch (Exception ex) when (!(ex is OutOfMemoryException))
             {
                 LogLocked(log, "Operation failed on {0}, aborting: {1}", Format.ToString(srv.EndPoint), ex.Message);
                 throw;
@@ -393,7 +393,7 @@ namespace StackExchange.Redis
             try
             {
                 srv.SlaveOf(null, flags);
-            } catch (Exception ex)
+            } catch (Exception ex) when (!(ex is OutOfMemoryException))
             {
                 LogLocked(log, "Operation failed on {0}, aborting: {1}", Format.ToString(srv.EndPoint), ex.Message);
                 throw;
@@ -585,7 +585,7 @@ namespace StackExchange.Redis
                 // if none error, great
                 if (Task.WaitAll(tasks, timeout)) return true;
             }
-            catch
+            catch (Exception ex) when (!(ex is OutOfMemoryException))
             { }
             // if we get problems, need to give the non-failing ones time to finish
             // to be fair and reasonable
@@ -600,7 +600,7 @@ namespace StackExchange.Redis
                     {
                         task.Wait(remaining);
                     }
-                    catch
+                    catch (Exception ex) when (!(ex is OutOfMemoryException))
                     { }
                 }
             }
@@ -678,7 +678,7 @@ namespace StackExchange.Redis
 #endif
                 return all;
             }
-            catch
+            catch (Exception ex) when (!(ex is OutOfMemoryException))
             { }
 
             // if we get problems, need to give the non-failing ones time to finish
@@ -705,7 +705,7 @@ namespace StackExchange.Redis
 #endif
                         await any.ForAwait();
                     }
-                    catch
+                    catch (Exception ex) when (!(ex is OutOfMemoryException))
                     { }
                 }
             }
@@ -800,7 +800,7 @@ namespace StackExchange.Redis
                 return muxer;
             } finally
             {
-                if (killMe != null) try { killMe.Dispose(); } catch { }
+                if (killMe != null) try { killMe.Dispose(); } catch (Exception ex) when (!(ex is OutOfMemoryException)) { }
             }
         }
 
@@ -823,7 +823,7 @@ namespace StackExchange.Redis
                 return muxer;
             } finally
             {
-                if (killMe != null) try { killMe.Dispose(); } catch { }
+                if (killMe != null) try { killMe.Dispose(); } catch (Exception ex) when (!(ex is OutOfMemoryException)) { }
             }
         }
 
@@ -889,7 +889,7 @@ namespace StackExchange.Redis
             }
             finally
             {
-                if (killMe != null) try { killMe.Dispose(); } catch { }
+                if (killMe != null) try { killMe.Dispose(); } catch (Exception ex) when (!(ex is OutOfMemoryException)) { }
             }
         }
 
@@ -986,7 +986,7 @@ namespace StackExchange.Redis
                 for (int i = 0; i < tmp.Length; i++)
                     tmp[i].OnHeartbeat();
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!(ex is OutOfMemoryException))
             {
                 if (Interlocked.CompareExchange(ref _activeHeartbeatErrors, 1, 0) == 0)
                 {
@@ -1553,12 +1553,12 @@ namespace StackExchange.Redis
                         LogLocked(log, "Broadcasting reconfigure...");
                         PublishReconfigureImpl(publishReconfigureFlags);
                     }
-                    catch
+                    catch (Exception ex) when (!(ex is OutOfMemoryException))
                     { }
                 }
                 return true;
 
-            } catch (Exception ex)
+            } catch (Exception ex) when (!(ex is OutOfMemoryException))
             {
                 Trace(ex.Message);
                 throw;
@@ -1581,7 +1581,7 @@ namespace StackExchange.Redis
                 var clusterConfig = await ExecuteAsyncImpl(message, ResultProcessor.ClusterNodes, null, server).ForAwait();
                 return new EndPointCollection(clusterConfig.Nodes.Select(node => node.EndPoint).ToList());
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!(ex is OutOfMemoryException))
             {
                 LogLocked(log, "Encountered error while updating cluster config: " + ex.Message);
                 return null;
@@ -1996,7 +1996,7 @@ namespace StackExchange.Redis
             try
             {
                 throw unthrownException;
-            } catch (Exception ex)
+            } catch (Exception ex) when (!(ex is OutOfMemoryException))
             {
                 source.TrySetException(ex);
                 GC.KeepAlive(source.Task.Exception);

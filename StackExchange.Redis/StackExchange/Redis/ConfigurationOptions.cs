@@ -487,7 +487,7 @@ namespace StackExchange.Redis
                             }
                         }
                     }
-                    catch (Exception ex)
+                    catch (Exception ex) when (!(ex is OutOfMemoryException))
                     {
                         multiplexer.OnInternalError(ex);
                         multiplexer.LogLocked(log, ex.Message);

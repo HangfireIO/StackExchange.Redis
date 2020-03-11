@@ -31,7 +31,7 @@ namespace StackExchange.Redis
                 foreach(Action<RedisChannel, RedisValue> sub in handler.GetInvocationList())
                 {
                     try { sub.Invoke(channel, message); }
-                    catch { }
+                    catch (Exception ex) when (!(ex is OutOfMemoryException)) { }
                 }
                 ConnectionMultiplexer.TraceWithoutContext("Invoke complete", "Subscription");
                 return true;

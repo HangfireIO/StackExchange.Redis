@@ -34,7 +34,7 @@ namespace StackExchange.Redis
                     case CallbackOperation.Error: callback.Error(); break;
                 }
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!(ex is OutOfMemoryException))
             {
                 Trace.WriteLine(ex);
             }
@@ -97,7 +97,7 @@ namespace StackExchange.Redis
                     managerState = ManagerState.Inactive;
                 }
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!(ex is OutOfMemoryException))
             {
                 if (weAreReader)
                 {
@@ -159,7 +159,7 @@ namespace StackExchange.Redis
                     foreach (var pair in allSocketPairs)
                     {
                         var callback = pair.Callback;
-                        if (callback != null) try { callback.OnHeartbeat(); } catch { }
+                        if (callback != null) try { callback.OnHeartbeat(); } catch (Exception ex) when (!(ex is OutOfMemoryException)) { }
                     }
                 }
 
@@ -256,7 +256,7 @@ namespace StackExchange.Redis
                     ConnectionMultiplexer.TraceWithoutContext((int)readSockets[0] != 0, "Read sockets: " + (int)readSockets[0]);
                     ConnectionMultiplexer.TraceWithoutContext((int)errorSockets[0] != 0, "Error sockets: " + (int)errorSockets[0]);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (!(ex is OutOfMemoryException))
                 { // this typically means a socket was disposed just before; just retry
                     Trace.WriteLine(ex.Message);
                     continue;
