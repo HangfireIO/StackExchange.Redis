@@ -2012,6 +2012,8 @@ namespace StackExchange.Redis
                 return default(T);
             }
 
+            var manager = this.socketManager;
+
             if (message.IsFireAndForget)
             {
                 TryPushMessageToBridge(message, processor, null, ref server);
@@ -2060,10 +2062,10 @@ namespace StackExchange.Redis
                             add("Instantaneous", "inst", inst.ToString());
                             
 #if !NETSTANDARD1_5
-                            if (socketManager.socketMode == SocketMode.Poll)
+                            if (manager.socketMode == SocketMode.Poll)
                             {
-                                var mgrState = socketManager.State;
-                                var lastError = socketManager.LastErrorTimeRelative();
+                                var mgrState = manager.State;
+                                var lastError = manager.LastErrorTimeRelative();
 
                                 add("Manager-State", "mgr", mgrState.ToString());
                                 add("Last-Error", "err", lastError);
