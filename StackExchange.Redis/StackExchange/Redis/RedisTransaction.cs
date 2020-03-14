@@ -242,13 +242,24 @@ namespace StackExchange.Redis
                                 conditions[conditions.Length - 1].GetBox().SetState(conditionsCompletedEvent);
                             }
 
+                            var watchKeys = new RedisKey[conditions.Length];
+
                             for (int i = 0; i < conditions.Length; i++)
                             {
-                                foreach (var msg in conditions[i].CreateMessages(Db))
-                                {
-                                    msg.SetNoRedirect(); // need to keep them in the current context only
-                                    yield return msg;
-                                }
+                                watchKeys[i] = conditions[i].Condition.Key;
+                            }
+
+                            var watchMessage = Message.Create(Db, CommandFlags.None, RedisCommand.WATCH, watchKeys);
+                            watchMessage.SetNoRedirect();
+
+                            yield return watchMessage;
+
+                            for (int i = 0; i < conditions.Length; i++)
+                            {
+                                var msg = conditions[i].CreateMessage(Db);
+                                msg.SetNoRedirect(); // need to keep them in the current context only
+
+                                yield return msg;
                             }
 
                             if (!explicitCheckForQueued)

@@ -14,6 +14,11 @@ namespace StackExchange.Redis
         private Condition() { }
 
         /// <summary>
+        /// Gets a key under which condition is enforces.
+        /// </summary>
+        public abstract RedisKey Key { get; }
+
+        /// <summary>
         /// Enforces that the given hash-field must have the specified value
         /// </summary>
         public static Condition HashEqual(RedisKey key, RedisValue hashField, RedisValue value)
@@ -271,7 +276,7 @@ namespace StackExchange.Redis
 
         internal abstract void CheckCommands(CommandMap commandMap);
 
-        internal abstract IEnumerable<Message> CreateMessages(int db, ResultBox resultBox);
+        internal abstract Message CreateMessage(int db, ResultBox resultBox);
 
         internal abstract int GetHashSlot(ServerSelectionStrategy serverSelectionStrategy);
         internal abstract bool TryValidate(RawResult result, out bool value);
@@ -370,6 +375,8 @@ namespace StackExchange.Redis
                 }
             }
 
+            public override RedisKey Key => key;
+
             public override string ToString()
             {
                 return (expectedValue.IsNull ? key.ToString() : ((string)key) + " " + type + " > " + expectedValue)
@@ -381,13 +388,11 @@ namespace StackExchange.Redis
                 commandMap.AssertAvailable(cmd);
             }
 
-            internal override IEnumerable<Message> CreateMessages(int db, ResultBox resultBox)
+            internal override Message CreateMessage(int db, ResultBox resultBox)
             {
-                yield return Message.Create(db, CommandFlags.None, RedisCommand.WATCH, key);
-
                 var message = ConditionProcessor.CreateMessage(this, db, CommandFlags.None, cmd, key, expectedValue);
                 message.SetSource(ConditionProcessor.Default, resultBox);
-                yield return message;
+                return message;
             }
 
             internal override int GetHashSlot(ServerSelectionStrategy serverSelectionStrategy)
@@ -439,6 +444,8 @@ namespace StackExchange.Redis
                 this.expectedValue = expectedValue;
             }
 
+            public override RedisKey Key => key;
+
             public override string ToString()
             {
                 return (hashField.IsNull ? key.ToString() : ((string)key) + " > " + hashField)
@@ -451,14 +458,12 @@ namespace StackExchange.Redis
                 commandMap.AssertAvailable(hashField.IsNull ? RedisCommand.GET : RedisCommand.HGET);
             }
 
-            internal sealed override IEnumerable<Message> CreateMessages(int db, ResultBox resultBox)
+            internal sealed override Message CreateMessage(int db, ResultBox resultBox)
             {
-                yield return Message.Create(db, CommandFlags.None, RedisCommand.WATCH, key);
-
                 var cmd = hashField.IsNull ? RedisCommand.GET : RedisCommand.HGET;
                 var message = ConditionProcessor.CreateMessage(this, db, CommandFlags.None, cmd, key, hashField);
                 message.SetSource(ConditionProcessor.Default, resultBox);
-                yield return message;
+                return message;
             }
 
             internal override int GetHashSlot(ServerSelectionStrategy serverSelectionStrategy)
@@ -502,6 +507,8 @@ namespace StackExchange.Redis
                 this.expectedValue = expectedValue;
             }
 
+            public override RedisKey Key => key;
+
             public override string ToString()
             {
                 return ((string)key) + "[" + index.ToString() + "]"
@@ -513,13 +520,11 @@ namespace StackExchange.Redis
                 commandMap.AssertAvailable(RedisCommand.LINDEX);
             }
 
-            internal sealed override IEnumerable<Message> CreateMessages(int db, ResultBox resultBox)
+            internal sealed override Message CreateMessage(int db, ResultBox resultBox)
             {
-                yield return Message.Create(db, CommandFlags.None, RedisCommand.WATCH, key);
-
                 var message = ConditionProcessor.CreateMessage(this, db, CommandFlags.None, RedisCommand.LINDEX, key, index);
                 message.SetSource(ConditionProcessor.Default, resultBox);
-                yield return message;
+                return message;
             }
 
             internal override int GetHashSlot(ServerSelectionStrategy serverSelectionStrategy)
@@ -597,6 +602,8 @@ namespace StackExchange.Redis
                 }
             }
 
+            public override RedisKey Key => key;
+
             public override string ToString()
             {
                 return ((string)key) + " " + type + " length" + GetComparisonString() + expectedLength;
@@ -612,13 +619,11 @@ namespace StackExchange.Redis
                 commandMap.AssertAvailable(cmd);
             }
 
-            internal sealed override IEnumerable<Message> CreateMessages(int db, ResultBox resultBox)
+            internal sealed override Message CreateMessage(int db, ResultBox resultBox)
             {
-                yield return Message.Create(db, CommandFlags.None, RedisCommand.WATCH, key);
-
                 var message = ConditionProcessor.CreateMessage(this, db, CommandFlags.None, cmd, key);
                 message.SetSource(ConditionProcessor.Default, resultBox);
-                yield return message;
+                return message;
             }
 
             internal override int GetHashSlot(ServerSelectionStrategy serverSelectionStrategy)
@@ -667,9 +672,9 @@ namespace StackExchange.Redis
         /// </summary>
         public bool WasSatisfied => wasSatisfied;
 
-        internal IEnumerable<Message> CreateMessages(int db)
+        internal Message CreateMessage(int db)
         {
-            return Condition.CreateMessages(db, resultBox);
+            return Condition.CreateMessage(db, resultBox);
         }
 
         internal ResultBox<bool> GetBox() { return resultBox; }
