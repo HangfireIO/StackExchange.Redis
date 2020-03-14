@@ -219,7 +219,6 @@ namespace StackExchange.Redis
 
             public IEnumerable<Message> GetMessages(PhysicalConnection connection)
             {
-                ResultBox lastBox = null;
                 try
                 {
                     // Important: if the server supports EXECABORT, then we can check the pre-conditions (pause there),
@@ -236,38 +235,39 @@ namespace StackExchange.Redis
                     // PART 1: issue the pre-conditions
                     if (!IsAborted && conditions.Length != 0)
                     {
-                        for (int i = 0; i < conditions.Length; i++)
+                        using (var conditionsCompletedEvent = !explicitCheckForQueued ? new ManualResetEvent(false) : null)
                         {
-                            // need to have locked them before sending them
-                            // to guarantee that we see the pulse
-                            ResultBox latestBox = conditions[i].GetBox();
-                            //Monitor.Enter(latestBox);
-                            //if (lastBox != null) Monitor.Exit(lastBox);
-                            lastBox = latestBox;
-                            foreach (var msg in conditions[i].CreateMessages(Db))
+                            if (!explicitCheckForQueued)
                             {
-                                msg.SetNoRedirect(); // need to keep them in the current context only
-                                yield return msg;
+                                conditions[conditions.Length - 1].GetBox().SetState(conditionsCompletedEvent);
                             }
-                        }
 
-                        if (!explicitCheckForQueued && lastBox != null)
-                        {
-                            // need to get those sent ASAP; if they are stuck in the buffers, we die
-                            multiplexer.Trace("Flushing and waiting for precondition responses");
-                            connection.Flush();
-                            if (lastBox.Wait(multiplexer.TimeoutMilliseconds))
+                            for (int i = 0; i < conditions.Length; i++)
                             {
-                                if (!AreAllConditionsSatisfied(multiplexer))
-                                    command = RedisCommand.UNWATCH; // somebody isn't happy
+                                foreach (var msg in conditions[i].CreateMessages(Db))
+                                {
+                                    msg.SetNoRedirect(); // need to keep them in the current context only
+                                    yield return msg;
+                                }
                             }
-                            else
-                            { // timeout running pre-conditions
-                                multiplexer.Trace("Timeout checking preconditions");
-                                command = RedisCommand.UNWATCH;
+
+                            if (!explicitCheckForQueued)
+                            {
+                                // need to get those sent ASAP; if they are stuck in the buffers, we die
+                                multiplexer.Trace("Flushing and waiting for precondition responses");
+                                connection.Flush();
+                                if (conditionsCompletedEvent.WaitOne(multiplexer.TimeoutMilliseconds))
+                                {
+                                    if (!AreAllConditionsSatisfied(multiplexer))
+                                        command = RedisCommand.UNWATCH; // somebody isn't happy
+                                }
+                                else
+                                {
+                                    // timeout running pre-conditions
+                                    multiplexer.Trace("Timeout checking preconditions");
+                                    command = RedisCommand.UNWATCH;
+                                }
                             }
-                            //Monitor.Exit(lastBox);
-                            lastBox = null;
                         }
                     }
 
@@ -281,55 +281,50 @@ namespace StackExchange.Redis
                     // PART 3: issue the commands
                     if (!IsAborted && operations.Length != 0)
                     {
-                        multiplexer.Trace("Issuing transaction operations");
-
-                        foreach (var op in operations)
+                        using (var operationsCompletedEvent = explicitCheckForQueued ? new ManualResetEvent(false) : null)
                         {
+                            multiplexer.Trace("Issuing transaction operations");
                             if (explicitCheckForQueued)
-                            {   // need to have locked them before sending them
-                                // to guarantee that we see the pulse
-                                ResultBox thisBox = op.ResultBox;
-                                if (thisBox != null)
-                                {
-                                    //Monitor.Enter(thisBox);
-                                    //if (lastBox != null) Monitor.Exit(lastBox);
-                                    lastBox = thisBox;
-                                }
-                            }
-                            yield return op;
-                        }
-
-                        if (explicitCheckForQueued && lastBox != null)
-                        {
-                            multiplexer.Trace("Flushing and waiting for precondition+queued responses");
-                            connection.Flush(); // make sure they get sent, so we can check for QUEUED (and the pre-conditions if necessary)
-                            if (lastBox.Wait(multiplexer.TimeoutMilliseconds))
                             {
-                                if (!AreAllConditionsSatisfied(multiplexer))
+                                operations[operations.Length - 1].ResultBox.SetState(operationsCompletedEvent);
+                            }
+
+                            foreach (var op in operations)
+                            {
+                                yield return op;
+                            }
+
+                            if (explicitCheckForQueued)
+                            {
+                                multiplexer.Trace("Flushing and waiting for precondition+queued responses");
+                                connection.Flush(); // make sure they get sent, so we can check for QUEUED (and the pre-conditions if necessary)
+                                if (operationsCompletedEvent.WaitOne(multiplexer.TimeoutMilliseconds))
                                 {
-                                    command = RedisCommand.DISCARD;
+                                    if (!AreAllConditionsSatisfied(multiplexer))
+                                    {
+                                        command = RedisCommand.DISCARD;
+                                    }
+                                    else
+                                    {
+                                        foreach (var op in operations)
+                                        {
+                                            if (!op.WasQueued)
+                                            {
+                                                multiplexer.Trace("Aborting: operation was not queued: " + op.Command);
+                                                command = RedisCommand.DISCARD;
+                                                break;
+                                            }
+                                        }
+                                    }
+
+                                    multiplexer.Trace("Confirmed: QUEUED x " + operations.Length);
                                 }
                                 else
                                 {
-                                    foreach (var op in operations)
-                                    {
-                                        if (!op.WasQueued)
-                                        {
-                                            multiplexer.Trace("Aborting: operation was not queued: " + op.Command);
-                                            command = RedisCommand.DISCARD;
-                                            break;
-                                        }
-                                    }
+                                    multiplexer.Trace("Aborting: timeout checking queued messages");
+                                    command = RedisCommand.DISCARD;
                                 }
-                                multiplexer.Trace("Confirmed: QUEUED x " + operations.Length);
                             }
-                            else
-                            {
-                                multiplexer.Trace("Aborting: timeout checking queued messages");
-                                command = RedisCommand.DISCARD;
-                            }
-                            //Monitor.Exit(lastBox);
-                            lastBox = null;
                         }
                     }
                 }

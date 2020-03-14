@@ -8,19 +8,6 @@ namespace StackExchange.Redis
 {
 #if DEBUG
 
-    partial class ResultBox
-    {
-        internal static long allocations;
-
-        public static long GetAllocationCount()
-        {
-            return Interlocked.Read(ref allocations);
-        }
-        static partial void OnAllocated()
-        {
-            Interlocked.Increment(ref allocations);
-        }
-    }
     partial interface IServer
     {
         /// <summary>
@@ -158,13 +145,6 @@ namespace StackExchange.Redis
 
     partial class ConnectionMultiplexer
     {
-        /// <summary>
-        /// Gets how many result-box instances were allocated
-        /// </summary>
-        public static long GetResultBoxAllocationCount()
-        {
-            return ResultBox.GetAllocationCount();
-        }
         /// <summary>
         /// Gets how many async completion workers were queueud
         /// </summary>

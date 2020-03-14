@@ -7,8 +7,13 @@ namespace StackExchange.Redis
 {
     abstract partial class ResultBox
     {
-        private ManualResetEventSlim completedEvent = new ManualResetEventSlim(false);
         protected Exception exception;
+        protected object stateOrCompletionSource;
+
+        public void SetState(object state)
+        {
+            stateOrCompletionSource = state;
+        }
 
         public void SetException(Exception exception)
         {
@@ -23,38 +28,10 @@ namespace StackExchange.Redis
             //}
         }
 
-        public bool Wait(int milliseconds)
-        {
-            return this.completedEvent.Wait(milliseconds);
-        }
-
-        protected void SignalCompleted()
-        {
-            this.completedEvent.Set();
-        }
-
-        protected void ResetCompleted()
-        {
-            this.completedEvent.Dispose();
-            this.completedEvent = new ManualResetEventSlim(false);
-        }
-
         public abstract bool TryComplete(bool isAsync);
-
-        [Conditional("DEBUG")]
-        protected static void IncrementAllocationCount()
-        {
-            OnAllocated();
-        }
-
-        static partial void OnAllocated();
     }
     sealed class ResultBox<T> : ResultBox
     {
-        private static readonly ResultBox<T>[] store = new ResultBox<T>[64];
-
-        private object stateOrCompletionSource;
-
         private T value;
 
         public ResultBox(object stateOrCompletionSource)
@@ -62,24 +39,8 @@ namespace StackExchange.Redis
             this.stateOrCompletionSource = stateOrCompletionSource;
         }
 
-        public object AsyncState =>
-            stateOrCompletionSource is TaskCompletionSource<T>
-                ? ((TaskCompletionSource<T>) stateOrCompletionSource).Task.AsyncState
-                : stateOrCompletionSource;
-
         public static ResultBox<T> Get(object stateOrCompletionSource)
         {
-            ResultBox<T> found;
-            for (int i = 0; i < store.Length; i++)
-            {
-                if ((found = Interlocked.Exchange(ref store[i], null)) != null)
-                {
-                    found.Reset(stateOrCompletionSource);
-                    return found;
-                }
-            }
-            IncrementAllocationCount();
-            
             return new ResultBox<T>(stateOrCompletionSource);
         }
 
@@ -97,14 +58,6 @@ namespace StackExchange.Redis
                 box.value = default(T);
                 box.exception = null;
                 box.stateOrCompletionSource = null;
-                box.ResetCompleted();
-                if (recycle)
-                {
-                    for (int i = 0; i < store.Length; i++)
-                    {
-                        if (Interlocked.CompareExchange(ref store[i], box, null) == null) return;
-                    }
-                }
             }
         }
 
@@ -144,26 +97,24 @@ namespace StackExchange.Redis
                 }
 #endif
             }
-            else
+            else if (stateOrCompletionSource is ManualResetEvent resetEvent)
             {
-                /*lock (this)
-                { // tell the waiting thread that we're done
-                    
-                    Monitor.PulseAll(this);
-                }*/
-                SignalCompleted();
+                try
+                {
+                    resetEvent.Set();
+                }
+                catch (ObjectDisposedException)
+                {
+                }
+
                 ConnectionMultiplexer.TraceWithoutContext("Pulsed", "Result");
                 return true;
             }
-        }
-
-        private void Reset(object stateOrCompletionSource)
-        {
-            value = default(T);
-            exception = null;
-
-            this.stateOrCompletionSource = stateOrCompletionSource;
-            this.ResetCompleted();
+            else
+            {
+                ConnectionMultiplexer.TraceWithoutContext("Completed", "result");
+                return true;
+            }
         }
     }
 

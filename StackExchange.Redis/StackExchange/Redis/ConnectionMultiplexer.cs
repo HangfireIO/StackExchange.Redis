@@ -2022,16 +2022,16 @@ namespace StackExchange.Redis
             }
             else
             {
-                var source = ResultBox<T>.Get(null);
-
-                //lock (source)
+                using (var completedEvent = new ManualResetEvent(false))
                 {
+                    var source = ResultBox<T>.Get(completedEvent);
+
                     if (!TryPushMessageToBridge(message, processor, source, ref server))
                     {
                         throw ExceptionFactory.NoConnectionAvailable(IncludeDetailInExceptions, IncludePerformanceCountersInExceptions, message.Command, message, server, GetServerSnapshot());
                     }
 
-                    if (source.Wait(timeoutMilliseconds))
+                    if (completedEvent.WaitOne(timeoutMilliseconds))
                     {
                         Trace("Timeley response to " + message.ToString());
                     }
@@ -2125,14 +2125,15 @@ namespace StackExchange.Redis
                         throw timeoutEx;
                         // very important not to return "source" to the pool here
                     }
+
+                    // snapshot these so that we can recycle the box
+                    Exception ex;
+                    T val;
+                    ResultBox<T>.UnwrapAndRecycle(source, true, out val, out ex); // now that we aren't locking it...
+                    if (ex != null) throw ex;
+                    Trace(message + " received " + val);
+                    return val;
                 }
-                // snapshot these so that we can recycle the box
-                Exception ex;
-                T val;
-                ResultBox<T>.UnwrapAndRecycle(source, true, out val, out ex); // now that we aren't locking it...
-                if (ex != null) throw ex;
-                Trace(message + " received " + val);
-                return val;
             }
         }
 
