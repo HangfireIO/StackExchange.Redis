@@ -36,7 +36,7 @@ namespace StackExchange.Redis
 
         private int databases, writeEverySeconds;
 
-        private PhysicalBridge interactive, subscription;
+        private volatile PhysicalBridge interactive, subscription;
 
         bool isDisposed;
 
