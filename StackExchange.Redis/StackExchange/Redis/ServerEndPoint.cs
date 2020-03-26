@@ -510,7 +510,13 @@ namespace StackExchange.Redis
         
         internal int LastInfoReplicationCheckSecondsAgo
         {
-            get { return unchecked(Environment.TickCount - VolatileWrapper.Read(ref lastInfoReplicationCheckTicks)) / 1000; }
+            get
+            {
+                var lastInfoTicks = VolatileWrapper.Read(ref lastInfoReplicationCheckTicks);
+                if (lastInfoTicks == 0) return -1;
+
+                return unchecked(Environment.TickCount - lastInfoTicks) / 1000;
+            }
         }
 
         private EndPoint masterEndPoint;
