@@ -219,7 +219,7 @@ namespace StackExchange.Redis
                 int ready;
                 try
                 {
-                    var timeout = new TimeValue(1000);
+                    var timeout = new TimeValue(1_000_000); // microseconds
                     managerState = ManagerState.ExecuteSelect;
                     ready = select(0, readSockets, null, errorSockets, ref timeout);
                     managerState = ManagerState.ExecuteSelectComplete;
