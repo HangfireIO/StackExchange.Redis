@@ -533,7 +533,9 @@ namespace StackExchange.Redis
             if (next.sendingCanceled)
             {
                 Trace("Message sending was canceled");
-                return true;
+                next.Fail(ConnectionFailureType.ProtocolFailure, null);
+                CompleteSyncOrAsync(next);
+                return true; // don't kill the connection as it's not required
             }
             if (next is IMultiMessage)
             {
