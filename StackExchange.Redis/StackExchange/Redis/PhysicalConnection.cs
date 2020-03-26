@@ -1170,7 +1170,7 @@ namespace StackExchange.Redis
 
             int now = Environment.TickCount;
 
-            if (firstUnansweredWrite != 0 && (now - firstUnansweredWrite) > this.Multiplexer.RawConfig.ResponseTimeout)
+            if (firstUnansweredWrite != 0 && unchecked(now - firstUnansweredWrite) > this.Multiplexer.RawConfig.ResponseTimeout)
             {
                 this.RecordConnectionFailed(ConnectionFailureType.SocketFailure, ref managerState, origin: "CheckForStaleConnection");
             }
