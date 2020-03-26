@@ -197,7 +197,7 @@ namespace StackExchange.Redis
                 case RedisCommand.PUNSUBSCRIBE:
                     return subscription ?? (create ? subscription = CreateBridge(ConnectionType.Subscription, null) : null);
                 default:
-                    return interactive;
+                    return interactive ?? (create ? interactive = CreateBridge(ConnectionType.Interactive, null) : null);
             }
         }
 
