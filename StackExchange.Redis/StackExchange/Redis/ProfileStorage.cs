@@ -73,8 +73,8 @@ namespace StackExchange.Redis
             if (Message != null) throw new InvalidOperationException();
 
             Message = msg;
-            MessageCreatedDateTime = msg.createdDateTime;
-            MessageCreatedTimeStamp = msg.createdTimestamp;
+            MessageCreatedDateTime = DateTime.UtcNow;
+            MessageCreatedTimeStamp = Stopwatch.GetTimestamp();
         }
 
         public void SetEnqueued()
