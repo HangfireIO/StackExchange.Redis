@@ -59,11 +59,11 @@ namespace StackExchange.Redis
         /// <summary>
         /// Interprets the result as a String
         /// </summary>
-        public static explicit operator string (RedisResult result) { return result.AsString(); }
+        public static explicit operator string (RedisResult result) { return result?.AsString(); }
         /// <summary>
         /// Interprets the result as a Byte[]
         /// </summary>
-        public static explicit operator byte[] (RedisResult result) { return result.AsByteArray(); }
+        public static explicit operator byte[] (RedisResult result) { return result?.AsByteArray(); }
         /// <summary>
         /// Interprets the result as a Double
         /// </summary>
@@ -83,35 +83,35 @@ namespace StackExchange.Redis
         /// <summary>
         /// Interprets the result as a RedisValue
         /// </summary>
-        public static explicit operator RedisValue (RedisResult result) { return result.AsRedisValue(); }
+        public static explicit operator RedisValue (RedisResult result) { return result?.AsRedisValue() ?? RedisValue.Null; }
         /// <summary>
         /// Interprets the result as a RedisKey
         /// </summary>
-        public static explicit operator RedisKey (RedisResult result) { return result.AsRedisKey(); }
+        public static explicit operator RedisKey (RedisResult result) { return result?.AsRedisKey() ?? default; }
         /// <summary>
         /// Interprets the result as a Nullable Double
         /// </summary>
-        public static explicit operator double? (RedisResult result) { return result.AsNullableDouble(); }
+        public static explicit operator double? (RedisResult result) { return result?.AsNullableDouble(); }
         /// <summary>
         /// Interprets the result as a Nullable Int64
         /// </summary>
-        public static explicit operator long? (RedisResult result) { return result.AsNullableInt64(); }
+        public static explicit operator long? (RedisResult result) { return result?.AsNullableInt64(); }
         /// <summary>
         /// Interprets the result as a Nullable Int32
         /// </summary>
-        public static explicit operator int? (RedisResult result) { return result.AsNullableInt32(); }
+        public static explicit operator int? (RedisResult result) { return result?.AsNullableInt32(); }
         /// <summary>
         /// Interprets the result as a Nullable Boolean
         /// </summary>
-        public static explicit operator bool? (RedisResult result) { return result.AsNullableBoolean(); }
+        public static explicit operator bool? (RedisResult result) { return result?.AsNullableBoolean(); }
         /// <summary>
         /// Interprets the result as an array of String
         /// </summary>
-        public static explicit operator string[] (RedisResult result) { return result.AsStringArray(); }
+        public static explicit operator string[] (RedisResult result) { return result?.AsStringArray(); }
         /// <summary>
         /// Interprets the result as an array of Byte[]
         /// </summary>
-        public static explicit operator byte[][] (RedisResult result) { return result.AsByteArrayArray(); }
+        public static explicit operator byte[][] (RedisResult result) { return result?.AsByteArrayArray(); }
         /// <summary>
         /// Interprets the result as an array of Double
         /// </summary>
@@ -119,23 +119,23 @@ namespace StackExchange.Redis
         /// <summary>
         /// Interprets the result as an array of Int64
         /// </summary>
-        public static explicit operator long[] (RedisResult result) { return result.AsInt64Array(); }
+        public static explicit operator long[] (RedisResult result) { return result?.AsInt64Array(); }
         /// <summary>
         /// Interprets the result as an array of Int32
         /// </summary>
-        public static explicit operator int[] (RedisResult result) { return result.AsInt32Array(); }
+        public static explicit operator int[] (RedisResult result) { return result?.AsInt32Array(); }
         /// <summary>
         /// Interprets the result as an array of Boolean
         /// </summary>
-        public static explicit operator bool[] (RedisResult result) { return result.AsBooleanArray(); }
+        public static explicit operator bool[] (RedisResult result) { return result?.AsBooleanArray(); }
         /// <summary>
         /// Interprets the result as an array of RedisValue
         /// </summary>
-        public static explicit operator RedisValue[] (RedisResult result) { return result.AsRedisValueArray(); }
+        public static explicit operator RedisValue[] (RedisResult result) { return result?.AsRedisValueArray(); }
         /// <summary>
         /// Interprets the result as an array of RedisKey
         /// </summary>
-        public static explicit operator RedisKey[] (RedisResult result) { return result.AsRedisKeyArray(); }
+        public static explicit operator RedisKey[] (RedisResult result) { return result?.AsRedisKeyArray(); }
         /// <summary>
         /// Interprets the result as an array of RedisResult
         /// </summary>
