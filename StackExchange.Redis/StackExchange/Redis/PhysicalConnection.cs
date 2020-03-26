@@ -217,7 +217,7 @@ namespace StackExchange.Redis
                 managerState = SocketManager.ManagerState.RecordConnectionFailed_ReportFailure;
                 int now = Environment.TickCount, lastRead = VolatileWrapper.Read(ref lastReadTickCount), lastWrite = VolatileWrapper.Read(ref lastWriteTickCount),
                     lastBeat = VolatileWrapper.Read(ref lastBeatTickCount);
-                int unansweredRead = VolatileWrapper.Read(ref firstUnansweredWriteTickCount);
+                int unansweredWrite = VolatileWrapper.Read(ref firstUnansweredWriteTickCount);
 
                 var exMessage = new StringBuilder(failureType + " on " + Format.ToString(Bridge.ServerEndPoint.EndPoint) + "/" + connectionType);
                 var data = new List<Tuple<string, string>>
@@ -236,7 +236,7 @@ namespace StackExchange.Redis
                 add("Outstanding-Responses", "outstanding", GetSentAwaitingResponseCount().ToString());
                 add("Last-Read", "last-read", unchecked(now - lastRead) / 1000 + "s ago");
                 add("Last-Write", "last-write", unchecked(now - lastWrite) / 1000 + "s ago");
-                add("Unanswered-Write", "unanswered-write", unchecked(now - unansweredRead) / 1000 + "s ago");
+                add("Unanswered-Write", "unanswered-write", unansweredWrite == 0 ? "never" : unchecked(now - unansweredWrite) / 1000 + "s ago");
                 add("Keep-Alive", "keep-alive", Bridge.ServerEndPoint.WriteEverySeconds + "s");
                 add("Pending", "pending", Bridge.GetPendingCount().ToString());
                 add("Previous-Physical-State", "state", oldState.ToString());
