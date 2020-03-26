@@ -308,7 +308,7 @@ namespace StackExchange.Redis
             }
             if (commandMap.IsAvailable(RedisCommand.INFO))
             {
-                lastInfoReplicationCheckTicks = Environment.TickCount;
+                Interlocked.Exchange(ref lastInfoReplicationCheckTicks, Environment.TickCount);
                 if (features.InfoSections)
                 {
                     msg = Message.Create(-1, flags, RedisCommand.INFO, RedisLiterals.replication);
@@ -523,7 +523,7 @@ namespace StackExchange.Redis
 
         internal bool CheckInfoReplication()
         {
-            lastInfoReplicationCheckTicks = Environment.TickCount;
+            Interlocked.Exchange(ref lastInfoReplicationCheckTicks, Environment.TickCount);
             PhysicalBridge bridge;
             if (version >= RedisFeatures.v2_8_0 && multiplexer.CommandMap.IsAvailable(RedisCommand.INFO)
                 && (bridge = GetBridge(ConnectionType.Interactive, false)) != null)
