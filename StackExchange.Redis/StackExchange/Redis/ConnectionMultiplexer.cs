@@ -972,6 +972,17 @@ namespace StackExchange.Redis
             ((ConnectionMultiplexer)state).OnHeartbeat();
         };
 
+        /// <summary>
+        /// Performs the heartbeat manually when automatic ones disabled by setting the
+        /// <see cref="ConfigurationOptions.HeartbeatInterval"/> to a zero value. It's
+        /// expected that multiple heartbeats are called during the keep-alive time. By
+        /// default it's expected to run every second.
+        /// </summary>
+        public void HeartbeatOnce()
+        {
+            OnHeartbeat();
+        }
+
         private int _activeHeartbeatErrors;
         private void OnHeartbeat()
         {
@@ -1006,7 +1017,7 @@ namespace StackExchange.Redis
         private static int lastGlobalHeartbeatTicks = Environment.TickCount;
         internal long LastHeartbeatSecondsAgo {
             get {
-                if (pulse == null) return -1;
+                if (isDisposed) return -1;
                 return unchecked(Environment.TickCount - VolatileWrapper.Read(ref lastHeartbeatTicks)) / 1000;
             }
         }
@@ -1541,10 +1552,10 @@ namespace StackExchange.Redis
                 {
                     return false;
                 }
-                if (first)
+                if (first && configuration.HeartbeatInterval > 0)
                 {
                     LogLocked(log, "Starting heartbeat...");
-                    pulse = new Timer(heartbeat, this, MillisecondsPerHeartbeat, MillisecondsPerHeartbeat);
+                    pulse = new Timer(heartbeat, this, configuration.HeartbeatInterval, configuration.HeartbeatInterval);
                 }
                 if(publishReconfigure)
                 {

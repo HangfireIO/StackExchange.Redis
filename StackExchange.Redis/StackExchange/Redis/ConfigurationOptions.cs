@@ -89,7 +89,8 @@ namespace StackExchange.Redis
                         TieBreaker = "tiebreaker", WriteBuffer = "writeBuffer", Ssl = "ssl", SslHost = "sslHost", HighPrioritySocketThreads = "highPriorityThreads",
                         ConfigChannel = "configChannel", AbortOnConnectFail = "abortConnect", ResolveDns = "resolveDns",
                         ChannelPrefix = "channelPrefix", Proxy = "proxy", ConnectRetry = "connectRetry",
-                        ConfigCheckSeconds = "configCheckSeconds", ResponseTimeout = "responseTimeout", DefaultDatabase = "defaultDatabase";
+                        ConfigCheckSeconds = "configCheckSeconds", ResponseTimeout = "responseTimeout", DefaultDatabase = "defaultDatabase",
+                        HeartbeatInterval = "heartbeatInterval";
             internal const string SslProtocols = "sslProtocols";
 
             private static readonly Dictionary<string, string> normalizedOptions = new[]
@@ -101,7 +102,7 @@ namespace StackExchange.Redis
                 ConfigChannel, AbortOnConnectFail, ResolveDns,
                 ChannelPrefix, Proxy, ConnectRetry,
                 ConfigCheckSeconds, DefaultDatabase,
-                SslProtocols,
+                SslProtocols, HeartbeatInterval
             }.ToDictionary(x => x, StringComparer.OrdinalIgnoreCase);
 
             public static string TryNormalize(string value)
@@ -126,7 +127,7 @@ namespace StackExchange.Redis
 
         private Version defaultVersion;
 
-        private int? keepAlive, syncTimeout, connectTimeout, responseTimeout, writeBuffer, connectRetry, configCheckSeconds, defaultDatabase;
+        private int? keepAlive, syncTimeout, connectTimeout, responseTimeout, writeBuffer, connectRetry, configCheckSeconds, defaultDatabase, heartbeatInterval;
 
         private Proxy? proxy;
 
@@ -145,6 +146,16 @@ namespace StackExchange.Redis
         /// </summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1009:DeclareEventHandlersCorrectly")]
         public event RemoteCertificateValidationCallback CertificateValidation;
+
+        /// <summary>
+        /// Specifies the interval between heartbeat runs in milliseconds. It's expected to have multiple
+        /// heartbeat invocations per the configured keep-alive value. By default interval is 1 second.
+        /// </summary>
+        public int HeartbeatInterval
+        {
+            get { return heartbeatInterval.GetValueOrDefault(ConnectionMultiplexer.MillisecondsPerHeartbeat); }
+            set { heartbeatInterval = value; }
+        }
 
         /// <summary>
         /// Gets or sets whether connect/configuration timeouts should be explicitly notified via a TimeoutException
@@ -579,6 +590,9 @@ namespace StackExchange.Redis
 
                     switch (OptionKeys.TryNormalize(key))
                     {
+                        case OptionKeys.HeartbeatInterval:
+                            HeartbeatInterval = OptionKeys.ParseInt32(key, value, minValue: 0);
+                            break;
                         case OptionKeys.SyncTimeout:
                             SyncTimeout = OptionKeys.ParseInt32(key, value, minValue: 1);
                             break;
