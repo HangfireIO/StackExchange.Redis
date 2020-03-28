@@ -14,7 +14,6 @@ namespace StackExchange.Redis
     internal enum SocketMode
     {
         Abort,
-        Poll,
         Async
     }
     /// <summary>
@@ -112,7 +111,6 @@ namespace StackExchange.Redis
         private readonly string name;
 
         private readonly Queue<PhysicalBridge> writeQueue = new Queue<PhysicalBridge>();
-        internal volatile SocketMode socketMode;
 
         bool isDisposed;
         private bool useHighPrioritySocketThreads = true;
@@ -130,20 +128,6 @@ namespace StackExchange.Redis
             if (string.IsNullOrWhiteSpace(name)) name = GetType().Name;
             this.name = name;
             this.useHighPrioritySocketThreads = useHighPrioritySocketThreads;
-
-#if NETSTANDARD1_5
-            this.socketMode = SocketMode.Async;
-#else
-            if (Environment.OSVersion.Platform == PlatformID.MacOSX ||
-                Environment.OSVersion.Platform == PlatformID.Unix)
-            {
-                this.socketMode = SocketMode.Async;
-            }
-            else
-            {
-                this.socketMode = SocketMode.Poll;
-            }
-#endif
 
             // we need a dedicated writer, because when under heavy ambient load
             // (a busy asp.net site, for example), workers are not reliable enough
@@ -347,12 +331,6 @@ namespace StackExchange.Redis
                 var socketMode = callback?.Connected(netStream, log) ?? SocketMode.Abort;
                 switch (socketMode)
                 {
-#if !NETSTANDARD1_5
-                    case SocketMode.Poll:
-                        multiplexer.LogLocked(log, "Starting poll");
-                        OnAddRead(socket, callback);
-                        break;
-#endif
                     case SocketMode.Async:
                         multiplexer.LogLocked(log, "Starting read");
                         try

@@ -2071,17 +2071,6 @@ namespace StackExchange.Redis
 
                             int queue = server.GetOutstandingCount(message.Command, out inst, out qu, out qs, out qc, out wr, out wq, out @in, out ar);
                             add("Instantaneous", "inst", inst.ToString());
-                            
-#if !NETSTANDARD1_5
-                            if (manager.socketMode == SocketMode.Poll)
-                            {
-                                var mgrState = manager.State;
-                                var lastError = manager.LastErrorTimeRelative();
-
-                                add("Manager-State", "mgr", mgrState.ToString());
-                                add("Last-Error", "err", lastError);
-                            }
-#endif
 
                             add("Queue-Length", "queue", queue.ToString());
                             add("Queue-Outstanding", "qu", qu.ToString());

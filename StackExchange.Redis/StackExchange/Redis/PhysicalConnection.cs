@@ -251,16 +251,6 @@ namespace StackExchange.Redis
                 add("Last-Multiplexer-Heartbeat", "last-mbeat", Multiplexer.LastHeartbeatSecondsAgo + "s ago");
                 add("Last-Global-Heartbeat", "global", ConnectionMultiplexer.LastGlobalHeartbeatSecondsAgo + "s ago");
 
-                var mgr = Bridge.Multiplexer.SocketManager;
-
-#if !NETSTANDARD1_5
-                if (mgr.socketMode == SocketMode.Poll)
-                {
-                    add("SocketManager-State", "mgr", mgr.State.ToString());
-                    add("Last-Error", "err", mgr.LastErrorTimeRelative());
-                }
-#endif
-
                 var ex = innerException == null
                     ? new RedisConnectionException(failureType, exMessage.ToString())
                     : new RedisConnectionException(failureType, exMessage.ToString(), innerException);
@@ -792,7 +782,7 @@ namespace StackExchange.Redis
         {
             try
             {
-                var socketMode = Multiplexer.SocketManager.socketMode;
+                var socketMode = SocketMode.Async;
 
                 // disallow connection in some cases
                 OnDebugAbort();
