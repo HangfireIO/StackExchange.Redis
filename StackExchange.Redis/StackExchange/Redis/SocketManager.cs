@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using System.Threading;
 #if CORE_CLR
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 #endif
 
@@ -176,6 +176,8 @@ namespace StackExchange.Redis
             socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
             socket.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveInterval, 1);
             socket.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveTime, 30);
+#else
+            SetKeepAliveOption(socket, intervalSec: 1, timeSec: 30);
 #endif
             socket.NoDelay = true;
             try
@@ -247,6 +249,37 @@ namespace StackExchange.Redis
             var token = new SocketToken(socket);
             return token;
         }
+
+        private static void SetKeepAliveOption(Socket socket, int intervalSec, int timeSec)
+        {
+            // windows only
+            try
+            {
+#if NETSTANDARD1_5
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+#else
+                if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+#endif
+                {
+                    int size = Marshal.SizeOf(new uint());
+                    byte[] optInValue = new byte[size * 3];
+
+                    BitConverter.GetBytes((uint)1).CopyTo(optInValue, 0);
+                    BitConverter.GetBytes((uint)timeSec * 1000).CopyTo(optInValue, size);
+                    BitConverter.GetBytes((uint)intervalSec * 1000).CopyTo(optInValue, size * 2);
+
+                    socket.IOControl(IOControlCode.KeepAliveValues, optInValue, null);
+                }
+            }
+            catch (PlatformNotSupportedException)
+            {
+                // Fix for https://github.com/StackExchange/StackExchange.Redis/issues/582 
+                // Checking the platform can fail on some platforms. However, we don't 
+                //   care if the platform check fails because this is for a Windows 
+                //   optimization, and checking the platform will not fail on Windows.
+            }
+        }
+
         internal void SetFastLoopbackOption(Socket socket)
         {
             // SIO_LOOPBACK_FAST_PATH (http://msdn.microsoft.com/en-us/library/windows/desktop/jj841212%28v=vs.85%29.aspx)
