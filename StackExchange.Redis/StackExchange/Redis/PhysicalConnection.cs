@@ -778,12 +778,10 @@ namespace StackExchange.Redis
             { }
             return null;
         }
-        SocketMode ISocketCallback.Connected(Stream stream, TextWriter log)
+        bool ISocketCallback.Connected(Stream stream, TextWriter log)
         {
             try
             {
-                var socketMode = SocketMode.Async;
-
                 // disallow connection in some cases
                 OnDebugAbort();
 
@@ -813,10 +811,9 @@ namespace StackExchange.Redis
                     {
                         RecordConnectionFailed(ConnectionFailureType.AuthenticationFailure, authexception);
                         Multiplexer.Trace("Encryption failure");
-                        return SocketMode.Abort;
+                        return false;
                     }
                     stream = ssl;
-                    socketMode = SocketMode.Async;
                 }
                 OnWrapForLogging(ref stream, physicalName);
 
@@ -826,13 +823,13 @@ namespace StackExchange.Redis
                 Multiplexer.LogLocked(log, "Connected {0}", Bridge);
 
                 Bridge.OnConnected(this, log);
-                return socketMode;
+                return true;
             }
             catch (Exception ex) when (!(ex is OutOfMemoryException))
             {
                 RecordConnectionFailed(ConnectionFailureType.InternalFailure, ex); // includes a bridge.OnDisconnected
                 Multiplexer.Trace("Could not connect: " + ex.Message, physicalName);
-                return SocketMode.Abort;
+                return false;
             }
         }
 
@@ -1021,15 +1018,15 @@ namespace StackExchange.Redis
             Interlocked.Increment(ref haveReader);
             try
             {
+                bool keepReading;
+
                 do
                 {
                     int space = EnsureSpaceAndComputeBytesToRead();
                     int bytesRead = netStream?.Read(ioBuffer, ioBufferBytes, space) ?? 0;
 
-                    if (!ProcessReadBytes(bytesRead)) return; // EOF
-                } while (socketToken.Available != 0);
-                Multiplexer.Trace("Buffer exhausted", physicalName);
-                // ^^^ note that the socket manager will call us again when there is something to do
+                    keepReading = ProcessReadBytes(bytesRead);
+                } while (keepReading);
             }
             catch (Exception ex) when (!(ex is OutOfMemoryException))
             {

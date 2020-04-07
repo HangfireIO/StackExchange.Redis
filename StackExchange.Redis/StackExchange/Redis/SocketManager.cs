@@ -14,7 +14,8 @@ namespace StackExchange.Redis
     internal enum SocketMode
     {
         Abort,
-        Async
+        Async,
+        Sync
     }
     /// <summary>
     /// Allows callbacks from SocketManager as work is discovered
@@ -24,7 +25,7 @@ namespace StackExchange.Redis
         /// <summary>
         /// Indicates that a socket has connected
         /// </summary>
-        SocketMode Connected(Stream stream, TextWriter log);
+        bool Connected(Stream stream, TextWriter log);
         /// <summary>
         /// Indicates that the socket has signalled an error condition
         /// </summary>
@@ -111,6 +112,7 @@ namespace StackExchange.Redis
         private readonly string name;
 
         private readonly Queue<PhysicalBridge> writeQueue = new Queue<PhysicalBridge>();
+        internal volatile SocketMode socketMode;
 
         bool isDisposed;
         private bool useHighPrioritySocketThreads = true;
@@ -128,6 +130,7 @@ namespace StackExchange.Redis
             if (string.IsNullOrWhiteSpace(name)) name = GetType().Name;
             this.name = name;
             this.useHighPrioritySocketThreads = useHighPrioritySocketThreads;
+            this.socketMode = SocketMode.Sync;
 
             // we need a dedicated writer, because when under heavy ambient load
             // (a busy asp.net site, for example), workers are not reliable enough
@@ -361,7 +364,14 @@ namespace StackExchange.Redis
                 socket.EndConnect(ar);
 #endif
                 var netStream = new NetworkStream(socket, false);
-                var socketMode = callback?.Connected(netStream, log) ?? SocketMode.Abort;
+                var connected = callback?.Connected(netStream, log) ?? false;
+                if (!connected)
+                {
+                    ConnectionMultiplexer.TraceWithoutContext("Aborting socket");
+                    Shutdown(socket);
+                    return;
+                }
+
                 switch (socketMode)
                 {
                     case SocketMode.Async:
@@ -374,8 +384,28 @@ namespace StackExchange.Redis
                             Shutdown(socket);
                         }
                         break;
+                    case SocketMode.Sync:
+                        multiplexer.LogLocked(log, "Starting reader thread");
+                        try
+                        {
+#if !CORE_CLR
+                            Thread dedicatedReader = new Thread(performSyncRead, 64 * 1024); // don't need a huge stack;
+                            dedicatedReader.Priority = useHighPrioritySocketThreads ? ThreadPriority.AboveNormal : ThreadPriority.Normal;
+#else
+                            Thread dedicatedReader = new Thread(performSyncRead);
+#endif
+                            dedicatedReader.Name = name + ":Read";
+                            dedicatedReader.IsBackground = true; // should not keep process alive
+                            dedicatedReader.Start(callback); // will self-exit when disposed
+                        }
+                        catch (Exception ex) when (!(ex is OutOfMemoryException))
+                        {
+                            ConnectionMultiplexer.TraceWithoutContext(ex.Message);
+                            Shutdown(socket);
+                        }
+                        break;
                     default:
-                        ConnectionMultiplexer.TraceWithoutContext("Aborting socket");
+                        ConnectionMultiplexer.TraceWithoutContext($"Socket mode '{socketMode}' is not supported.");
                         Shutdown(socket);
                         break;
                 }
@@ -407,6 +437,11 @@ namespace StackExchange.Redis
                 }
             }
         }
+
+        private static readonly ParameterizedThreadStart performSyncRead = context =>
+        {
+            try { ((ISocketCallback)context).Read(); } catch (Exception ex) when (!(ex is OutOfMemoryException)) { }
+        };
 
         partial void OnDispose();
         partial void OnShutdown(Socket socket);
