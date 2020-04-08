@@ -130,7 +130,47 @@ namespace StackExchange.Redis
             if (string.IsNullOrWhiteSpace(name)) name = GetType().Name;
             this.name = name;
             this.useHighPrioritySocketThreads = useHighPrioritySocketThreads;
-            this.socketMode = SocketMode.Sync;
+
+#if NETSTANDARD1_5
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+#else
+            if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+#endif
+            {
+                // Since async sockets work great on Windows (please see the
+                // comment below), and regular work items can't delay the
+                // response reading logic, we don't need to create dedicated
+                // reader threads on this OS. Less threads is always better
+                // than more threads, especially when additional threads aren't
+                // required.
+                this.socketMode = SocketMode.Async;
+            }
+            else
+            {
+                // As of Mono 6.8 and earlier, .NET Core 3.1 and earlier, and
+                // possible some future versions as well, async mode properly
+                // works only on Windows systems, and only there responses are
+                // dispatched in dedicated I/O threads of CLR's thread pool.
+                //
+                // On Linux and macOS systems responses are dispatched in regular
+                // worker threads, using the same work queue that's shared with
+                // other activities, such as HTTP request processing, and so on,
+                // despite the fact that some blog posts in the Internet claim
+                // some epoll- or kqueue-based implementation is used for async
+                // sockets.
+                //
+                // Those other activities that don't relate to sockets may (and
+                // will) cause unexpected delays in response processing, causing
+                // lots of timeouts to occur. In an ideal world nothing blocks
+                // us in those worker threads, but we have legacy synchronous
+                // code, old non-async DbTransaction, and sync requests to Redis
+                // itself.
+                //
+                // So we avoid such blocks by creating another reader thread per
+                // socket that works preemptively with CLR's worker threads and
+                // uses synchronous API.
+                this.socketMode = SocketMode.Sync;
+            }
 
             // we need a dedicated writer, because when under heavy ambient load
             // (a busy asp.net site, for example), workers are not reliable enough
