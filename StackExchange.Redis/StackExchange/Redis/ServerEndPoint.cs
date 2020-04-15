@@ -573,7 +573,7 @@ namespace StackExchange.Redis
             var source = ResultBox<T>.Get(tcs);
             message.SetSource(processor, source);
             if (bridge == null) bridge = GetBridge(message.Command);
-            if (!bridge.TryEnqueue(message, isSlave))
+            if (bridge == null || !bridge.TryEnqueue(message, isSlave))
             {
                 ConnectionMultiplexer.ThrowFailed(tcs, ExceptionFactory.NoConnectionAvailable(multiplexer.IncludeDetailInExceptions, multiplexer.IncludePerformanceCountersInExceptions, message.Command, message, this, multiplexer.GetServerSnapshot()));
             }
