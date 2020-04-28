@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
@@ -206,6 +207,43 @@ namespace StackExchange.Redis
 
         internal SocketToken BeginConnect(EndPoint endpoint, ISocketCallback callback, ConnectionMultiplexer multiplexer, TextWriter log)
         {
+            var formattedEndpoint = Format.ToString(endpoint);
+
+            if (!IsWindowsPlatform() && endpoint is DnsEndPoint dnsEndPoint)
+            {
+                // Socket.BeginConnect(IPAddress[], int) doesn't work well on Unix systems due to their internal
+                // implementation (please see https://github.com/dotnet/runtime/issues/16263 for details). Also,
+                // when using socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true)
+                // option, even when Socket.BeginConnect(string host, int port) overload is called, it begins
+                // to use the Socket.BeginConnect(IPAddress[], int) method, resulting into PlatformNotSupportedException.
+                // So we are querying DNS server by ourselves, using the first available IP address and always
+                // passing a single endpoint to the Socket.BeginConnect method to avoid the exception.
+
+                IPAddress[] endpointAddresses = null;
+
+#if CORE_CLR
+                multiplexer.LogLocked(log, "BeginDNSResolve: {0}", formattedEndpoint);
+                Dns.GetHostAddressesAsync(dnsEndPoint.Host).ContinueWith(t =>
+                {
+                    multiplexer.LogLocked(log, "EndDNSResolve: {0}", formattedEndpoint);
+                    endpointAddresses = t.Result;
+                    multiplexer.LogLocked(log, "DNSResolve complete: {0}", formattedEndpoint);
+                });
+#else
+                multiplexer.LogLocked(log, "BeginDNSResolve: {0}", formattedEndpoint);
+                endpointAddresses = Dns.GetHostAddresses(dnsEndPoint.Host);
+                multiplexer.LogLocked(log, "EndDNSResolve: {0}", formattedEndpoint);
+#endif
+                var endpointAddress = endpointAddresses?.FirstOrDefault(ip =>
+                    ip.AddressFamily == AddressFamily.InterNetwork ||
+                    ip.AddressFamily == AddressFamily.InterNetworkV6);
+
+                if (endpointAddress != null)
+                {
+                    endpoint = new IPEndPoint(endpointAddress, dnsEndPoint.Port);
+                }
+            }
+
             var addressFamily = endpoint.AddressFamily == AddressFamily.Unspecified ? AddressFamily.InterNetwork : endpoint.AddressFamily; // 41526630444f27f53258eb88448d285836f097dd
             var socket = new Socket(addressFamily, SocketType.Stream, ProtocolType.Tcp); // 300baed206f671f471bd3ffe01de1ae0e7437bda
             SetFastLoopbackOption(socket);
@@ -222,36 +260,7 @@ namespace StackExchange.Redis
                 CompletionType connectCompletionType = CompletionType.Any;
                 this.ShouldForceConnectCompletionType(ref connectCompletionType);
 
-                var formattedEndpoint = Format.ToString(endpoint);
                 var tuple = Tuple.Create(socket, callback);
-                if (endpoint is DnsEndPoint)
-                {
-                    // A work-around for a Mono bug in BeginConnect(EndPoint endpoint, AsyncCallback callback, object state)
-                    DnsEndPoint dnsEndpoint = (DnsEndPoint)endpoint;
-
-#if CORE_CLR
-                    multiplexer.LogLocked(log, "BeginConnect: {0}", formattedEndpoint);
-                    socket.ConnectAsync(dnsEndpoint.Host, dnsEndpoint.Port).ContinueWith(t =>
-                    {
-                        multiplexer.LogLocked(log, "EndConnect: {0}", formattedEndpoint);
-                        EndConnectImpl(t, multiplexer, log, tuple);
-                        multiplexer.LogLocked(log, "Connect complete: {0}", formattedEndpoint);
-                    });
-#else
-                    CompletionTypeHelper.RunWithCompletionType(
-                        cb => {
-                            multiplexer.LogLocked(log, "BeginConnect: {0}", formattedEndpoint);
-                            return socket.BeginConnect(dnsEndpoint.Host, dnsEndpoint.Port, cb, tuple);
-                        },
-                        ar => {
-                            multiplexer.LogLocked(log, "EndConnect: {0}", formattedEndpoint);                            
-                            EndConnectImpl(ar, multiplexer, log, tuple);
-                            multiplexer.LogLocked(log, "Connect complete: {0}", formattedEndpoint);
-                        },
-                        connectCompletionType);
-#endif
-                }
-                else
                 {
 #if CORE_CLR
                     multiplexer.LogLocked(log, "BeginConnect: {0}", formattedEndpoint);
@@ -287,16 +296,21 @@ namespace StackExchange.Redis
             return token;
         }
 
+        private static bool IsWindowsPlatform()
+        {
+#if NETSTANDARD1_5
+            return RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+#else
+            return Environment.OSVersion.Platform == PlatformID.Win32NT;
+#endif
+        }
+
         private static void SetKeepAliveOption(Socket socket, int intervalSec, int timeSec)
         {
             // windows only
             try
             {
-#if NETSTANDARD1_5
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-#else
-                if (Environment.OSVersion.Platform == PlatformID.Win32NT)
-#endif
+                if (IsWindowsPlatform())
                 {
                     int size = Marshal.SizeOf(new uint());
                     byte[] optInValue = new byte[size * 3];
