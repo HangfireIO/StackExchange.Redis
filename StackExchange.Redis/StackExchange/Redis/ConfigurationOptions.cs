@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Security;
+using System.Net.Sockets;
 using System.Security.Authentication;
 using System.Text;
 using System.Threading.Tasks;
@@ -489,12 +490,15 @@ namespace StackExchange.Redis
 #else
                             var ips = await Dns.GetHostAddressesAsync(dns.Host).ObserveErrors().ForAwait();
 #endif
-                            if (ips.Length == 1)
+                            if (ips.Length > 0)
                             {
-                                ip = ips[0];
-                                multiplexer.LogLocked(log, "'{0}' => {1}", dns.Host, ip);
-                                cache[dns.Host] = ip;
-                                endpoints[i] = new IPEndPoint(ip, dns.Port);
+                                ip = ips.FirstOrDefault(x => x.AddressFamily == AddressFamily.InterNetwork || x.AddressFamily == AddressFamily.InterNetworkV6);
+                                if (ip != null)
+                                {
+                                    multiplexer.LogLocked(log, "'{0}' => {1}", dns.Host, ip);
+                                    cache[dns.Host] = ip;
+                                    endpoints[i] = new IPEndPoint(ip, dns.Port);
+                                }
                             }
                         }
                     }
