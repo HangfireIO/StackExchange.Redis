@@ -104,6 +104,12 @@ namespace StackExchange.Redis
             try { ((SocketManager)context).WriteAllQueues(); } catch (Exception ex) when (!(ex is OutOfMemoryException)) { }
         };
 
+        private static readonly WaitCallback writeOneQueue = context =>
+        {
+
+            try { ((SocketManager)context).WriteOneQueue(); } catch (Exception ex) when (!(ex is OutOfMemoryException)) { }
+        };
+
         private readonly string name;
 
         private readonly Queue<PhysicalBridge> writeQueue = new Queue<PhysicalBridge>();
@@ -384,6 +390,10 @@ namespace StackExchange.Redis
                     {
                         Monitor.PulseAll(writeQueue);
                     }
+                    else if (writeQueue.Count >= 2)
+                    { // struggling are we? let's have some help dealing with the backlog
+                        ThreadPool.QueueUserWorkItem(writeOneQueue, this);
+                    }
                 }
             }
         }
@@ -551,6 +561,40 @@ namespace StackExchange.Redis
                         break;
                 }
             }
+        }
+
+        private void WriteOneQueue()
+        {
+            PhysicalBridge bridge;
+            lock (writeQueue)
+            {
+                bridge = writeQueue.Count == 0 ? null : writeQueue.Dequeue();
+            }
+            if (bridge == null) return;
+            bool keepGoing;
+            do
+            {
+                switch (bridge.WriteQueue(-1))
+                {
+                    case WriteResult.MoreWork:
+                    case WriteResult.QueueEmptyAfterWrite:
+                        keepGoing = true;
+                        break;
+                    case WriteResult.NothingToDo:
+                        keepGoing = !bridge.ConfirmRemoveFromWriteQueue();
+                        break;
+                    case WriteResult.CompetingWriter:
+                        keepGoing = false;
+                        break;
+                    case WriteResult.NoConnection:
+                        Interlocked.Exchange(ref bridge.inWriteQueue, 0);
+                        keepGoing = false;
+                        break;
+                    default:
+                        keepGoing = false;
+                        break;
+                }
+            } while (keepGoing);
         }
     }
 }
