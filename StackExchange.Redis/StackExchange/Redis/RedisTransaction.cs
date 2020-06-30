@@ -235,7 +235,7 @@ namespace StackExchange.Redis
                     // PART 1: issue the pre-conditions
                     if (!IsAborted && conditions.Length != 0)
                     {
-                        using (var conditionsCompletedEvent = !explicitCheckForQueued ? new ManualResetEvent(false) : null)
+                        using (var conditionsCompletedEvent = !explicitCheckForQueued ? new ManualResetEventSlim(false) : null)
                         {
                             if (!explicitCheckForQueued)
                             {
@@ -267,7 +267,7 @@ namespace StackExchange.Redis
                                 // need to get those sent ASAP; if they are stuck in the buffers, we die
                                 multiplexer.Trace("Flushing and waiting for precondition responses");
                                 connection.Flush();
-                                if (conditionsCompletedEvent.WaitOne(multiplexer.TimeoutMilliseconds))
+                                if (conditionsCompletedEvent.Wait(multiplexer.TimeoutMilliseconds))
                                 {
                                     if (!AreAllConditionsSatisfied(multiplexer))
                                         command = RedisCommand.UNWATCH; // somebody isn't happy
@@ -292,7 +292,7 @@ namespace StackExchange.Redis
                     // PART 3: issue the commands
                     if (!IsAborted && operations.Length != 0)
                     {
-                        using (var operationsCompletedEvent = explicitCheckForQueued ? new ManualResetEvent(false) : null)
+                        using (var operationsCompletedEvent = explicitCheckForQueued ? new ManualResetEventSlim(false) : null)
                         {
                             multiplexer.Trace("Issuing transaction operations");
                             if (explicitCheckForQueued)
@@ -309,7 +309,7 @@ namespace StackExchange.Redis
                             {
                                 multiplexer.Trace("Flushing and waiting for precondition+queued responses");
                                 connection.Flush(); // make sure they get sent, so we can check for QUEUED (and the pre-conditions if necessary)
-                                if (operationsCompletedEvent.WaitOne(multiplexer.TimeoutMilliseconds))
+                                if (operationsCompletedEvent.Wait(multiplexer.TimeoutMilliseconds))
                                 {
                                     if (!AreAllConditionsSatisfied(multiplexer))
                                     {

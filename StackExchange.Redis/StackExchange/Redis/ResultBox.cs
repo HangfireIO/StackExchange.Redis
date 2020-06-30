@@ -97,7 +97,7 @@ namespace StackExchange.Redis
                 }
 #endif
             }
-            else if (stateOrCompletionSource is ManualResetEvent resetEvent)
+            else if (stateOrCompletionSource is ManualResetEventSlim resetEvent)
             {
                 try
                 {

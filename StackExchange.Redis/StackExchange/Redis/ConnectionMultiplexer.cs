@@ -2033,7 +2033,7 @@ namespace StackExchange.Redis
             }
             else
             {
-                using (var completedEvent = new ManualResetEvent(false))
+                using (var completedEvent = new ManualResetEventSlim(false))
                 {
                     var source = ResultBox<T>.Get(completedEvent);
 
@@ -2042,7 +2042,7 @@ namespace StackExchange.Redis
                         throw ExceptionFactory.NoConnectionAvailable(IncludeDetailInExceptions, IncludePerformanceCountersInExceptions, message.Command, message, server, GetServerSnapshot());
                     }
 
-                    if (completedEvent.WaitOne(timeoutMilliseconds))
+                    if (completedEvent.Wait(timeoutMilliseconds))
                     {
                         Trace("Timeley response to " + message.ToString());
                     }
