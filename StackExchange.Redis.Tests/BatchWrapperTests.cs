@@ -1,5 +1,4 @@
-﻿#if FEATURE_MOQ
-using Moq;
+﻿using Moq;
 using NUnit.Framework;
 using StackExchange.Redis.KeyspaceIsolation;
 using System.Text;
@@ -28,4 +27,3 @@ namespace StackExchange.Redis.Tests
         }
     }
 }
-#endif

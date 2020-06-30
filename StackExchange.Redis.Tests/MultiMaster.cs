@@ -76,7 +76,7 @@ namespace StackExchange.Redis.Tests
                 }
                 catch (RedisConnectionException ex)
                 {
-                    Assert.AreEqual("No connection is available to service this operation: EXISTS DeslaveGoesToPrimary", ex.Message);
+                    Assert.True(ex.Message.Contains("No connection is available to service this operation: EXISTS DeslaveGoesToPrimary"));
                 }
 
                 primary.MakeMaster(ReplicationChangeOptions.Broadcast | ReplicationChangeOptions.EnslaveSubordinates | ReplicationChangeOptions.SetTiebreaker);

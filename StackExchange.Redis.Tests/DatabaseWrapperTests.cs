@@ -1,5 +1,4 @@
-﻿#if FEATURE_MOQ
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Net;
@@ -934,4 +933,3 @@ namespace StackExchange.Redis.Tests
         }
     }
 }
-#endif

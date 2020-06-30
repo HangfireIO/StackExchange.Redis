@@ -107,7 +107,7 @@ namespace StackExchange.Redis.Tests
                 continuationThread = Environment.CurrentManagedThreadId;
                 evt.Set();
             }
-            private async void DoAwait(Task task)
+            private async Task DoAwait(Task task)
             {
                 await task.ConfigureAwait(false);
                 continuationThread = Environment.CurrentManagedThreadId;

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using NUnit.Framework;
 
 namespace StackExchange.Redis.Tests
@@ -48,7 +49,7 @@ namespace StackExchange.Redis.Tests
         }
 
         [Test]
-        public async void IncrDecrFloatingPointAsync()
+        public async Task IncrDecrFloatingPointAsync()
         {
             using (var conn = Create())
             {
@@ -123,7 +124,7 @@ namespace StackExchange.Redis.Tests
         }
 
         [Test]
-        public async void HashIncrDecrFloatingPointAsync()
+        public async Task HashIncrDecrFloatingPointAsync()
         {
             using (var conn = Create())
             {

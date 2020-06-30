@@ -12,7 +12,7 @@ namespace StackExchange.Redis.Tests.Issues
             return "127.0.0.1:6379";
         }
         [Test]
-        public async void Execute()
+        public async Task Execute()
         {
             using(var conn = ConnectionMultiplexer.Connect(GetConfiguration())) // Create())
             {

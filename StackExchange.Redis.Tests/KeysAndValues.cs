@@ -145,6 +145,7 @@ namespace StackExchange.Redis.Tests
             Assert.AreEqual((byte)'3', blob[2]);
         }
 
+#if false
         [Test]
         public void CanBeDynamic()
         {
@@ -157,6 +158,7 @@ namespace StackExchange.Redis.Tests
             Assert.AreEqual((byte)'b', blob[1]);
             Assert.AreEqual((byte)'c', blob[2]);
         }
+#endif
 
         [Test]
         public void TryParse()

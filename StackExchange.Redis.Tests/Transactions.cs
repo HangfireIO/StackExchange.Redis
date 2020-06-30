@@ -679,7 +679,7 @@ namespace StackExchange.Redis.Tests
         }
         
         [Test]
-        public async void BasicTran()
+        public async Task BasicTran()
         {
             using (var muxer = Create())
             {

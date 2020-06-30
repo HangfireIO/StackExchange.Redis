@@ -74,6 +74,10 @@ namespace StackExchange.Redis.Tests
                     case "KeyRandomAsync":
                     case "Publish":
                     case "PublishAsync":
+                    case "Execute":
+                    case "ExecuteAsync":
+                    case "ScriptEvaluate":
+                    case "ScriptEvaluateAsync":
                         continue; // they're fine, but don't want to widen check to return type
                 }
 
@@ -110,6 +114,8 @@ namespace StackExchange.Redis.Tests
                 case "SortedSetScan":
                 case "HashScan":
                 case "SubscribedEndpoint":
+                case "Execute":
+                case "ExecuteAsync":
                     return true;
             }
             return false;
@@ -149,7 +155,7 @@ namespace StackExchange.Redis.Tests
                 }
                 var pFrom = method.GetParameters();
                 Type[] args = pFrom.Select(x => x.ParameterType).ToArray();
-                Assert.AreEqual(typeof(CommandFlags), args.Last());
+                Assert.AreEqual(typeof(CommandFlags), args.Last(), method.DeclaringType.Name + "." + method.Name);
 #if !CORE_CLR
                 var found = to.GetMethod(huntName, flags, null, method.CallingConvention, args, null);
 #else
