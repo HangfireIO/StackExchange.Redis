@@ -104,9 +104,8 @@ namespace StackExchange.Redis
             try { ((SocketManager)context).WriteAllQueues(); } catch (Exception ex) when (!(ex is OutOfMemoryException)) { }
         };
 
-        private static readonly WaitCallback writeOneQueue = context =>
+        private static readonly ParameterizedThreadStart writeOneQueue = context =>
         {
-
             try { ((SocketManager)context).WriteOneQueue(); } catch (Exception ex) when (!(ex is OutOfMemoryException)) { }
         };
 
@@ -391,8 +390,21 @@ namespace StackExchange.Redis
                         Monitor.PulseAll(writeQueue);
                     }
                     else if (writeQueue.Count >= 2)
-                    { // struggling are we? let's have some help dealing with the backlog
-                        ThreadPool.QueueUserWorkItem(writeOneQueue, this);
+                    { 
+                        // struggling are we? let's have some help dealing with the backlog
+#if NETSTANDARD1_5
+                        var thread = new Thread(writeOneQueue)
+#else
+                        var thread = new Thread(writeOneQueue, 64 * 1024) // don't need a huge stack
+#endif
+                        {
+#if !NETSTANDARD1_5
+                            Priority = useHighPrioritySocketThreads ? ThreadPriority.AboveNormal : ThreadPriority.Normal,
+#endif
+                            Name = name + ":WriteHelper",
+                            IsBackground = true // should not keep process alive
+                        };
+                        thread.Start(this);
                     }
                 }
             }
