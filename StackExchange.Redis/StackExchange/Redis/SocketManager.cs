@@ -6,9 +6,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Threading;
-#if CORE_CLR
 using System.Threading.Tasks;
-#endif
 
 namespace StackExchange.Redis
 {
@@ -26,7 +24,7 @@ namespace StackExchange.Redis
         /// <summary>
         /// Indicates that a socket has connected
         /// </summary>
-        bool Connected(Stream stream, TextWriter log);
+        Task<bool> ConnectedAsync(Stream stream, TextWriter log);
         /// <summary>
         /// Indicates that the socket has signalled an error condition
         /// </summary>
@@ -210,7 +208,7 @@ namespace StackExchange.Redis
             OnDispose();
         }
 
-        internal SocketToken BeginConnect(EndPoint endpoint, ISocketCallback callback, ConnectionMultiplexer multiplexer, TextWriter log)
+        internal async Task BeginConnectAsync(Socket socket, EndPoint endpoint, ISocketCallback callback, ConnectionMultiplexer multiplexer, TextWriter log)
         {
             var formattedEndpoint = Format.ToString(endpoint);
 
@@ -226,19 +224,10 @@ namespace StackExchange.Redis
 
                 IPAddress[] endpointAddresses = null;
 
-#if CORE_CLR
                 multiplexer.LogLocked(log, "BeginDNSResolve: {0}", formattedEndpoint);
-                Dns.GetHostAddressesAsync(dnsEndPoint.Host).ContinueWith(t =>
-                {
-                    multiplexer.LogLocked(log, "EndDNSResolve: {0}", formattedEndpoint);
-                    endpointAddresses = t.Result;
-                    multiplexer.LogLocked(log, "DNSResolve complete: {0}", formattedEndpoint);
-                });
-#else
-                multiplexer.LogLocked(log, "BeginDNSResolve: {0}", formattedEndpoint);
-                endpointAddresses = Dns.GetHostAddresses(dnsEndPoint.Host);
+                endpointAddresses = await Dns.GetHostAddressesAsync(dnsEndPoint.Host);
                 multiplexer.LogLocked(log, "EndDNSResolve: {0}", formattedEndpoint);
-#endif
+
                 var endpointAddress = endpointAddresses?.FirstOrDefault(ip =>
                     ip.AddressFamily == AddressFamily.InterNetwork ||
                     ip.AddressFamily == AddressFamily.InterNetworkV6);
@@ -249,8 +238,6 @@ namespace StackExchange.Redis
                 }
             }
 
-            var addressFamily = endpoint.AddressFamily == AddressFamily.Unspecified ? AddressFamily.InterNetwork : endpoint.AddressFamily; // 41526630444f27f53258eb88448d285836f097dd
-            var socket = new Socket(addressFamily, SocketType.Stream, ProtocolType.Tcp); // 300baed206f671f471bd3ffe01de1ae0e7437bda
             SetFastLoopbackOption(socket);
 #if NETCOREAPP3_0
             socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
@@ -262,19 +249,10 @@ namespace StackExchange.Redis
             socket.NoDelay = true;
             try
             {
-                CompletionType connectCompletionType = CompletionType.Any;
-                this.ShouldForceConnectCompletionType(ref connectCompletionType);
-
                 var tuple = Tuple.Create(socket, callback);
                 {
-#if CORE_CLR
                     multiplexer.LogLocked(log, "BeginConnect: {0}", formattedEndpoint);
-                    socket.ConnectAsync(endpoint).ContinueWith(t =>
-                    {
-                        multiplexer.LogLocked(log, "EndConnect: {0}", formattedEndpoint);
-                        EndConnectImpl(t, multiplexer, log, tuple);
-                    });
-#else
+#if NET45 || NET46
                     CompletionTypeHelper.RunWithCompletionType(
                         cb => {
                             multiplexer.LogLocked(log, "BeginConnect: {0}", formattedEndpoint);
@@ -282,10 +260,17 @@ namespace StackExchange.Redis
                         },
                         ar => {
                             multiplexer.LogLocked(log, "EndConnect: {0}", formattedEndpoint);
-                            EndConnectImpl(ar, multiplexer, log, tuple);
+#pragma warning disable 4014
+                            EndConnectImplAsync(ar, multiplexer, log, tuple);
+#pragma warning restore 4014
                             multiplexer.LogLocked(log, "Connect complete: {0}", formattedEndpoint);
                         },
-                        connectCompletionType);
+                        CompletionType.Any);
+#else
+                    await socket.ConnectAsync(endpoint);
+                    multiplexer.LogLocked(log, "EndConnect: {0}", formattedEndpoint);
+                    await EndConnectImplAsync(null, multiplexer, log, tuple);
+                    multiplexer.LogLocked(log, "Connect complete: {0}", formattedEndpoint);
 #endif
                 }
             } 
@@ -297,8 +282,6 @@ namespace StackExchange.Redis
                 }
                 throw;
             }
-            var token = new SocketToken(socket);
-            return token;
         }
 
         private static bool IsWindowsPlatform()
@@ -415,7 +398,7 @@ namespace StackExchange.Redis
             Shutdown(token.Socket);
         }
 
-        private void EndConnectImpl(IAsyncResult ar, ConnectionMultiplexer multiplexer, TextWriter log, Tuple<Socket, ISocketCallback> tuple)
+        private async Task EndConnectImplAsync(IAsyncResult ar, ConnectionMultiplexer multiplexer, TextWriter log, Tuple<Socket, ISocketCallback> tuple)
         {
             try
             {
@@ -424,13 +407,22 @@ namespace StackExchange.Redis
                 if (ignoreConnect) return;
                 var socket = tuple.Item1;
                 var callback = tuple.Item2;
+
+                if (ar != null)
+                {
 #if CORE_CLR
-                multiplexer.Wait((Task)ar); // make it explode if invalid (note: already complete at this point)
+                    multiplexer.Wait((Task)ar); // make it explode if invalid (note: already complete at this point)
 #else
-                socket.EndConnect(ar);
+                    socket.EndConnect(ar);
 #endif
+                }
+
                 var netStream = new NetworkStream(socket, false);
-                var connected = callback?.Connected(netStream, log) ?? false;
+                bool connected = false;
+                if (callback != null)
+                {
+                    connected = await callback.ConnectedAsync(netStream, log);
+                }
                 if (!connected)
                 {
                     ConnectionMultiplexer.TraceWithoutContext("Aborting socket");
@@ -513,8 +505,6 @@ namespace StackExchange.Redis
         partial void OnShutdown(Socket socket);
 
         partial void ShouldIgnoreConnect(ISocketCallback callback, ref bool ignore);
-        
-        partial void ShouldForceConnectCompletionType(ref CompletionType completionType);
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2202:Do not dispose objects multiple times")]
         private void Shutdown(Socket socket)

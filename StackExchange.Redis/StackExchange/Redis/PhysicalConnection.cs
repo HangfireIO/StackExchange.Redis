@@ -10,9 +10,7 @@ using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
-#if CORE_CLR
 using System.Threading.Tasks;
-#endif
 
 namespace StackExchange.Redis
 {
@@ -121,8 +119,23 @@ namespace StackExchange.Redis
             VolatileWrapper.Write(ref firstUnansweredWriteTickCount, 0);
             var endpoint = this.Bridge.ServerEndPoint.EndPoint;
 
-            Multiplexer.Trace("Connecting...", physicalName);
-            this.socketToken = Multiplexer.SocketManager.BeginConnect(endpoint, this, Multiplexer, log);
+            var addressFamily = endpoint.AddressFamily == AddressFamily.Unspecified ? AddressFamily.InterNetwork : endpoint.AddressFamily; // 41526630444f27f53258eb88448d285836f097dd
+            var socket = new Socket(addressFamily, SocketType.Stream, ProtocolType.Tcp); // 300baed206f671f471bd3ffe01de1ae0e7437bda
+
+            this.socketToken = new SocketToken(socket);
+
+            try
+            {
+                Multiplexer.Trace("Connecting...", physicalName);
+#pragma warning disable 4014
+                Multiplexer.SocketManager.BeginConnectAsync(socket, endpoint, this, Multiplexer, log);
+#pragma warning restore 4014
+            }
+            catch (Exception)
+            {
+                this.socketToken = default;
+                socket.Dispose();
+            }
         }
 
         private enum ReadMode : byte
@@ -778,7 +791,7 @@ namespace StackExchange.Redis
             { }
             return null;
         }
-        bool ISocketCallback.Connected(Stream stream, TextWriter log)
+        async Task<bool> ISocketCallback.ConnectedAsync(Stream stream, TextWriter log)
         {
             try
             {
@@ -803,7 +816,7 @@ namespace StackExchange.Redis
                         );
                     try
                     {
-                        ssl.AuthenticateAsClient(host, config.SslProtocols);
+                        await ssl.AuthenticateAsClientAsync(host, config.SslProtocols);
 
                         Multiplexer.LogLocked(log, $"SSL connection established successfully using protocol: {ssl.SslProtocol}");
                     }

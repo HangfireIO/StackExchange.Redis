@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net.Security;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
+using System.Threading.Tasks;
 
 namespace StackExchange.Redis
 {
@@ -126,32 +127,24 @@ namespace StackExchange.Redis
             return ConvertHelper.ConvertAll(values, x => (string)x);
         }
 
-        internal static void AuthenticateAsClient(this SslStream ssl, string host, SslProtocols? allowedProtocols)
+        internal static async Task AuthenticateAsClientAsync(this SslStream ssl, string host, SslProtocols? allowedProtocols)
         {
             if (!allowedProtocols.HasValue)
             {
                 //Default to the sslProtocols defined by the .NET Framework
-                AuthenticateAsClientUsingDefaultProtocols(ssl, host);
+                await AuthenticateAsClientUsingDefaultProtocolsAsync(ssl, host);
                 return;
             }
 
             var certificateCollection = new X509CertificateCollection();
             const bool checkCertRevocation = true;
-#if CORE_CLR
-            ssl.AuthenticateAsClientAsync(host, certificateCollection, allowedProtocols.Value, checkCertRevocation)
-                                .GetAwaiter().GetResult();
-#else
-            ssl.AuthenticateAsClient(host, certificateCollection, allowedProtocols.Value, checkCertRevocation);
-#endif
+
+            await ssl.AuthenticateAsClientAsync(host, certificateCollection, allowedProtocols.Value, checkCertRevocation);
         }
 
-        private static void AuthenticateAsClientUsingDefaultProtocols(SslStream ssl, string host)
+        private static async Task AuthenticateAsClientUsingDefaultProtocolsAsync(SslStream ssl, string host)
         {
-#if CORE_CLR
-            ssl.AuthenticateAsClientAsync(host).GetAwaiter().GetResult();
-#else
-            ssl.AuthenticateAsClient(host);
-#endif
+            await ssl.AuthenticateAsClientAsync(host);
         }
     }
 }
