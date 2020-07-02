@@ -91,7 +91,7 @@ namespace StackExchange.Redis
                         ConfigChannel = "configChannel", AbortOnConnectFail = "abortConnect", ResolveDns = "resolveDns",
                         ChannelPrefix = "channelPrefix", Proxy = "proxy", ConnectRetry = "connectRetry",
                         ConfigCheckSeconds = "configCheckSeconds", ResponseTimeout = "responseTimeout", DefaultDatabase = "defaultDatabase",
-                        HeartbeatInterval = "heartbeatInterval";
+                        HeartbeatInterval = "heartbeatInterval", PreferIOCP = "preferIOCP";
             internal const string SslProtocols = "sslProtocols";
 
             private static readonly Dictionary<string, string> normalizedOptions = new[]
@@ -103,7 +103,7 @@ namespace StackExchange.Redis
                 ConfigChannel, AbortOnConnectFail, ResolveDns,
                 ChannelPrefix, Proxy, ConnectRetry,
                 ConfigCheckSeconds, DefaultDatabase,
-                SslProtocols, HeartbeatInterval
+                SslProtocols, HeartbeatInterval, PreferIOCP
             }.ToDictionary(x => x, StringComparer.OrdinalIgnoreCase);
 
             public static string TryNormalize(string value)
@@ -120,7 +120,7 @@ namespace StackExchange.Redis
 
         private readonly EndPointCollection endpoints = new EndPointCollection();
 
-        private bool? allowAdmin, abortOnConnectFail, highPrioritySocketThreads, resolveDns, ssl;
+        private bool? allowAdmin, abortOnConnectFail, highPrioritySocketThreads, resolveDns, ssl, preferIOCP;
 
         private string clientName, serviceName, password, tieBreaker, sslHost, configChannel;
 
@@ -156,6 +156,17 @@ namespace StackExchange.Redis
         {
             get { return heartbeatInterval.GetValueOrDefault(ConnectionMultiplexer.MillisecondsPerHeartbeat); }
             set { heartbeatInterval = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets whether IOCP or dedicated threads will be used to read responses from Redis. IOCP works only
+        /// on Windows, but lets to avoid having a lot of threads just for reading responses, but may work worse when
+        /// CLR Thread Pool's IOCP threads starved with other work.
+        /// </summary>
+        public bool PreferIOCP
+        {
+            get { return preferIOCP.GetValueOrDefault(true); }
+            set { preferIOCP = value; }
         }
 
         /// <summary>
@@ -391,6 +402,8 @@ namespace StackExchange.Redis
                 responseTimeout = responseTimeout,
                 defaultDatabase = defaultDatabase,
                 ReconnectRetryPolicy = reconnectRetryPolicy,
+                heartbeatInterval = heartbeatInterval,
+                preferIOCP = preferIOCP,
 #if !CORE_CLR
                 SslProtocols = SslProtocols,
 #endif
@@ -452,6 +465,8 @@ namespace StackExchange.Redis
             Append(sb, OptionKeys.ConfigCheckSeconds, configCheckSeconds);
             Append(sb, OptionKeys.ResponseTimeout, responseTimeout);
             Append(sb, OptionKeys.DefaultDatabase, defaultDatabase);
+            Append(sb, OptionKeys.HeartbeatInterval, heartbeatInterval);
+            Append(sb, OptionKeys.PreferIOCP, preferIOCP);
             commandMap?.AppendDeltas(sb);
             return sb.ToString();
         }
@@ -556,6 +571,8 @@ namespace StackExchange.Redis
             CertificateValidation = null;            
             ChannelPrefix = default(RedisChannel);
             SocketManager = null;
+            heartbeatInterval = null;
+            preferIOCP = null;
         }
 
 #if !CORE_CLR
@@ -668,6 +685,9 @@ namespace StackExchange.Redis
                             SslProtocols = OptionKeys.ParseSslProtocols(key, value);
                             break;
 #endif
+                        case OptionKeys.PreferIOCP:
+                            PreferIOCP = OptionKeys.ParseBoolean(key, value);
+                            break;
                         default:
                             if (!string.IsNullOrEmpty(key) && key[0] == '$')
                             {

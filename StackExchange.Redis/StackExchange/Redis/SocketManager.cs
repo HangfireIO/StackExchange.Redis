@@ -118,21 +118,21 @@ namespace StackExchange.Redis
         /// <summary>
         /// Creates a new (optionally named) SocketManager instance
         /// </summary>
-        public SocketManager(string name = null) : this(name, true) { }
+        public SocketManager(string name = null) : this(name, true, true) { }
 
         /// <summary>
         /// Creates a new SocketManager instance
         /// </summary>
-        public SocketManager(string name, bool useHighPrioritySocketThreads)
+        public SocketManager(string name, bool useHighPrioritySocketThreads, bool preferIocp)
         {
             if (string.IsNullOrWhiteSpace(name)) name = GetType().Name;
             this.name = name;
             this.useHighPrioritySocketThreads = useHighPrioritySocketThreads;
 
 #if NETSTANDARD1_5
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            if (preferIocp && RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
 #else
-            if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+            if (preferIocp && Environment.OSVersion.Platform == PlatformID.Win32NT)
 #endif
             {
                 // Since async sockets work great on Windows (please see the

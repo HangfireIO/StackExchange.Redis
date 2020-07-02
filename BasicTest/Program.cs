@@ -13,7 +13,7 @@ namespace BasicTest
     {
         static void Main()
         {
-            using (var conn = ConnectionMultiplexer.Connect("127.0.0.1:6379,syncTimeout=1000"))
+            using (var conn = ConnectionMultiplexer.Connect("127.0.0.1:6379,syncTimeout=1000,preferiocp=true"))
             {
                 var threads = new List<Thread>();
 
