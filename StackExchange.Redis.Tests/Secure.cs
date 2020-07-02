@@ -20,9 +20,6 @@ namespace StackExchange.Redis.Tests
             using (var muxer = Create())
             {
                 muxer.PreserveAsyncOrder = preserveOrder;
-#if DEBUG
-                long oldAlloc = ConnectionMultiplexer.GetResultBoxAllocationCount();
-#endif
                 RedisKey key = "MBOF";
                 var conn = muxer.GetDatabase();
                 conn.Ping();
@@ -39,12 +36,6 @@ namespace StackExchange.Redis.Tests
                 Console.WriteLine("{2}: Time for {0} ops: {1}ms ({3}); ops/s: {4}", AsyncOpsQty, watch.ElapsedMilliseconds, Me(),
                     preserveOrder ? "preserve order" : "any order",
                     AsyncOpsQty / watch.Elapsed.TotalSeconds);
-#if DEBUG
-                long newAlloc = ConnectionMultiplexer.GetResultBoxAllocationCount();
-                Console.WriteLine("ResultBox allocations: {0}",
-                    newAlloc - oldAlloc);
-                Assert.IsTrue(newAlloc - oldAlloc <= 2);
-#endif
             }
         }
 

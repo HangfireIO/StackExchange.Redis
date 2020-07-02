@@ -420,7 +420,6 @@ namespace StackExchange.Redis.Tests
                 var conn = muxer.GetDatabase();
                 conn.KeyDelete(key);
 #if DEBUG
-                long oldAlloc = ConnectionMultiplexer.GetResultBoxAllocationCount();
                 long oldWorkerCount = ConnectionMultiplexer.GetAsyncCompletionWorkerCount();
 #endif
                 var timeTaken = RunConcurrent(delegate
@@ -437,10 +436,8 @@ namespace StackExchange.Redis.Tests
                     threads * workPerThread, timeTaken.TotalMilliseconds, Me()
                     , preserveOrder ? "preserve order" : "any order", threads, (workPerThread * threads) / timeTaken.TotalSeconds);
 #if DEBUG
-                long newAlloc = ConnectionMultiplexer.GetResultBoxAllocationCount();
                 long newWorkerCount = ConnectionMultiplexer.GetAsyncCompletionWorkerCount();
-                Console.WriteLine("ResultBox allocations: {0}; workers {1}", newAlloc - oldAlloc, newWorkerCount - oldWorkerCount);
-                Assert.IsTrue(newAlloc - oldAlloc <= 2 * threads, "number of box allocations");
+                Console.WriteLine("Workers {0}", newWorkerCount - oldWorkerCount);
 #endif
             }
         }
@@ -497,9 +494,6 @@ namespace StackExchange.Redis.Tests
             using (var muxer = Create())
             {
                 muxer.PreserveAsyncOrder = preserveOrder;
-#if DEBUG
-                long oldAlloc = ConnectionMultiplexer.GetResultBoxAllocationCount();
-#endif
                 RedisKey key = "MBOF";
                 var conn = muxer.GetDatabase();
                 conn.Ping();
@@ -521,12 +515,6 @@ namespace StackExchange.Redis.Tests
                     val, elapsed.TotalMilliseconds, Me(),
                     preserveOrder ? "preserve order" : "any order",
                     val / elapsed.TotalSeconds, threads);
-#if DEBUG
-                long newAlloc = ConnectionMultiplexer.GetResultBoxAllocationCount();
-                Console.WriteLine("ResultBox allocations: {0}",
-                    newAlloc - oldAlloc);
-                Assert.IsTrue(newAlloc - oldAlloc <= 4);
-#endif
             }
         }
 
