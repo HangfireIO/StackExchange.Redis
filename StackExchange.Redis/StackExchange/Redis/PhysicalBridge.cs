@@ -113,7 +113,7 @@ namespace StackExchange.Redis
             return ConnectionType + "/" + Format.ToString(ServerEndPoint.EndPoint);
         }
 
-        public void TryConnect(TextWriter log)
+        public void TryConnect(Action<string> log)
         {
             GetConnection(log);
         }
@@ -271,7 +271,7 @@ namespace StackExchange.Redis
             }
         }
 
-        internal void OnConnected(PhysicalConnection connection, TextWriter log)
+        internal void OnConnected(PhysicalConnection connection, Action<string> log)
         {
             Trace("OnConnected");
             if (physical == connection && !isDisposed && ChangeState(State.Connecting, State.ConnectedEstablishing))
@@ -686,7 +686,7 @@ namespace StackExchange.Redis
             return result;
         }
 
-        private PhysicalConnection GetConnection(TextWriter log)
+        private PhysicalConnection GetConnection(Action<string> log)
         {
             if (state == (int)State.Disconnected)
             {

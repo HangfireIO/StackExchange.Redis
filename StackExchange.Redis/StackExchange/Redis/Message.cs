@@ -147,14 +147,14 @@ namespace StackExchange.Redis
 
     sealed class LoggingMessage : Message
     {
-        public readonly TextWriter log;
+        public readonly Action<string> log;
         private readonly Message tail;
 
-        public static Message Create(TextWriter log, Message tail)
+        public static Message Create(Action<string> log, Message tail)
         {
             return log == null ? tail : new LoggingMessage(log, tail);
         }
-        private LoggingMessage(TextWriter log, Message tail) : base(tail.Db, tail.Flags, tail.Command)
+        private LoggingMessage(Action<string> log, Message tail) : base(tail.Db, tail.Flags, tail.Command)
         {
             this.log = log;
             this.tail = tail;
@@ -180,7 +180,7 @@ namespace StackExchange.Redis
             tail.WriteImpl(physical);
         }
 
-        public TextWriter Log => log;
+        public Action<string> Log => log;
     }
 
     abstract class Message : ICompletable

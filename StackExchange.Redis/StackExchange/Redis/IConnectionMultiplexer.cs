@@ -191,12 +191,12 @@ namespace StackExchange.Redis
         /// <summary>
         /// Reconfigure the current connections based on the existing configuration
         /// </summary>
-        Task<bool> ConfigureAsync(TextWriter log = null);
+        Task<bool> ConfigureAsync(Action<string> log = null);
 
         /// <summary>
         /// Reconfigure the current connections based on the existing configuration
         /// </summary>
-        bool Configure(TextWriter log = null);
+        bool Configure(Action<string> log = null);
 
         /// <summary>
         /// Provides a text overview of the status of all connections
@@ -206,7 +206,7 @@ namespace StackExchange.Redis
         /// <summary>
         /// Provides a text overview of the status of all connections
         /// </summary>
-        void GetStatus(TextWriter log);
+        void GetStatus(Action<string> log);
 
         /// <summary>
         /// See Object.ToString()

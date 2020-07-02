@@ -463,7 +463,7 @@ namespace StackExchange.Redis
         }
 
 #pragma warning disable 1998 // NET40 is sync, not async, currently
-        internal async Task ResolveEndPointsAsync(ConnectionMultiplexer multiplexer, TextWriter log)
+        internal async Task ResolveEndPointsAsync(ConnectionMultiplexer multiplexer, Action<string> log)
         {
             Dictionary<string, IPAddress> cache = new Dictionary<string, IPAddress>(StringComparer.OrdinalIgnoreCase);
             for (int i = 0; i < endpoints.Count; i++)

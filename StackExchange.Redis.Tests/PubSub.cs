@@ -325,11 +325,7 @@ namespace StackExchange.Redis.Tests
                     Interlocked.Exchange(ref aCount, 0);
                     Interlocked.Exchange(ref bCount, 0);
                     Console.WriteLine("Changing master...");
-                    using (var sw = new StringWriter())
-                    {
-                        a.GetServer(PrimaryServer, SlavePort).MakeMaster(ReplicationChangeOptions.All, sw);
-                        Console.WriteLine(sw);
-                    }
+                    a.GetServer(PrimaryServer, SlavePort).MakeMaster(ReplicationChangeOptions.All, Console.WriteLine);
                     subA.Ping();
                     subB.Ping();
                     Console.WriteLine("Pausing...");

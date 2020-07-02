@@ -24,34 +24,18 @@ namespace StackExchange.Redis.Tests.Issues
         [Test]
         public void ConfigurationOptions_UnspecifiedDefaultDb()
         {
-            var log = new StringWriter();
-            try
-            {
-                using (var conn = ConnectionMultiplexer.Connect($"{PrimaryServer}:{PrimaryPort}", log)) {
-                    var db = conn.GetDatabase();
-                    Assert.AreEqual(0, db.Database);
-                }
-            }
-            finally
-            {
-                Console.WriteLine(log);
+            using (var conn = ConnectionMultiplexer.Connect($"{PrimaryServer}:{PrimaryPort}", Console.WriteLine)) {
+                var db = conn.GetDatabase();
+                Assert.AreEqual(0, db.Database);
             }
         }
 
         [Test]
         public void ConfigurationOptions_SpecifiedDefaultDb()
         {
-            var log = new StringWriter();
-            try
-            {
-                using (var conn = ConnectionMultiplexer.Connect($"{PrimaryServer}:{PrimaryPort},defaultDatabase=3", log)) {
-                    var db = conn.GetDatabase();
-                    Assert.AreEqual(3, db.Database);
-                }
-            }
-            finally
-            {
-                Console.WriteLine(log);
+            using (var conn = ConnectionMultiplexer.Connect($"{PrimaryServer}:{PrimaryPort},defaultDatabase=3", Console.WriteLine)) {
+                var db = conn.GetDatabase();
+                Assert.AreEqual(3, db.Database);
             }
         }
 	}

@@ -15,13 +15,12 @@ namespace StackExchange.Redis.Tests
         {
             for (int i = 0; i < 50; i++)
             {
-                var log = new StringWriter();
                 try
                 {
                     var options = ConfigurationOptions.Parse(config);
                     options.SyncTimeout = 3000;
                     options.ConnectRetry = 5;
-                    using (var conn = ConnectionMultiplexer.Connect(options, log))
+                    using (var conn = ConnectionMultiplexer.Connect(options, msg => Console.WriteLine(msg)))
                     {
                         var ttl = conn.GetDatabase().Ping();
                         Console.WriteLine(ttl);
@@ -29,7 +28,6 @@ namespace StackExchange.Redis.Tests
                 }
                 catch
                 {
-                    Console.WriteLine(log);
                     Assert.Fail();
                 }
                 Console.WriteLine();

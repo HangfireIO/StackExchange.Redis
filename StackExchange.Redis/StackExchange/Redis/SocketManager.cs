@@ -24,7 +24,7 @@ namespace StackExchange.Redis
         /// <summary>
         /// Indicates that a socket has connected
         /// </summary>
-        Task<bool> ConnectedAsync(Stream stream, TextWriter log);
+        Task<bool> ConnectedAsync(Stream stream, Action<string> log);
         /// <summary>
         /// Indicates that the socket has signalled an error condition
         /// </summary>
@@ -208,7 +208,7 @@ namespace StackExchange.Redis
             OnDispose();
         }
 
-        internal async Task BeginConnectAsync(Socket socket, EndPoint endpoint, ISocketCallback callback, ConnectionMultiplexer multiplexer, TextWriter log)
+        internal async Task BeginConnectAsync(Socket socket, EndPoint endpoint, ISocketCallback callback, ConnectionMultiplexer multiplexer, Action<string> log)
         {
             var formattedEndpoint = Format.ToString(endpoint);
 
@@ -251,7 +251,6 @@ namespace StackExchange.Redis
             {
                 var tuple = Tuple.Create(socket, callback);
                 {
-                    multiplexer.LogLocked(log, "BeginConnect: {0}", formattedEndpoint);
 #if NET45 || NET46
                     CompletionTypeHelper.RunWithCompletionType(
                         cb => {
@@ -267,6 +266,7 @@ namespace StackExchange.Redis
                         },
                         CompletionType.Any);
 #else
+                    multiplexer.LogLocked(log, "BeginConnect: {0}", formattedEndpoint);
                     await socket.ConnectAsync(endpoint);
                     multiplexer.LogLocked(log, "EndConnect: {0}", formattedEndpoint);
                     await EndConnectImplAsync(null, multiplexer, log, tuple);
@@ -398,7 +398,7 @@ namespace StackExchange.Redis
             Shutdown(token.Socket);
         }
 
-        private async Task EndConnectImplAsync(IAsyncResult ar, ConnectionMultiplexer multiplexer, TextWriter log, Tuple<Socket, ISocketCallback> tuple)
+        private async Task EndConnectImplAsync(IAsyncResult ar, ConnectionMultiplexer multiplexer, Action<string> log, Tuple<Socket, ISocketCallback> tuple)
         {
             try
             {

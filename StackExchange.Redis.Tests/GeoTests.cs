@@ -22,10 +22,7 @@ namespace StackExchange.Redis.Tests
             options.ConnectTimeout = 5000;
             options.Password = password;
             options.TieBreaker = "";
-            var log = new StringWriter();
-            var conn = ConnectionMultiplexer.Connect(options, log);
-            var s = log.ToString();
-            Console.WriteLine(s);
+            var conn = ConnectionMultiplexer.Connect(options, Console.WriteLine);
             return conn;
         }
         public const int Db = 0;

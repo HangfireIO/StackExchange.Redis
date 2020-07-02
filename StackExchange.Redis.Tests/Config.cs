@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using NUnit.Framework;
 
@@ -58,10 +59,9 @@ namespace StackExchange.Redis.Tests
                 },
                 ConnectTimeout = 200
             };
-            var log = new StringWriter();
-            using(var conn = ConnectionMultiplexer.Connect(config, log))
+
+            using (var conn = ConnectionMultiplexer.Connect(config, msg => Console.WriteLine(msg)))
             {
-                Console.WriteLine(log);
                 Assert.IsFalse(conn.IsConnected);
             }
         }

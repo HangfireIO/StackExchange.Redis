@@ -29,7 +29,7 @@ namespace StackExchange.Redis.Tests
                 ServiceName = ServiceName,
                 SyncTimeout = 5000
             };
-            var connection = ConnectionMultiplexer.Connect(options, Console.Out);
+            var connection = ConnectionMultiplexer.Connect(options, Console.WriteLine);
             Thread.Sleep(3000);
             Assert.IsTrue(connection.IsConnected);
             return connection;

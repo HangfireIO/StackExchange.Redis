@@ -83,12 +83,8 @@ namespace StackExchange.Redis.Tests
             var clone = ConfigurationOptions.Parse(configString);
             Assert.AreEqual(configString, clone.ToString(), "config string");
 
-            using(var log = new StringWriter())
-            using (var muxer = ConnectionMultiplexer.Connect(config, log))
+            using (var muxer = ConnectionMultiplexer.Connect(config, Console.WriteLine))
             {
-                Console.WriteLine("Connect log:");
-                Console.WriteLine(log);
-                Console.WriteLine("====");
                 muxer.ConnectionFailed += OnConnectionFailed;
                 muxer.InternalError += OnInternalError;
                 var db = muxer.GetDatabase();

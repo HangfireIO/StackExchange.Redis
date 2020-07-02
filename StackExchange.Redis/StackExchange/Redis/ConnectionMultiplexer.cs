@@ -344,7 +344,7 @@ namespace StackExchange.Redis
         }
 #endif
 
-        internal void MakeMaster(ServerEndPoint server, ReplicationChangeOptions options, TextWriter log)
+        internal void MakeMaster(ServerEndPoint server, ReplicationChangeOptions options, Action<string> log)
         {
             CommandMap.AssertAvailable(RedisCommand.SLAVEOF);
             if (!configuration.AllowAdmin) throw ExceptionFactory.AdminModeNotEnabled(IncludeDetailInExceptions, RedisCommand.SLAVEOF, null, server);
@@ -353,7 +353,6 @@ namespace StackExchange.Redis
             var srv = new RedisServer(this, server, null);
             if (!srv.IsConnected) throw ExceptionFactory.NoConnectionAvailable(IncludeDetailInExceptions, IncludePerformanceCountersInExceptions, RedisCommand.SLAVEOF, null, server, GetServerSnapshot());
 
-            if (log == null) log = TextWriter.Null;
             CommandMap.AssertAvailable(RedisCommand.SLAVEOF);
 
             const CommandFlags flags = CommandFlags.NoRedirect | CommandFlags.HighPriority;
@@ -444,32 +443,27 @@ namespace StackExchange.Redis
             }
         }
 
-        /// <summary>
-        /// Used internally to synchronize loggine without depending on locking the log instance
-        /// </summary>
-        private object LogSyncLock => UniqueId;
-
 // we know this has strong identity: readonly and unique to us
 
-        internal void LogLocked(TextWriter log, string line)
+        internal void LogLocked(Action<string> log, string line)
         {
-            if (log != null) lock (LogSyncLock) { log.WriteLine(line); }
+            log?.Invoke(line);
         }
-        internal void LogLocked(TextWriter log, string line, object arg)
+        internal void LogLocked(Action<string> log, string line, object arg)
         {
-            if (log != null) lock (LogSyncLock) { log.WriteLine(line, arg); }
+            log?.Invoke(String.Format(line, arg));
         }
-        internal void LogLocked(TextWriter log, string line, object arg0, object arg1)
+        internal void LogLocked(Action<string> log, string line, object arg0, object arg1)
         {
-            if (log != null) lock (LogSyncLock) { log.WriteLine(line, arg0, arg1); }
+            log?.Invoke(String.Format(line, arg0, arg1));
         }
-        internal void LogLocked(TextWriter log, string line, object arg0, object arg1, object arg2)
+        internal void LogLocked(Action<string> log, string line, object arg0, object arg1, object arg2)
         {
-            if (log != null) lock (LogSyncLock) { log.WriteLine(line, arg0, arg1, arg2); }
+            log?.Invoke(String.Format(line, arg0, arg1, arg2));
         }
-        internal void LogLocked(TextWriter log, string line, params object[] args)
+        internal void LogLocked(Action<string> log, string line, params object[] args)
         {
-            if (log != null) lock (LogSyncLock) { log.WriteLine(line, args); }
+            log?.Invoke(String.Format(line, args));
         }
 
         internal void CheckMessage(Message message)
@@ -608,7 +602,7 @@ namespace StackExchange.Redis
         }
 
 #if !CORE_CLR
-        private void LogLockedWithThreadPoolStats(TextWriter log, string message, out int busyWorkerCount)
+        private void LogLockedWithThreadPoolStats(Action<string> log, string message, out int busyWorkerCount)
         {
             busyWorkerCount = 0;
             if(log != null)
@@ -633,7 +627,7 @@ namespace StackExchange.Redis
             }
             return true;
         }
-        private async Task<bool> WaitAllIgnoreErrorsAsync(Task[] tasks, int timeoutMilliseconds, TextWriter log)
+        private async Task<bool> WaitAllIgnoreErrorsAsync(Task[] tasks, int timeoutMilliseconds, Action<string> log)
         {
             if (tasks == null) throw new ArgumentNullException(nameof(tasks));
             if (tasks.Length == 0)
@@ -784,7 +778,7 @@ namespace StackExchange.Redis
         /// <summary>
         /// Create a new ConnectionMultiplexer instance
         /// </summary>
-        public static async Task<ConnectionMultiplexer> ConnectAsync(string configuration, TextWriter log = null)
+        public static async Task<ConnectionMultiplexer> ConnectAsync(string configuration, Action<string> log = null)
         {
             IDisposable killMe = null;
             try
@@ -807,7 +801,7 @@ namespace StackExchange.Redis
         /// <summary>
         /// Create a new ConnectionMultiplexer instance
         /// </summary>
-        public static async Task<ConnectionMultiplexer> ConnectAsync(ConfigurationOptions configuration, TextWriter log = null)
+        public static async Task<ConnectionMultiplexer> ConnectAsync(ConfigurationOptions configuration, Action<string> log = null)
         {
             IDisposable killMe = null;
             try
@@ -848,7 +842,7 @@ namespace StackExchange.Redis
         /// <summary>
         /// Create a new ConnectionMultiplexer instance
         /// </summary>
-        public static ConnectionMultiplexer Connect(string configuration, TextWriter log = null)
+        public static ConnectionMultiplexer Connect(string configuration, Action<string> log = null)
         {
             return ConnectImpl(() => CreateMultiplexer(configuration), log);
         }
@@ -856,12 +850,12 @@ namespace StackExchange.Redis
         /// <summary>
         /// Create a new ConnectionMultiplexer instance
         /// </summary>
-        public static ConnectionMultiplexer Connect(ConfigurationOptions configuration, TextWriter log = null)
+        public static ConnectionMultiplexer Connect(ConfigurationOptions configuration, Action<string> log = null)
         {
             return ConnectImpl(() => CreateMultiplexer(configuration), log);
         }
 
-        private static ConnectionMultiplexer ConnectImpl(Func<ConnectionMultiplexer> multiplexerFactory, TextWriter log)
+        private static ConnectionMultiplexer ConnectImpl(Func<ConnectionMultiplexer> multiplexerFactory, Action<string> log)
         {
             IDisposable killMe = null;
             try
@@ -1170,14 +1164,14 @@ namespace StackExchange.Redis
         /// <summary>
         /// Reconfigure the current connections based on the existing configuration
         /// </summary>
-        public Task<bool> ConfigureAsync(TextWriter log = null)
+        public Task<bool> ConfigureAsync(Action<string> log = null)
         {
             return ReconfigureAsync(false, true, log, null, "configure").ObserveErrors();
         }
         /// <summary>
         /// Reconfigure the current connections based on the existing configuration
         /// </summary>
-        public bool Configure(TextWriter log = null)
+        public bool Configure(Action<string> log = null)
         {
             // note we expect ReconfigureAsync to internally allow [n] duration,
             // so to avoid near misses, here we wait 2*[n]
@@ -1215,16 +1209,16 @@ namespace StackExchange.Redis
         /// </summary>
         public string GetStatus()
         {
-            using(var sw = new StringWriter())
-            {
-                GetStatus(sw);
-                return sw.ToString();
-            }
+            var sb = new StringBuilder();
+            void AppendLog(string msg) => sb.AppendLine(msg);
+
+            GetStatus(AppendLog);
+            return sb.ToString();
         }
         /// <summary>
         /// Provides a text overview of the status of all connections
         /// </summary>
-        public void GetStatus(TextWriter log)
+        public void GetStatus(Action<string> log)
         {
             if (log == null) return;
 
@@ -1238,14 +1232,13 @@ namespace StackExchange.Redis
             LogLocked(log, "Sync timeouts: {0}; fire and forget: {1}; last heartbeat: {2}s ago",
                 Interlocked.Read(ref syncTimeouts), Interlocked.Read(ref fireAndForgets), LastHeartbeatSecondsAgo);
         }
-        internal async Task<bool> ReconfigureAsync(bool first, bool reconfigureAll, TextWriter log, EndPoint blame, string cause, bool publishReconfigure = false, CommandFlags publishReconfigureFlags = CommandFlags.None)
+        internal async Task<bool> ReconfigureAsync(bool first, bool reconfigureAll, Action<string> log, EndPoint blame, string cause, bool publishReconfigure = false, CommandFlags publishReconfigureFlags = CommandFlags.None)
         {
             if (isDisposed) throw new ObjectDisposedException(ToString());
             bool showStats = true;
 
             if (log == null)
             {
-                log = TextWriter.Null;
                 showStats = false;
             }
             bool ranThisCall = false;
@@ -1584,7 +1577,7 @@ namespace StackExchange.Redis
             }
         }
 
-        private async Task<EndPointCollection> GetEndpointsFromClusterNodes(ServerEndPoint server, TextWriter log)
+        private async Task<EndPointCollection> GetEndpointsFromClusterNodes(ServerEndPoint server, Action<string> log)
         {
             var message = Message.Create(-1, CommandFlags.None, RedisCommand.CLUSTER, RedisLiterals.NODES);
             try
@@ -1609,8 +1602,8 @@ namespace StackExchange.Redis
             }
         }
 
-        partial void OnTraceLog(TextWriter log, [System.Runtime.CompilerServices.CallerMemberName] string caller = null);
-        private async Task<ServerEndPoint> NominatePreferredMaster(TextWriter log, ServerEndPoint[] servers, bool useTieBreakers, Task<string>[] tieBreakers, List<ServerEndPoint> masters)
+        partial void OnTraceLog(Action<string> log, [System.Runtime.CompilerServices.CallerMemberName] string caller = null);
+        private async Task<ServerEndPoint> NominatePreferredMaster(Action<string> log, ServerEndPoint[] servers, bool useTieBreakers, Task<string>[] tieBreakers, List<ServerEndPoint> masters)
         {
             Dictionary<string, int> uniques = null;
             if (useTieBreakers)
@@ -1722,7 +1715,7 @@ namespace StackExchange.Redis
 
         }
 
-        private ServerEndPoint SelectServerByElection(ServerEndPoint[] servers, string endpoint, TextWriter log)
+        private ServerEndPoint SelectServerByElection(ServerEndPoint[] servers, string endpoint, Action<string> log)
         {
             if (servers == null || string.IsNullOrWhiteSpace(endpoint)) return null;
             for (int i = 0; i < servers.Length; i++)

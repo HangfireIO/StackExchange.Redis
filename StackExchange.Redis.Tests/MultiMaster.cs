@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Text;
 using NUnit.Framework;
 
 namespace StackExchange.Redis.Tests
@@ -48,13 +49,14 @@ namespace StackExchange.Redis.Tests
                 primary.Ping();
                 secondary.Ping();
 
-                using (var writer = new StringWriter())
-                {
-                    conn.Configure(writer);
-                    string log = writer.ToString();
+                var sb = new StringBuilder();
+                void AppendLog(string msg) => sb.AppendLine(msg);
 
-                    Assert.IsTrue(log.Contains("tie-break is unanimous at " + PrimaryServer + ":" + PrimaryPort), "unanimous");
-                }
+                conn.Configure(AppendLog);
+                string log = sb.ToString();
+
+                Assert.IsTrue(log.Contains("tie-break is unanimous at " + PrimaryServer + ":" + PrimaryPort),
+                    "unanimous");
                 // k, so we know everyone loves 6379; is that what we get?
 
                 var db = conn.GetDatabase();
@@ -114,11 +116,14 @@ namespace StackExchange.Redis.Tests
         [Test]
         public void TestMultiNoTieBreak()
         {
-            using (var log = new StringWriter())
-            using (var conn = Create(log: log, tieBreaker: ""))
+            var sb = new StringBuilder();
+            void AppendLog(string msg) => sb.AppendLine(msg);
+
+            using (var conn = Create(log: AppendLog, tieBreaker: ""))
             {
-                Console.WriteLine(log);
-                Assert.IsTrue(log.ToString().Contains("Choosing master arbitrarily"));
+                var results = sb.ToString();
+                Console.WriteLine(results);
+                Assert.IsTrue(results.Contains("Choosing master arbitrarily"));
             }
         }
 
@@ -148,10 +153,11 @@ namespace StackExchange.Redis.Tests
             }
 
             // see what happens
-            using (var log = new StringWriter())
-            using (var conn = Create(log: log, tieBreaker: TieBreak))
+            var sb = new StringBuilder();
+            void AppendLog(string msg) => sb.AppendLine(msg);
+            using (var conn = Create(log: AppendLog, tieBreaker: TieBreak))
             {
-                string text = log.ToString();
+                string text = sb.ToString();
                 Console.WriteLine(text);
                 Assert.IsFalse(text.Contains("failed to nominate"), "failed to nominate");
                 if (elected != null)

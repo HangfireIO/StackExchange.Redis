@@ -114,7 +114,7 @@ namespace StackExchange.Redis
             OnCreateEcho();
         }
 
-        public void BeginConnect(TextWriter log)
+        public void BeginConnect(Action<string> log)
         {
             VolatileWrapper.Write(ref firstUnansweredWriteTickCount, 0);
             var endpoint = this.Bridge.ServerEndPoint.EndPoint;
@@ -791,7 +791,7 @@ namespace StackExchange.Redis
             { }
             return null;
         }
-        async Task<bool> ISocketCallback.ConnectedAsync(Stream stream, TextWriter log)
+        async Task<bool> ISocketCallback.ConnectedAsync(Stream stream, Action<string> log)
         {
             try
             {

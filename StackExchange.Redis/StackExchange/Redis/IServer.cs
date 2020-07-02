@@ -270,7 +270,7 @@ namespace StackExchange.Redis
         /// <summary>
         /// Promote the selected node to be master
         /// </summary>
-        void MakeMaster(ReplicationChangeOptions options, TextWriter log = null);
+        void MakeMaster(ReplicationChangeOptions options, Action<string> log = null);
 
         /// <summary>
         /// Explicitly request the database to persist the current state to disk

@@ -389,7 +389,7 @@ namespace StackExchange.Redis
             Debug.WriteLine(message, Environment.CurrentManagedThreadId + " ~ " + category);
         }
 
-        partial void OnTraceLog(TextWriter log, string caller)
+        partial void OnTraceLog(Action<string> log, string caller)
         {
             lock (UniqueId)
             {

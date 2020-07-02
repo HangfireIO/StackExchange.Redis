@@ -54,7 +54,7 @@ namespace StackExchange.Redis
             interactive?.ResetNonConnected();
             subscription?.ResetNonConnected();
         }
-        public ServerEndPoint(ConnectionMultiplexer multiplexer, EndPoint endpoint, TextWriter log)
+        public ServerEndPoint(ConnectionMultiplexer multiplexer, EndPoint endpoint, Action<string> log)
         {
             this.multiplexer = multiplexer;
             this.endpoint = endpoint;
@@ -174,7 +174,7 @@ namespace StackExchange.Redis
             tmp?.Dispose();
         }
 
-        public PhysicalBridge GetBridge(ConnectionType type, bool create = true, TextWriter log = null)
+        public PhysicalBridge GetBridge(ConnectionType type, bool create = true, Action<string> log = null)
         {
             if (isDisposed) return null;
             switch (type)
@@ -263,7 +263,7 @@ namespace StackExchange.Redis
             return bridge != null && bridge.TryEnqueue(message, isSlave);
         }
 
-        internal void Activate(ConnectionType type, TextWriter log)
+        internal void Activate(ConnectionType type, Action<string> log)
         {
             GetBridge(type, true, log);
         }
@@ -477,7 +477,7 @@ namespace StackExchange.Redis
             return bridge != null && bridge.IsConnected;
         }
 
-        internal void OnEstablishing(PhysicalConnection connection, TextWriter log)
+        internal void OnEstablishing(PhysicalConnection connection, Action<string> log)
         {
             try
             {
@@ -596,7 +596,7 @@ namespace StackExchange.Redis
             subscription?.ReportNextFailure();
         }
 
-        internal Task<bool> SendTracer(TextWriter log = null)
+        internal Task<bool> SendTracer(Action<string> log = null)
         {
             var msg = GetTracerMessage(false);
             msg = LoggingMessage.Create(log, msg);
@@ -653,14 +653,14 @@ namespace StackExchange.Redis
             }
         }
 
-        private PhysicalBridge CreateBridge(ConnectionType type, TextWriter log)
+        private PhysicalBridge CreateBridge(ConnectionType type, Action<string> log)
         {
             multiplexer.Trace(type.ToString());
             var bridge = new PhysicalBridge(this, type);
             bridge.TryConnect(log);
             return bridge;
         }
-        void Handshake(PhysicalConnection connection, TextWriter log)
+        void Handshake(PhysicalConnection connection, Action<string> log)
         {
             multiplexer.LogLocked(log, "Server handshake");
             if (connection == null)

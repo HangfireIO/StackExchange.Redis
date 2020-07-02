@@ -315,7 +315,7 @@ namespace StackExchange.Redis
             return ExecuteAsync(msg, ResultProcessor.DateTime);
         }
 
-        public void MakeMaster(ReplicationChangeOptions options, TextWriter log = null)
+        public void MakeMaster(ReplicationChangeOptions options, Action<string> log = null)
         {
             multiplexer.MakeMaster(server, options, log);
         }

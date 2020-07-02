@@ -163,7 +163,7 @@ namespace StackExchange.Redis.Tests
 
         protected virtual ConnectionMultiplexer Create(
             string clientName = null, int? syncTimeout = null, bool? allowAdmin = null, int? keepAlive = null,
-            int? connectTimeout = null, string password = null, string tieBreaker = null, TextWriter log = null,
+            int? connectTimeout = null, string password = null, string tieBreaker = null, Action<string> log = null,
             bool fail = true, string[] disabledCommands = null, string[] enabledCommands = null,
             bool checkConnect = true, bool pause = true, string failMessage = null,
             string channelPrefix = null, bool useSharedSocketManager = true, Proxy? proxy = null)
@@ -195,7 +195,7 @@ namespace StackExchange.Redis.Tests
             if (connectTimeout != null) config.ConnectTimeout = connectTimeout.Value;
             if (proxy != null) config.Proxy = proxy.Value;
             var watch = Stopwatch.StartNew();
-            var task = ConnectionMultiplexer.ConnectAsync(config, log ?? Console.Out);
+            var task = ConnectionMultiplexer.ConnectAsync(config, log ?? Console.WriteLine);
             if (!task.Wait(config.ConnectTimeout >= (int.MaxValue / 2) ? int.MaxValue : config.ConnectTimeout * 2))
             {
                 task.ContinueWith(x =>
