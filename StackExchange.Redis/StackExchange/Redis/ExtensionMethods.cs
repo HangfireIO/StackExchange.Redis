@@ -126,7 +126,7 @@ namespace StackExchange.Redis
             return ConvertHelper.ConvertAll(values, x => (string)x);
         }
 
-        internal static void AuthenticateAsClient(this SslStream ssl, string host, SslProtocols? allowedProtocols)
+        internal static void AuthenticateAsClient(this SslStream ssl, string host, SslProtocols? allowedProtocols, bool checkCertRevocation)
         {
             if (!allowedProtocols.HasValue)
             {
@@ -136,7 +136,7 @@ namespace StackExchange.Redis
             }
 
             var certificateCollection = new X509CertificateCollection();
-            const bool checkCertRevocation = true;
+
 #if CORE_CLR
             ssl.AuthenticateAsClientAsync(host, certificateCollection, allowedProtocols.Value, checkCertRevocation)
                                 .GetAwaiter().GetResult();

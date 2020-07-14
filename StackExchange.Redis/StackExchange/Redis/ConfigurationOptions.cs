@@ -120,7 +120,7 @@ namespace StackExchange.Redis
 
         private readonly EndPointCollection endpoints = new EndPointCollection();
 
-        private bool? allowAdmin, abortOnConnectFail, highPrioritySocketThreads, resolveDns, ssl, preferIOCP;
+        private bool? allowAdmin, abortOnConnectFail, highPrioritySocketThreads, resolveDns, ssl, preferIOCP, checkCertificateRevocation;
 
         private string clientName, serviceName, password, tieBreaker, sslHost, configChannel;
 
@@ -147,6 +147,12 @@ namespace StackExchange.Redis
         /// </summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1009:DeclareEventHandlersCorrectly")]
         public event RemoteCertificateValidationCallback CertificateValidation;
+
+        /// <summary>
+        /// Gets or sets whether certificate revocation list is checked upon an authentication process, requires <see cref="SslProtocols"/>
+        /// property to be explicitly set to make this option work.
+        /// </summary>
+        public bool CheckCertificateRevocation { get { return checkCertificateRevocation ?? true; } set { checkCertificateRevocation = value; } }
 
         /// <summary>
         /// Specifies the interval between heartbeat runs in milliseconds. It's expected to have multiple

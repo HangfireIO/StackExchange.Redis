@@ -803,7 +803,7 @@ namespace StackExchange.Redis
                         );
                     try
                     {
-                        ssl.AuthenticateAsClient(host, config.SslProtocols);
+                        ssl.AuthenticateAsClient(host, config.SslProtocols, config.CheckCertificateRevocation);
 
                         Multiplexer.LogLocked(log, $"SSL connection established successfully using protocol: {ssl.SslProtocol}");
                     }
