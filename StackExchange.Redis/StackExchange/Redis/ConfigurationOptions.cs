@@ -413,6 +413,7 @@ namespace StackExchange.Redis
 #if !CORE_CLR
                 SslProtocols = SslProtocols,
 #endif
+                checkCertificateRevocation = checkCertificateRevocation,
             };
             foreach (var item in endpoints)
                 options.endpoints.Add(item);
@@ -579,6 +580,7 @@ namespace StackExchange.Redis
             SocketManager = null;
             heartbeatInterval = null;
             preferIOCP = null;
+            checkCertificateRevocation = null;
         }
 
 #if !CORE_CLR
