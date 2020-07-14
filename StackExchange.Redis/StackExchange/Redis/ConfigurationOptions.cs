@@ -410,9 +410,7 @@ namespace StackExchange.Redis
                 ReconnectRetryPolicy = reconnectRetryPolicy,
                 heartbeatInterval = heartbeatInterval,
                 preferIOCP = preferIOCP,
-#if !CORE_CLR
                 SslProtocols = SslProtocols,
-#endif
                 checkCertificateRevocation = checkCertificateRevocation,
             };
             foreach (var item in endpoints)
