@@ -1900,11 +1900,22 @@ namespace StackExchange.Redis
                 pulse = null;
             }
 
-            if (allowCommandsToComplete)
+            try
             {
-                var quits = QuitAllServers();
-                WaitAllIgnoreErrors(quits);
+                if (allowCommandsToComplete)
+                {
+                    var quits = QuitAllServers();
+                    WaitAllIgnoreErrors(quits);
+                }
             }
+            catch
+            {
+                // We are ignoring possible exceptions thrown from the QuitAllServers,
+                // since that method can thrown an exception when closing connection
+                // while physical bridge wasn't established yet. Otherwise exception
+                // will prevent sockets from being closed.
+            }
+
             DisposeAndClearServers();
             OnCloseReaderWriter();
         }
