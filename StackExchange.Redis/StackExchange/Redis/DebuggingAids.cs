@@ -329,7 +329,7 @@ namespace StackExchange.Redis
     internal class CompletionTypeHelper
     {
 
-        public static void RunWithCompletionType(Func<AsyncCallback, IAsyncResult> beginAsync, AsyncCallback callback, CompletionType completionType)
+        public static void RunWithCompletionType(Func<AsyncCallback, IAsyncResult> beginAsync, AsyncCallback callback, CompletionType completionType, int timeoutMilliseconds)
         { 
             AsyncCallback proxyCallback;
             if (completionType == CompletionType.Any)
@@ -354,7 +354,7 @@ namespace StackExchange.Redis
                 return;
             }
 
-            result.AsyncWaitHandle.WaitOne();
+            result.AsyncWaitHandle.WaitOne(timeoutMilliseconds);
 
             switch (completionType)
             { 

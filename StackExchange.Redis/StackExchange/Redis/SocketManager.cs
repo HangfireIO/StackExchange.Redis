@@ -285,7 +285,8 @@ namespace StackExchange.Redis
                             EndConnectImpl(ar, multiplexer, log, tuple);
                             multiplexer.LogLocked(log, "Connect complete: {0}", formattedEndpoint);
                         },
-                        connectCompletionType);
+                        connectCompletionType,
+                        multiplexer.SyncConnectTimeout(false));
 #endif
                 }
             } 
