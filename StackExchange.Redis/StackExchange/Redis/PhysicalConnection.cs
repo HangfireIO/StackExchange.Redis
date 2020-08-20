@@ -803,7 +803,9 @@ namespace StackExchange.Redis
                         );
                     try
                     {
+                        ssl.ReadTimeout = Multiplexer.SyncConnectTimeout(false);
                         ssl.AuthenticateAsClient(host, config.SslProtocols, config.CheckCertificateRevocation);
+                        ssl.ReadTimeout = Timeout.Infinite;
 
                         Multiplexer.LogLocked(log, $"SSL connection established successfully using protocol: {ssl.SslProtocol}");
                     }
