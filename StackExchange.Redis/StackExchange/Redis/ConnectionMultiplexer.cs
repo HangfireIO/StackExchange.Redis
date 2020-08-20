@@ -1472,42 +1472,45 @@ namespace StackExchange.Redis
                         }
                     }
 
-                    if (clusterCount == 0)
+                    healthy = standaloneCount != 0 || clusterCount != 0 || sentinelCount != 0;
+                    if (healthy)
                     {
-                        // set the serverSelectionStrategy
-                        if (RawConfig.Proxy == Proxy.Twemproxy) 
+                        if (clusterCount == 0)
                         {
-                            serverSelectionStrategy.ServerType = ServerType.Twemproxy;
-                        } 
-                        else if (standaloneCount == 0 && sentinelCount > 0) 
-                        {
-                            serverSelectionStrategy.ServerType = ServerType.Sentinel;
-                        } 
-                        else 
-                        {
-                            serverSelectionStrategy.ServerType = ServerType.Standalone;
-                        }
-                        var preferred = await NominatePreferredMaster(log, servers, useTieBreakers, tieBreakers, masters).ObserveErrors().ForAwait();
-                        foreach (var master in masters)
-                        {
-                            if (master == preferred)
+                            // set the serverSelectionStrategy
+                            if (RawConfig.Proxy == Proxy.Twemproxy)
                             {
-                                master.ClearUnselectable(UnselectableFlags.RedundantMaster);
+                                ServerSelectionStrategy.ServerType = ServerType.Twemproxy;
+                            }
+                            else if (standaloneCount == 0 && sentinelCount > 0)
+                            {
+                                ServerSelectionStrategy.ServerType = ServerType.Sentinel;
                             }
                             else
                             {
-                                master.SetUnselectable(UnselectableFlags.RedundantMaster);
+                                ServerSelectionStrategy.ServerType = ServerType.Standalone;
+                            }
+                            var preferred = await NominatePreferredMaster(log, servers, useTieBreakers, tieBreakers, masters).ObserveErrors().ForAwait();
+                            foreach (var master in masters)
+                            {
+                                if (master == preferred)
+                                {
+                                    master.ClearUnselectable(UnselectableFlags.RedundantMaster);
+                                }
+                                else
+                                {
+                                    master.SetUnselectable(UnselectableFlags.RedundantMaster);
+                                }
                             }
                         }
+                        else
+                        {
+                            ServerSelectionStrategy.ServerType = ServerType.Cluster;
+                            long coveredSlots = ServerSelectionStrategy.CountCoveredSlots();
+                            LogLocked(log, "Cluster: {0} of {1} slots covered", coveredSlots, serverSelectionStrategy.TotalSlots);
+                        }
                     }
-                    else
-                    {
-                        serverSelectionStrategy.ServerType = ServerType.Cluster;
-                        long coveredSlots = serverSelectionStrategy.CountCoveredSlots();
-                        LogLocked(log, "Cluster: {0} of {1} slots covered",
-                            coveredSlots, serverSelectionStrategy.TotalSlots);
 
-                    }
                     if (!first)
                     {
                         long subscriptionChanges = ValidateSubscriptions();
@@ -1531,7 +1534,7 @@ namespace StackExchange.Redis
                         LogLocked(log, "");
                         LogLocked(log, stormLog);
                     }
-                    healthy = standaloneCount != 0 || clusterCount != 0 || sentinelCount != 0;
+
                     if (first && !healthy && attemptsLeft > 0)
                     {
                         LogLocked(log, "resetting failing connections to retry...");
