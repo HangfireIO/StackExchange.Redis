@@ -86,7 +86,7 @@ namespace StackExchange.Redis
 
             internal const string AllowAdmin = "allowAdmin", SyncTimeout = "syncTimeout",
                                 ServiceName = "serviceName", ClientName = "name", KeepAlive = "keepAlive",
-                        Version = "version", ConnectTimeout = "connectTimeout", Password = "password",
+                        Version = "version", ConnectTimeout = "connectTimeout", User = "user", UserName = "username", Password = "password",
                         TieBreaker = "tiebreaker", WriteBuffer = "writeBuffer", Ssl = "ssl", SslHost = "sslHost", HighPrioritySocketThreads = "highPriorityThreads",
                         ConfigChannel = "configChannel", AbortOnConnectFail = "abortConnect", ResolveDns = "resolveDns",
                         ChannelPrefix = "channelPrefix", Proxy = "proxy", ConnectRetry = "connectRetry",
@@ -98,7 +98,7 @@ namespace StackExchange.Redis
             {
                 AllowAdmin, SyncTimeout,
                 ServiceName, ClientName, KeepAlive,
-                Version, ConnectTimeout, Password,
+                Version, ConnectTimeout, User, UserName, Password,
                 TieBreaker, WriteBuffer, Ssl, SslHost, HighPrioritySocketThreads,
                 ConfigChannel, AbortOnConnectFail, ResolveDns,
                 ChannelPrefix, Proxy, ConnectRetry,
@@ -285,6 +285,11 @@ namespace StackExchange.Redis
         public int KeepAlive { get { return keepAlive.GetValueOrDefault(-1); } set { keepAlive = value; } }
 
         /// <summary>
+        /// The user to use to authenticate with the server.
+        /// </summary>
+        public string UserName { get; set; }
+
+        /// <summary>
         /// The password to use to authenticate with the server
         /// </summary>
         public string Password { get { return password; } set { password = value; } }
@@ -411,6 +416,7 @@ namespace StackExchange.Redis
                 heartbeatInterval = heartbeatInterval,
                 preferIOCP = preferIOCP,
                 SslProtocols = SslProtocols,
+                UserName = UserName,
                 checkCertificateRevocation = checkCertificateRevocation,
             };
             foreach (var item in endpoints)
@@ -455,6 +461,7 @@ namespace StackExchange.Redis
             Append(sb, OptionKeys.AllowAdmin, allowAdmin);
             Append(sb, OptionKeys.Version, defaultVersion);
             Append(sb, OptionKeys.ConnectTimeout, connectTimeout);
+            Append(sb, OptionKeys.UserName, UserName);
             Append(sb, OptionKeys.Password, includePassword ? password : "*****");
             Append(sb, OptionKeys.TieBreaker, tieBreaker);
             Append(sb, OptionKeys.WriteBuffer, writeBuffer);
@@ -565,7 +572,7 @@ namespace StackExchange.Redis
 
         void Clear()
         {
-            clientName = serviceName = password = tieBreaker = sslHost = configChannel = null;
+            clientName = serviceName = UserName = password = tieBreaker = sslHost = configChannel = null;
             keepAlive = syncTimeout = connectTimeout = writeBuffer = connectRetry = configCheckSeconds = defaultDatabase = null;
             allowAdmin = abortOnConnectFail = highPrioritySocketThreads = resolveDns = ssl = null;
             defaultVersion = null;
@@ -658,6 +665,10 @@ namespace StackExchange.Redis
                             break;
                         case OptionKeys.Version:
                             DefaultVersion = OptionKeys.ParseVersion(key, value);
+                            break;
+                        case OptionKeys.User:
+                        case OptionKeys.UserName:
+                            UserName = value;
                             break;
                         case OptionKeys.Password:
                             Password = value;

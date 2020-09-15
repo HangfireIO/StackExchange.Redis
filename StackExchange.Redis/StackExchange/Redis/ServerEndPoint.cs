@@ -669,8 +669,16 @@ namespace StackExchange.Redis
                 return;
             }
             Message msg;
-            string password = multiplexer.RawConfig.Password;
-            if (!string.IsNullOrWhiteSpace(password))
+            // note that we need "" (not null) for password in the case of 'nopass' logins
+            string username = Multiplexer.RawConfig.UserName, password = Multiplexer.RawConfig.Password ?? "";
+            if (!string.IsNullOrWhiteSpace(username))
+            {
+                multiplexer.LogLocked(log, "Authenticating (user/password)");
+                msg = Message.Create(-1, CommandFlags.FireAndForget, RedisCommand.AUTH, (RedisValue)username, (RedisValue)password);
+                msg.SetInternalCall();
+                WriteDirectOrQueueFireAndForget(connection, msg, ResultProcessor.DemandOK);
+            }
+            else if (!string.IsNullOrWhiteSpace(password))
             {
                 multiplexer.LogLocked(log, "Authenticating (password)");
                 msg = Message.Create(-1, CommandFlags.FireAndForget, RedisCommand.AUTH, (RedisValue)password);
