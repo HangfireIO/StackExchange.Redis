@@ -711,28 +711,37 @@ namespace StackExchange.Redis
                 {
                     keepReading = false;
                     int space = EnsureSpaceAndComputeBytesToRead();
-                    Multiplexer.Trace("Beginning async read...", physicalName);
-#if CORE_CLR
-                    var result = netStream.ReadAsync(ioBuffer, ioBufferBytes, space);
-                    switch (result.Status)
+                    var stream = this.netStream;
+
+                    if (stream != null)
                     {
-                        case TaskStatus.RanToCompletion:
-                        case TaskStatus.Faulted:
+                        Multiplexer.Trace("Beginning async read...", physicalName);
+#if CORE_CLR
+                        var result = stream.ReadAsync(ioBuffer, ioBufferBytes, space);
+                        switch (result.Status)
+                        {
+                            case TaskStatus.RanToCompletion:
+                            case TaskStatus.Faulted:
+                                Multiplexer.Trace("Completed synchronously: processing immediately", physicalName);
+                                keepReading = EndReading(result);
+                                break;
+                            default:
+                                result.ContinueWith(endRead);
+                                break;
+                        }
+#else
+                        var result = stream.BeginRead(ioBuffer, ioBufferBytes, space, endRead, this);
+                        if (result.CompletedSynchronously)
+                        {
                             Multiplexer.Trace("Completed synchronously: processing immediately", physicalName);
                             keepReading = EndReading(result);
-                            break;
-                        default:
-                            result.ContinueWith(endRead);
-                            break;
-                    }
-#else
-                    var result = netStream.BeginRead(ioBuffer, ioBufferBytes, space, endRead, this);
-                    if (result.CompletedSynchronously)
-                    {
-                        Multiplexer.Trace("Completed synchronously: processing immediately", physicalName);
-                        keepReading = EndReading(result);
-                    }
+                        }
 #endif
+                    }
+                    else
+                    {
+                        Multiplexer.Trace("Nothing to read: stream was already closed.");
+                    }
                 } while (keepReading);
             }
 #if CORE_CLR
@@ -745,6 +754,10 @@ namespace StackExchange.Redis
             {
                 Multiplexer.Trace("Could not connect: " + ex.Message, physicalName);
                 throw; // 1ea6c217e460d0647e95208e940234d4789c3484
+            }
+            catch (ObjectDisposedException)
+            {
+                Multiplexer.Trace("Could not connect: multiplexer was disposed before connection was established.");
             }
         }
         int haveReader;
