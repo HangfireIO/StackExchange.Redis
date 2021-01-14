@@ -2108,9 +2108,6 @@ namespace StackExchange.Redis
                                 add("Local-CPU", "Local-CPU", GetSystemCpuPercent());
                             }
 #endif
-                            sb.Append(" (Please take a look at this article for some common client-side issues that can cause timeouts: ");
-                            sb.Append(timeoutHelpLink);
-                            sb.Append(")");
                             errMessage = sb.ToString();
                             if (stormLogThreshold >= 0 && queue >= stormLogThreshold && Interlocked.CompareExchange(ref haveStormLog, 1, 0) == 0)
                             {
