@@ -110,6 +110,19 @@ namespace StackExchange.Redis
                 ConnectionMultiplexer.TraceWithoutContext("Pulsed", "Result");
                 return true;
             }
+            else if (stateOrCompletionSource is ManualResetEvent waitHandle)
+            {
+                try
+                {
+                    waitHandle.Set();
+                }
+                catch (ObjectDisposedException)
+                {
+                }
+
+                ConnectionMultiplexer.TraceWithoutContext("Pulsed", "Result");
+                return true;
+            }
             else
             {
                 ConnectionMultiplexer.TraceWithoutContext("Completed", "result");

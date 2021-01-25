@@ -346,17 +346,17 @@ namespace StackExchange.Redis
         internal uint NextReplicaOffset() // used to round-robin between multiple replicas
             => (uint) System.Threading.Interlocked.Increment(ref _nextReplicaOffset);
 
-        internal Task Close()
+        internal Message Close(out PhysicalBridge bridge)
         {
-            var tmp = interactive;
-            Task result;
-            if (tmp == null || !tmp.IsConnected || !multiplexer.CommandMap.IsAvailable(RedisCommand.QUIT))
+            bridge = interactive;
+            Message result;
+            if (bridge == null || !bridge.IsConnected || !multiplexer.CommandMap.IsAvailable(RedisCommand.QUIT))
             {
-                result = CompletedTask<bool>.Default(null);
+                result = null;
             }
             else
             {
-                result = QueueDirectAsync(Message.Create(-1, CommandFlags.None, RedisCommand.QUIT), ResultProcessor.DemandOK, bridge: interactive);
+                result = Message.Create(-1, CommandFlags.None, RedisCommand.QUIT);
             }
             return result;
         }
@@ -565,6 +565,17 @@ namespace StackExchange.Redis
                     Interlocked.Exchange(ref _heartBeatActive, 0);
                 }
             }
+        }
+
+        internal bool TryQueueDirect(Message message, PhysicalBridge bridge = null)
+        {
+            if (bridge == null) bridge = GetBridge(message.Command);
+            if (bridge == null || !bridge.TryEnqueue(message, isSlave))
+            {
+                return false;
+            }
+
+            return true;
         }
 
         internal Task<T> QueueDirectAsync<T>(Message message, ResultProcessor<T> processor, object asyncState = null, PhysicalBridge bridge = null)

@@ -1907,8 +1907,7 @@ namespace StackExchange.Redis
             {
                 if (allowCommandsToComplete)
                 {
-                    var quits = QuitAllServers();
-                    WaitAllIgnoreErrors(quits);
+                    QuitAllServers();
                 }
             }
             catch
@@ -1938,7 +1937,46 @@ namespace StackExchange.Redis
             }
         }
 
-        private Task[] QuitAllServers()
+        private bool QuitAllServers()
+        {
+            var waitHandles = new List<WaitHandle>(servers.Count);
+            try
+            {
+                lock (servers)
+                {
+                    var iter = servers.GetEnumerator();
+                    while (iter.MoveNext())
+                    {
+                        var server = (ServerEndPoint)iter.Value;
+                        var message = server.Close(out var bridge);
+
+                        if (message != null)
+                        {
+                            var quitEvent = new ManualResetEvent(false);
+                            var source = ResultBox<bool>.Get(quitEvent);
+                            message.SetSource(ResultProcessor.DemandOK, source);
+                            if (!server.TryQueueDirect(message, bridge: bridge))
+                            {
+                                quitEvent.Set();
+                            }
+
+                            waitHandles.Add(quitEvent);
+                        }
+                    }
+                }
+
+                return WaitHandle.WaitAll(waitHandles.ToArray(), timeoutMilliseconds);
+            }
+            finally
+            {
+                foreach (var waitHandle in waitHandles)
+                {
+                    waitHandle.Dispose();
+                }
+            }
+        }
+
+        private Task[] QuitAllServersAsync()
         {
             Task[] quits = new Task[servers.Count];
             lock (servers)
@@ -1948,7 +1986,11 @@ namespace StackExchange.Redis
                 while (iter.MoveNext())
                 {
                     var server = (ServerEndPoint)iter.Value;
-                    quits[index++] = server.Close();
+                    var message = server.Close(out var bridge);
+
+                    quits[index++] = message != null
+                        ? server.QueueDirectAsync(message, ResultProcessor.DemandOK, bridge: bridge)
+                        : CompletedTask<bool>.Default(null);
                 }
             }
             return quits;
@@ -1967,7 +2009,7 @@ namespace StackExchange.Redis
 
             if (allowCommandsToComplete)
             {
-                var quits = QuitAllServers();
+                var quits = QuitAllServersAsync();
                 await WaitAllIgnoreErrorsAsync(quits, configuration.SyncTimeout, null).ForAwait();
             }
 
