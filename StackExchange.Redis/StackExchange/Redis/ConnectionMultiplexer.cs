@@ -437,7 +437,10 @@ namespace StackExchange.Redis
 
             // and reconfigure the muxer
             LogLocked(log, "Reconfiguring all endpoints...");
-            if (!ReconfigureAsync(false, true, log, srv.EndPoint, "make master").ObserveErrors().Wait(5000))
+            if (!InlineSynchronizationContext.InvokeAsync(
+                () => ReconfigureAsync(false, true, log, srv.EndPoint, "make master").ObserveErrors(),
+                5000,
+                out _))
             {
                 LogLocked(log, "Verifying the configuration was incomplete; please verify");
             }
@@ -863,11 +866,12 @@ namespace StackExchange.Redis
                 var muxer = multiplexerFactory();
                 killMe = muxer;
                 // note that task has timeouts internally, so it might take *just over* the regular timeout
-                var task = muxer.ReconfigureAsync(true, false, log, null, "connect");
 
-                if (!task.Wait(muxer.SyncConnectTimeout(true)))
+                if (!InlineSynchronizationContext.InvokeAsync(
+                    () => muxer.ReconfigureAsync(true, false, log, null, "connect").ObserveErrors(),
+                    muxer.SyncConnectTimeout(true),
+                    out var task))
                 {
-                    task.ObserveErrors();
                     if (muxer.RawConfig.AbortOnConnectFail)
                     {
                         throw ExceptionFactory.UnableToConnect(muxer.RawConfig.AbortOnConnectFail, "ConnectTimeout");
@@ -1152,12 +1156,49 @@ namespace StackExchange.Redis
             {
                 bool reconfigureAll = fromBroadcast || publishReconfigure;
                 Trace("Configuration change detected; checking nodes", "Configuration");
-                ReconfigureAsync(false, reconfigureAll, null, blame, cause, publishReconfigure, flags).ObserveErrors();
+
+                var name = string.IsNullOrWhiteSpace(ClientName)
+                    ? ClientName
+                    : nameof(SocketManager);
+
+                var thread = new Thread(
+                    () => ReconfigureAsyncDoNotThrow(reconfigureAll, blame, cause, publishReconfigure, flags)
+#if !CORE_CLR
+                    , 64 * 1024
+#endif
+                    )
+                {
+                    IsBackground = true,
+                    Name = name + ":Reconfig",
+#if !CORE_CLR
+                    Priority = configuration.HighPrioritySocketThreads
+                        ? ThreadPriority.AboveNormal
+                        : ThreadPriority.Normal
+#endif
+                };
+
+                thread.Start();
+
                 return true;
             } else
             {
                 Trace("Configuration change skipped; already in progress via " + activeCause, "Configuration");
                 return false;
+            }
+        }
+
+        private void ReconfigureAsyncDoNotThrow(bool reconfigureAll, EndPoint blame, string cause, bool publishReconfigure, CommandFlags flags)
+        {
+            try
+            {
+                InlineSynchronizationContext.InvokeAsync(
+                    () => ReconfigureAsync(false, reconfigureAll, null, blame, cause, publishReconfigure, flags).ObserveErrors(),
+                    Timeout.Infinite,
+                    out _);
+            }
+            catch (Exception ex)
+            {
+                Trace($"Exception occurred while reconfiguring the client with cause {cause}: {ex}");
             }
         }
 
@@ -1175,10 +1216,11 @@ namespace StackExchange.Redis
         {
             // note we expect ReconfigureAsync to internally allow [n] duration,
             // so to avoid near misses, here we wait 2*[n]
-            var task = ReconfigureAsync(false, true, log, null, "configure");
-            if (!task.Wait(SyncConnectTimeout(false)))
+            if (!InlineSynchronizationContext.InvokeAsync(
+                () => ReconfigureAsync(false, true, log, null, "configure").ObserveErrors(),
+                SyncConnectTimeout(false),
+                out var task))
             {
-                task.ObserveErrors();
                 if (configuration.AbortOnConnectFail)
                 {
                     throw new TimeoutException();
