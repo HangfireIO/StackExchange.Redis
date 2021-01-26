@@ -220,9 +220,8 @@ namespace StackExchange.Redis
 
         internal static Exception UnableToConnect(bool abortOnConnect, string failureMessage=null)
         {
-            var abortOnConnectionFailure = abortOnConnect ? "to create a disconnected multiplexer, disable AbortOnConnectFail. " : "";
             return new RedisConnectionException(ConnectionFailureType.UnableToConnect,
-                string.Format("It was not possible to connect to the redis server(s); {0}{1}", abortOnConnectionFailure, failureMessage));
+                string.Format("It was not possible to connect to the redis server(s); {0}", failureMessage));
         }
 
         internal static Exception BeganProfilingWithDuplicateContext(object forContext)
