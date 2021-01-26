@@ -30,7 +30,7 @@ namespace StackExchange.Redis
         /// <summary>
         /// Indicates that the socket has signalled an error condition
         /// </summary>
-        void Error();
+        void Error(Exception exception);
 
         void OnHeartbeat();
 
@@ -483,7 +483,7 @@ namespace StackExchange.Redis
                 if (tuple != null)
                 {
                     try
-                    { tuple.Item2.Error(); }
+                    { tuple.Item2.Error(null); }
                     catch (Exception inner) when (!(inner is OutOfMemoryException))
                     {
                         ConnectionMultiplexer.TraceWithoutContext(inner.Message);
@@ -496,7 +496,7 @@ namespace StackExchange.Redis
                 if (tuple != null)
                 {
                     try
-                    { tuple.Item2.Error(); }
+                    { tuple.Item2.Error(outer); }
                     catch (Exception inner) when (!(inner is OutOfMemoryException))
                     {
                         ConnectionMultiplexer.TraceWithoutContext(inner.Message);

@@ -311,7 +311,7 @@ namespace StackExchange.Redis
             }
         }
 
-        internal void OnDisconnected(ConnectionFailureType failureType, PhysicalConnection connection, out bool isCurrent, out State oldState)
+        internal void OnDisconnected(ConnectionFailureType failureType, PhysicalConnection connection, Exception exception, out bool isCurrent, out State oldState)
         {
             Trace("OnDisconnected");
 
@@ -321,7 +321,7 @@ namespace StackExchange.Redis
             if (ping != null)
             {
                 Trace("Marking PING as failed (queue length: " + count + ")");
-                ping.Fail(failureType, null);
+                ping.Fail(failureType, exception);
                 CompleteSyncOrAsync(ping);
             }
             oldState = default(State); // only defined when isCurrent = true
@@ -394,7 +394,7 @@ namespace StackExchange.Redis
                             var snapshot = physical;
                             bool isCurrent;
                             State oldState;
-                            OnDisconnected(ConnectionFailureType.UnableToConnect, snapshot, out isCurrent, out oldState);
+                            OnDisconnected(ConnectionFailureType.UnableToConnect, snapshot, null, out isCurrent, out oldState);
                             using (snapshot) { } // dispose etc
                             TryConnect(null);
                         }
@@ -434,7 +434,7 @@ namespace StackExchange.Redis
                                 {
                                     bool ignore;
                                     State oldState;
-                                    OnDisconnected(ConnectionFailureType.SocketFailure, tmp, out ignore, out oldState);
+                                    OnDisconnected(ConnectionFailureType.SocketFailure, tmp, null, out ignore, out oldState);
                                 }
                             }
                             else if (!queue.Any() && tmp.GetSentAwaitingResponseCount() != 0)

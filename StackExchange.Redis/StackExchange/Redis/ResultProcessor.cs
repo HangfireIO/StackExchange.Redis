@@ -113,7 +113,9 @@ namespace StackExchange.Redis
         {
             PhysicalConnection.IdentifyFailureType(innerException, ref fail);
 
-            string exMessage = fail.ToString() + (message == null ? "" : (" on " + message.Command));
+            string exMessage = innerException != null
+                ? innerException.Message
+                : fail.ToString() + (message == null ? "" : (" on " + message.Command));
             var ex = innerException == null ? new RedisConnectionException(fail, exMessage)
                 : new RedisConnectionException(fail, exMessage, innerException);
             SetException(message, ex);

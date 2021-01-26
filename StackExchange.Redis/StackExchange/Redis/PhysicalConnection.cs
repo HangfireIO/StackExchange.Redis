@@ -202,7 +202,7 @@ namespace StackExchange.Redis
             PhysicalBridge.State oldState;
             int @in = -1, ar = -1;
             managerState = SocketManager.ManagerState.RecordConnectionFailed_OnDisconnected;
-            Bridge.OnDisconnected(failureType, this, out isCurrent, out oldState);
+            Bridge.OnDisconnected(failureType, this, innerException, out isCurrent, out oldState);
             if(oldState == PhysicalBridge.State.ConnectedEstablished)
             {
                 try
@@ -219,7 +219,17 @@ namespace StackExchange.Redis
                     lastBeat = VolatileWrapper.Read(ref lastBeatTickCount);
                 int unansweredWrite = VolatileWrapper.Read(ref firstUnansweredWriteTickCount);
 
-                var exMessage = new StringBuilder(failureType + " on " + Format.ToString(Bridge.ServerEndPoint.EndPoint) + "/" + connectionType);
+                var exMessage = new StringBuilder();
+                if (innerException != null)
+                {
+                    exMessage.Append(innerException.Message);
+                    exMessage.Append(" (");
+                }
+                exMessage.Append(failureType + " on " + Format.ToString(Bridge.ServerEndPoint.EndPoint) + "/" + connectionType);
+                if (innerException != null)
+                {
+                    exMessage.Append(")");
+                }
                 var data = new List<Tuple<string, string>>
                 {
                     Tuple.Create("FailureType", failureType.ToString()),
@@ -889,9 +899,9 @@ namespace StackExchange.Redis
             return space;
         }
 
-        void ISocketCallback.Error()
+        void ISocketCallback.Error(Exception exception)
         {
-            RecordConnectionFailed(ConnectionFailureType.SocketFailure);
+            RecordConnectionFailed(ConnectionFailureType.SocketFailure, exception);
         }
         void MatchResult(RawResult result)
         {
@@ -999,7 +1009,8 @@ namespace StackExchange.Redis
             if (bytesRead <= 0)
             {
                 Multiplexer.Trace("EOF", physicalName);
-                RecordConnectionFailed(ConnectionFailureType.SocketClosed);
+                RecordConnectionFailed(ConnectionFailureType.SocketClosed, new EndOfStreamException(
+                    "End of stream reached. If you are connecting to a secure endpoint, consider adding 'ssl=true' option to your connection string."));
                 return false;
             }
 
