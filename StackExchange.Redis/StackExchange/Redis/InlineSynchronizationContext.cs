@@ -41,17 +41,16 @@ namespace StackExchange.Redis
             if (asyncCallback == null) throw new ArgumentNullException(nameof(asyncCallback));
             var oldSyncContext = SynchronizationContext.Current;
 
-            using (var syncContext = new InlineSynchronizationContext())
+            try
             {
-                try
+                using (var syncContext = new InlineSynchronizationContext())
                 {
-
                     SynchronizationContext.SetSynchronizationContext(syncContext);
 
                     task = asyncCallback();
-                    var asyncResult = (IAsyncResult) task;
+                    var asyncResult = (IAsyncResult)task;
 
-                    var waitHandles = new[] {syncContext.WaitHandle, asyncResult.AsyncWaitHandle};
+                    var waitHandles = new[] { syncContext.WaitHandle, asyncResult.AsyncWaitHandle };
                     var waitResult = 1;
 
                     while (!asyncResult.IsCompleted && (waitResult = WaitHandle.WaitAny(waitHandles, timeoutMs)) == 0)
@@ -62,14 +61,10 @@ namespace StackExchange.Redis
 
                     return waitResult != WaitHandle.WaitTimeout;
                 }
-                finally
-                {
-                    SynchronizationContext.SetSynchronizationContext(oldSyncContext);
-                    foreach (var workItem in syncContext._queue)
-                    {
-                        oldSyncContext.Post(workItem.Item1, workItem.Item2);
-                    }
-                }
+            }
+            finally
+            {
+                SynchronizationContext.SetSynchronizationContext(oldSyncContext);
             }
         }
     }
