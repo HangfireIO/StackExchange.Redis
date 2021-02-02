@@ -583,12 +583,39 @@ namespace StackExchange.Redis
             var tcs = TaskSource.CreateDenyExecSync<T>(asyncState);
             var source = ResultBox<T>.Get(tcs);
             message.SetSource(processor, source);
-            if (bridge == null) bridge = GetBridge(message.Command);
-            if (bridge == null || !bridge.TryEnqueue(message, isSlave))
+            if (!TryQueueDirect(message, bridge))
             {
                 ConnectionMultiplexer.ThrowFailed(tcs, ExceptionFactory.NoConnectionAvailable(multiplexer.IncludeDetailInExceptions, multiplexer.IncludePerformanceCountersInExceptions, message.Command, message, this, multiplexer.GetServerSnapshot()));
             }
             return tcs.Task;
+        }
+
+        internal T QueueDirect<T>(Message message, ResultProcessor<T> processor, PhysicalBridge bridge = null)
+        {
+            using (var mre = new ManualResetEventSlim(false))
+            {
+                var source = ResultBox<T>.Get(mre);
+                message.SetSource(processor, source);
+                if (!TryQueueDirect(message, bridge))
+                {
+                    throw ExceptionFactory.NoConnectionAvailable(multiplexer.IncludeDetailInExceptions, multiplexer.IncludePerformanceCountersInExceptions, message.Command, message, this, multiplexer.GetServerSnapshot());
+                }
+
+                if (!mre.Wait(Multiplexer.TimeoutMilliseconds))
+                {
+                    Multiplexer.ThrowTimeoutException(message, this);
+                }
+
+                ResultBox<T>.UnwrapAndRecycle(source, true, out var result, out var exception);
+
+                if (exception != null)
+                {
+                    throw exception;
+                }
+
+                Multiplexer.Trace(message + " received " + result);
+                return result;
+            }
         }
 
         internal void QueueDirectFireAndForget<T>(Message message, ResultProcessor<T> processor, PhysicalBridge bridge = null)
