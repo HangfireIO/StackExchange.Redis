@@ -28,7 +28,7 @@ namespace StackExchange.Redis
             return false;
         }
 
-        internal Task AddSubscription(RedisChannel channel, Action<RedisChannel, RedisValue> handler, CommandFlags flags, object asyncState)
+        internal Task AddSubscriptionAsync(RedisChannel channel, Action<RedisChannel, RedisValue> handler, CommandFlags flags, object asyncState)
         {
             if (handler != null)
             {
@@ -43,7 +43,7 @@ namespace StackExchange.Redis
                     {
                         sub = new Subscription(handler);
                         subscriptions.Add(channel, sub);
-                        var task = sub.SubscribeToServer(this, channel, flags, asyncState, false);
+                        var task = sub.SubscribeToServerAsync(this, channel, flags, asyncState, false);
                         if (task != null) return task;
                     }
 
@@ -82,7 +82,7 @@ namespace StackExchange.Redis
             if (completable != null) unprocessableCompletionManager.CompleteSyncOrAsync(completable);
         }
 
-        internal Task RemoveAllSubscriptions(CommandFlags flags, object asyncState)
+        internal Task RemoveAllSubscriptionsAsync(CommandFlags flags, object asyncState)
         {
             Task last = CompletedTask<bool>.Default(asyncState);
             lock (subscriptions)
@@ -90,7 +90,7 @@ namespace StackExchange.Redis
                 foreach (var pair in subscriptions)
                 {
                     pair.Value.Remove(null); // always wipes
-                    var task = pair.Value.UnsubscribeFromServer(pair.Key, flags, asyncState, false);
+                    var task = pair.Value.UnsubscribeFromServerAsync(pair.Key, flags, asyncState, false);
                     if (task != null) last = task;
                 }
                 subscriptions.Clear();
@@ -98,7 +98,7 @@ namespace StackExchange.Redis
             return last;
         }
 
-        internal Task RemoveSubscription(RedisChannel channel, Action<RedisChannel, RedisValue> handler, CommandFlags flags, object asyncState)
+        internal Task RemoveSubscriptionAsync(RedisChannel channel, Action<RedisChannel, RedisValue> handler, CommandFlags flags, object asyncState)
         {
             lock (subscriptions)
             {
@@ -108,7 +108,7 @@ namespace StackExchange.Redis
                     if (sub.Remove(handler))
                     {
                         subscriptions.Remove(channel);
-                        var task = sub.UnsubscribeFromServer(channel, flags, asyncState, false);
+                        var task = sub.UnsubscribeFromServerAsync(channel, flags, asyncState, false);
                         if (task != null) return task;
                     }
                 }
@@ -183,7 +183,7 @@ namespace StackExchange.Redis
                     return (handler -= value) == null;
                 }
             }
-            public Task SubscribeToServer(ConnectionMultiplexer multiplexer, RedisChannel channel, CommandFlags flags, object asyncState, bool internalCall)
+            public Task SubscribeToServerAsync(ConnectionMultiplexer multiplexer, RedisChannel channel, CommandFlags flags, object asyncState, bool internalCall)
             {
                 var cmd = channel.IsPatternBased ? RedisCommand.PSUBSCRIBE : RedisCommand.SUBSCRIBE;
                 var selected = multiplexer.SelectServer(-1, cmd, flags, default(RedisKey));
@@ -195,7 +195,7 @@ namespace StackExchange.Redis
                 return selected.QueueDirectAsync(msg, ResultProcessor.TrackSubscriptions, asyncState);
             }
 
-            public Task UnsubscribeFromServer(RedisChannel channel, CommandFlags flags, object asyncState, bool internalCall)
+            public Task UnsubscribeFromServerAsync(RedisChannel channel, CommandFlags flags, object asyncState, bool internalCall)
             {
                 var oldOwner = Interlocked.Exchange(ref owner, null);
                 if (oldOwner == null) return null;
@@ -227,7 +227,7 @@ namespace StackExchange.Redis
                 var oldOwner = Interlocked.CompareExchange(ref owner, null, null);
                 if (oldOwner != null && !oldOwner.IsSelectable(RedisCommand.PSUBSCRIBE))
                 {
-                    if (UnsubscribeFromServer(channel, CommandFlags.FireAndForget, null, true) != null)
+                    if (UnsubscribeFromServerAsync(channel, CommandFlags.FireAndForget, null, true) != null)
                     {
                         changed = true;
                     }
@@ -235,7 +235,7 @@ namespace StackExchange.Redis
                 }
                 if (oldOwner == null)
                 {
-                    if (SubscribeToServer(multiplexer, channel, CommandFlags.FireAndForget, null, true) != null)
+                    if (SubscribeToServerAsync(multiplexer, channel, CommandFlags.FireAndForget, null, true) != null)
                     {
                         changed = true;
                     }
@@ -312,7 +312,7 @@ namespace StackExchange.Redis
         {
             
             if (channel.IsNullOrEmpty) throw new ArgumentNullException(nameof(channel));
-            return multiplexer.AddSubscription(channel, handler, flags, asyncState);
+            return multiplexer.AddSubscriptionAsync(channel, handler, flags, asyncState);
         }
 
 
@@ -336,13 +336,13 @@ namespace StackExchange.Redis
 
         public Task UnsubscribeAllAsync(CommandFlags flags = CommandFlags.None)
         {
-            return multiplexer.RemoveAllSubscriptions(flags, asyncState);
+            return multiplexer.RemoveAllSubscriptionsAsync(flags, asyncState);
         }
 
         public Task UnsubscribeAsync(RedisChannel channel, Action<RedisChannel, RedisValue> handler = null, CommandFlags flags = CommandFlags.None)
         {
             if (channel.IsNullOrEmpty) throw new ArgumentNullException(nameof(channel));
-            return multiplexer.RemoveSubscription(channel, handler, flags, asyncState);
+            return multiplexer.RemoveSubscriptionAsync(channel, handler, flags, asyncState);
         }
     }
 }
