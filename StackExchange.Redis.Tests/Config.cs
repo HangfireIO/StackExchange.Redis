@@ -179,17 +179,6 @@ namespace StackExchange.Redis.Tests
         }
 
         [Test]
-        public async System.Threading.Tasks.Task TestConfigureAsync()
-        {
-            using(var muxer = Create())
-            {
-                Thread.Sleep(1000);
-                Debug.WriteLine("About to reconfigure.....");
-                await muxer.ConfigureAsync().ConfigureAwait(false);
-                Debug.WriteLine("Reconfigured");
-            }
-        }
-        [Test]
         public void TestConfigureSync()
         {
             using (var muxer = Create())

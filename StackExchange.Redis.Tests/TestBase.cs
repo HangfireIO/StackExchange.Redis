@@ -195,23 +195,9 @@ namespace StackExchange.Redis.Tests
             if (connectTimeout != null) config.ConnectTimeout = connectTimeout.Value;
             if (proxy != null) config.Proxy = proxy.Value;
             var watch = Stopwatch.StartNew();
-            var task = ConnectionMultiplexer.ConnectAsync(config, log ?? Console.WriteLine);
-            if (!task.Wait(config.ConnectTimeout >= (int.MaxValue / 2) ? int.MaxValue : config.ConnectTimeout * 2))
-            {
-                task.ContinueWith(x =>
-                {
-                    try
-                    {
-                        GC.KeepAlive(x.Exception);
-                    }
-                    catch
-                    { }
-                }, TaskContinuationOptions.OnlyOnFaulted);
-                throw new TimeoutException("Connect timeout");
-            }
+            var muxer = ConnectionMultiplexer.Connect(config, log ?? Console.WriteLine);
             watch.Stop();
             Console.WriteLine("Connect took: " + watch.ElapsedMilliseconds + "ms");
-            var muxer = task.Result;
             if (checkConnect)
             {
                 if (!muxer.IsConnected)
