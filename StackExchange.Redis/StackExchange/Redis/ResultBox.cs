@@ -9,6 +9,7 @@ namespace StackExchange.Redis
     {
         protected Exception exception;
         protected object stateOrCompletionSource;
+        protected bool completed;
 
         public void SetState(object state)
         {
@@ -17,6 +18,7 @@ namespace StackExchange.Redis
 
         public void SetException(Exception exception)
         {
+            this.completed = true;
             this.exception = exception;
             //try
             //{
@@ -46,18 +48,26 @@ namespace StackExchange.Redis
 
         public static void UnwrapAndRecycle(ResultBox<T> box, bool recycle, out T value, out Exception exception)
         {
+            UnwrapAndRecycle(box, recycle, out value, out exception, out _);
+        }
+
+        public static void UnwrapAndRecycle(ResultBox<T> box, bool recycle, out T value, out Exception exception, out bool completed)
+        {
             if (box == null)
             {
                 value = default(T);
                 exception = null;
+                completed = false;
             }
             else
             {
                 value = box.value;
                 exception = box.exception;
+                completed = box.completed;
                 box.value = default(T);
                 box.exception = null;
                 box.stateOrCompletionSource = null;
+                box.completed = false;
             }
         }
 
@@ -68,6 +78,8 @@ namespace StackExchange.Redis
 
         public override bool TryComplete(bool isAsync)
         {
+            this.completed = true;
+
             if (stateOrCompletionSource is TaskCompletionSource<T>)
             {
                 var tcs = (TaskCompletionSource<T>)stateOrCompletionSource;

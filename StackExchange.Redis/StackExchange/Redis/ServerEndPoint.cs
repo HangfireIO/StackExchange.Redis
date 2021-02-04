@@ -634,13 +634,6 @@ namespace StackExchange.Redis
             subscription?.ReportNextFailure();
         }
 
-        internal Task<bool> SendTracer(Action<string> log = null)
-        {
-            var msg = GetTracerMessage(false);
-            msg = LoggingMessage.Create(log, msg);
-            return QueueDirectAsync(msg, ResultProcessor.Tracer);
-        }
-
         internal string Summary()
         {
             var sb = new StringBuilder(Format.ToString(endpoint))

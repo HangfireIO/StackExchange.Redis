@@ -191,11 +191,6 @@ namespace StackExchange.Redis
         /// <summary>
         /// Reconfigure the current connections based on the existing configuration
         /// </summary>
-        Task<bool> ConfigureAsync(Action<string> log = null);
-
-        /// <summary>
-        /// Reconfigure the current connections based on the existing configuration
-        /// </summary>
         bool Configure(Action<string> log = null);
 
         /// <summary>

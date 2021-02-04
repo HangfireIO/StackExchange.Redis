@@ -490,7 +490,7 @@ namespace StackExchange.Redis
         }
 
 #pragma warning disable 1998 // NET40 is sync, not async, currently
-        internal async Task ResolveEndPointsAsync(ConnectionMultiplexer multiplexer, Action<string> log)
+        internal void ResolveEndPoints(ConnectionMultiplexer multiplexer, Action<string> log)
         {
             Dictionary<string, IPAddress> cache = new Dictionary<string, IPAddress>(StringComparer.OrdinalIgnoreCase);
             for (int i = 0; i < endpoints.Count; i++)
@@ -512,10 +512,10 @@ namespace StackExchange.Redis
                         else
                         {
                             multiplexer.LogLocked(log, "Using DNS to resolve '{0}'...", dns.Host);
-#if NET40
+#if !CORE_CLR
                             var ips = Dns.GetHostAddresses(dns.Host);
 #else
-                            var ips = await Dns.GetHostAddressesAsync(dns.Host).ObserveErrors().ForAwait();
+                            var ips = Dns.GetHostAddressesAsync(dns.Host).ObserveErrors().ForAwait().GetAwaiter().GetResult();
 #endif
                             if (ips.Length > 0)
                             {
