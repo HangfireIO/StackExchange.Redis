@@ -1152,7 +1152,17 @@ namespace StackExchange.Redis
                     : nameof(SocketManager);
 
                 var thread = new Thread(
-                    () => Reconfigure(false, reconfigureAll, null, blame, cause, publishReconfigure, flags)
+                    () =>
+                    {
+                        try
+                        {
+                            Reconfigure(false, reconfigureAll, null, blame, cause, publishReconfigure, flags);
+                        }
+                        catch (Exception ex)
+                        {
+                            Trace("Exception thrown in Reconfig thread: " + ex);
+                        }
+                    }
 #if !CORE_CLR
                     , 64 * 1024
 #endif
