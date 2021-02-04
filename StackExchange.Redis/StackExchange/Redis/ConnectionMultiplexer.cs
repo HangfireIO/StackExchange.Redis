@@ -1380,7 +1380,7 @@ namespace StackExchange.Redis
                                 var tieMre = new ManualResetEvent(false);
                                 var tieSource = ResultBox<string>.Get(tieMre);
 
-                                msg.SetSource(ResultProcessor.String, source);
+                                msg.SetSource(ResultProcessor.String, tieSource);
                                 if (!server.TryQueueDirect(msg))
                                 {
                                     tieSource.SetException(ExceptionFactory.NoConnectionAvailable(IncludeDetailInExceptions, IncludePerformanceCountersInExceptions, msg.Command, msg, server, GetServerSnapshot()));
@@ -1401,7 +1401,6 @@ namespace StackExchange.Redis
                         for (int i = 0; i < available.Length; i++)
                         {
                             ResultBox<bool>.UnwrapAndRecycle(available[i].Item1, false, out var result, out var exception, out var completed);
-                            var task = available[i];
                             Trace(Format.ToString(endpoints[i]) + ": " + (completed ? "Completed" : "NotCompleted"));
                             if (completed && exception != null)
                             {
