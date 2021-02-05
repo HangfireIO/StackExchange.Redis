@@ -175,7 +175,7 @@ namespace StackExchange.Redis
             // we need a dedicated writer, because when under heavy ambient load
             // (a busy asp.net site, for example), workers are not reliable enough
 #if !CORE_CLR
-            Thread dedicatedWriter = new Thread(writeAllQueues, 64 * 1024); // don't need a huge stack;
+            Thread dedicatedWriter = new Thread(writeAllQueues, 256 * 1024); // don't need a huge stack;
             dedicatedWriter.Priority = useHighPrioritySocketThreads ? ThreadPriority.AboveNormal : ThreadPriority.Normal;
 #else
             Thread dedicatedWriter = new Thread(writeAllQueues);
@@ -396,7 +396,7 @@ namespace StackExchange.Redis
 #if NETSTANDARD1_5
                         var thread = new Thread(writeOneQueue)
 #else
-                        var thread = new Thread(writeOneQueue, 64 * 1024) // don't need a huge stack
+                        var thread = new Thread(writeOneQueue, 256 * 1024) // don't need a huge stack
 #endif
                         {
 #if !NETSTANDARD1_5
@@ -456,7 +456,7 @@ namespace StackExchange.Redis
                         try
                         {
 #if !CORE_CLR
-                            Thread dedicatedReader = new Thread(performSyncRead, 64 * 1024); // don't need a huge stack;
+                            Thread dedicatedReader = new Thread(performSyncRead, 256 * 1024); // don't need a huge stack;
                             dedicatedReader.Priority = useHighPrioritySocketThreads ? ThreadPriority.AboveNormal : ThreadPriority.Normal;
 #else
                             Thread dedicatedReader = new Thread(performSyncRead);

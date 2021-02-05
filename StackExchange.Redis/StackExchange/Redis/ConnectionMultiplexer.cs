@@ -1168,7 +1168,7 @@ namespace StackExchange.Redis
                         }
                     }
 #if !CORE_CLR
-                    , 64 * 1024
+                    , 256 * 1024 // don't need a huge stack
 #endif
                 )
                 {
