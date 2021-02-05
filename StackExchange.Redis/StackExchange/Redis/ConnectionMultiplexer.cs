@@ -1167,9 +1167,6 @@ namespace StackExchange.Redis
                             Trace("Exception thrown in Reconfig thread: " + ex);
                         }
                     }
-#if !CORE_CLR
-                    , 64 * 1024
-#endif
                 )
                 {
                     IsBackground = true,
