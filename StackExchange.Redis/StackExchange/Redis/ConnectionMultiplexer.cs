@@ -862,13 +862,17 @@ namespace StackExchange.Redis
                 // note that task has timeouts internally, so it might take *just over* the regular timeout
                 if (!muxer.Reconfigure(true, false, log, null, "connect"))
                 {
+                    var exception = ExceptionFactory.UnableToConnect(
+                        muxer.RawConfig.AbortOnConnectFail,
+                        muxer.failureMessage ?? "ConnectTimeout");
+
                     if (muxer.RawConfig.AbortOnConnectFail)
                     {
-                        throw ExceptionFactory.UnableToConnect(muxer.RawConfig.AbortOnConnectFail, muxer.failureMessage);
+                        throw exception;
                     }
                     else
                     {
-                        muxer.LastException = ExceptionFactory.UnableToConnect(muxer.RawConfig.AbortOnConnectFail, muxer.failureMessage);
+                        muxer.LastException = exception;
                     }
                 }
 
