@@ -405,7 +405,18 @@ namespace StackExchange.Redis
                             Name = name + ":WriteHelper",
                             IsBackground = true // should not keep process alive
                         };
-                        thread.Start(this);
+
+                        try
+                        {
+                            thread.Start(this);
+                        }
+                        catch (OutOfMemoryException)
+                        {
+                            // For constrained scenarios – we don't need to do anything in this case,
+                            // because the new thread is fully optional, and generic writer thread
+                            // that's started when connection is established will handle the new
+                            // command anyway.
+                        }
                     }
                 }
             }
