@@ -592,7 +592,9 @@ namespace StackExchange.Redis
 
         internal T QueueDirect<T>(Message message, ResultProcessor<T> processor, PhysicalBridge bridge = null)
         {
-            using (var mre = new ManualResetEventSlim(false))
+            var fireAndForget = (message.Flags & CommandFlags.FireAndForget) != 0;
+
+            using (var mre = fireAndForget ? null : new ManualResetEventSlim(false))
             {
                 var source = ResultBox<T>.Get(mre);
                 message.SetSource(processor, source);
@@ -600,6 +602,8 @@ namespace StackExchange.Redis
                 {
                     throw ExceptionFactory.NoConnectionAvailable(multiplexer.IncludeDetailInExceptions, multiplexer.IncludePerformanceCountersInExceptions, message.Command, message, this, multiplexer.GetServerSnapshot());
                 }
+
+                if (fireAndForget) return default(T);
 
                 if (!mre.Wait(Multiplexer.TimeoutMilliseconds))
                 {
