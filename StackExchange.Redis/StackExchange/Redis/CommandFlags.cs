@@ -62,5 +62,12 @@ namespace StackExchange.Redis
         /// Indicates that script-related operations should use EVAL, not SCRIPT LOAD + EVALSHA
         /// </summary>
         NoScriptCache = 512,
+
+        /// <summary>
+        /// Indicates that subscription message handler should be running synchronously in response processing
+        /// thread. This flag should be used with care for short and non-blocking message handlers, otherwise
+        /// response processing will be entirely blocked by such a handler.
+        /// </summary>
+        RunHandlerSynchronously = 1024,
     }
 }

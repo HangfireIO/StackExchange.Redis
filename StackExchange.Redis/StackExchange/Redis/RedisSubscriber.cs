@@ -32,16 +32,18 @@ namespace StackExchange.Redis
         {
             if (handler != null)
             {
+                var asyncHandler = (flags & CommandFlags.RunHandlerSynchronously) == 0;
+
                 lock (subscriptions)
                 {
                     Subscription sub;
                     if (subscriptions.TryGetValue(channel, out sub))
                     {
-                        sub.Add(handler);
+                        sub.Add(asyncHandler, handler);
                     }
                     else
                     {
-                        sub = new Subscription(handler);
+                        sub = new Subscription(asyncHandler, handler);
                         subscriptions.Add(channel, sub);
 
                         // Keeping this inside the `lock` statement to prevent race conditions
@@ -62,16 +64,18 @@ namespace StackExchange.Redis
         {
             if (handler != null)
             {
+                var asyncHandler = (flags & CommandFlags.RunHandlerSynchronously) == 0;
+
                 lock (subscriptions)
                 {
                     Subscription sub;
                     if (subscriptions.TryGetValue(channel, out sub))
                     {
-                        sub.Add(handler);
+                        sub.Add(asyncHandler, handler);
                     }
                     else
                     {
-                        sub = new Subscription(handler);
+                        sub = new Subscription(asyncHandler, handler);
                         subscriptions.Add(channel, sub);
                         var task = sub.SubscribeToServerAsync(this, channel, flags, asyncState, false);
                         if (task != null) return task;
@@ -227,34 +231,34 @@ namespace StackExchange.Redis
 
         private sealed class Subscription
         {
-            private Action<RedisChannel, RedisValue> handler;
+            private Action<RedisChannel, RedisValue> _asyncHandler, _syncHandler;
             private ServerEndPoint owner;
 
-            public Subscription(Action<RedisChannel, RedisValue> value)
+            public Subscription(bool asAsync, Action<RedisChannel, RedisValue> value)
             {
-                handler = value;
+                if (asAsync) _asyncHandler = value;
+                else _syncHandler = value;
             }
-            public void Add(Action<RedisChannel, RedisValue> value)
+            public void Add(bool asAsync, Action<RedisChannel, RedisValue> value)
             {
-                handler += value;
+                if (asAsync) _asyncHandler += value;
+                else _syncHandler += value;
             }
             public ICompletable ForInvoke(RedisChannel channel, RedisValue message)
             {
-                var tmp = handler;
-                return tmp == null ? null : new MessageCompletable(channel, message, tmp);
+                var syncHandler = _syncHandler;
+                var asyncHandler = _asyncHandler;
+                return (syncHandler == null && asyncHandler == null) ? null : new MessageCompletable(channel, message, syncHandler, asyncHandler);
             }
 
             public bool Remove(Action<RedisChannel, RedisValue> value)
             {
-                if (value == null)
-                { // treat as blanket wipe
-                    handler = null;
-                    return true;
-                }
-                else
+                if (value != null)
                 {
-                    return (handler -= value) == null;
+                    _asyncHandler -= value;
+                    _syncHandler -= value;
                 }
+                return _syncHandler == null && _asyncHandler == null;
             }
 
             public void SubscribeToServer(ConnectionMultiplexer multiplexer, RedisChannel channel, CommandFlags flags, bool internalCall)
