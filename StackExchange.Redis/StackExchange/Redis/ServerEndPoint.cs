@@ -590,11 +590,10 @@ namespace StackExchange.Redis
             return tcs.Task;
         }
 
-        internal T QueueDirect<T>(Message message, ResultProcessor<T> processor, PhysicalBridge bridge = null)
+        internal Func<T> QueueDirect<T>(Message message, ResultProcessor<T> processor, PhysicalBridge bridge = null)
         {
-            var fireAndForget = (message.Flags & CommandFlags.FireAndForget) != 0;
-
-            using (var mre = fireAndForget ? null : new ManualResetEventSlim(false))
+            var mre = new ManualResetEventSlim(initialState: false);
+            try
             {
                 var source = ResultBox<T>.Get(mre);
                 message.SetSource(processor, source);
@@ -603,22 +602,37 @@ namespace StackExchange.Redis
                     throw ExceptionFactory.NoConnectionAvailable(multiplexer.IncludeDetailInExceptions, multiplexer.IncludePerformanceCountersInExceptions, message.Command, message, this, multiplexer.GetServerSnapshot());
                 }
 
-                if (fireAndForget) return default(T);
-
-                if (!mre.Wait(Multiplexer.TimeoutMilliseconds))
+                return () =>
                 {
-                    Multiplexer.ThrowTimeoutException(message, this);
-                }
+                    try
+                    {
+                        if ((message.Flags & CommandFlags.FireAndForget) != 0) return default(T);
 
-                ResultBox<T>.UnwrapAndRecycle(source, true, out var result, out var exception);
+                        if (!mre.Wait(Multiplexer.TimeoutMilliseconds))
+                        {
+                            Multiplexer.ThrowTimeoutException(message, this);
+                        }
 
-                if (exception != null)
-                {
-                    throw exception;
-                }
+                        ResultBox<T>.UnwrapAndRecycle(source, true, out var result, out var exception);
 
-                Multiplexer.Trace(message + " received " + result);
-                return result;
+                        if (exception != null)
+                        {
+                            throw exception;
+                        }
+
+                        Multiplexer.Trace(message + " received " + result);
+                        return result;
+                    }
+                    finally
+                    {
+                        mre.Dispose();
+                    }
+                };
+            }
+            catch (Exception)
+            {
+                mre.Dispose();
+                throw;
             }
         }
 

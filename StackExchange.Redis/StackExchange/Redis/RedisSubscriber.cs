@@ -28,7 +28,7 @@ namespace StackExchange.Redis
             return false;
         }
 
-        internal void AddSubscription(RedisChannel channel, Action<RedisChannel, RedisValue> handler, CommandFlags flags)
+        internal Func<bool> AddSubscription(RedisChannel channel, Action<RedisChannel, RedisValue> handler, CommandFlags flags)
         {
             if (handler != null)
             {
@@ -46,18 +46,12 @@ namespace StackExchange.Redis
                         sub = new Subscription(asyncHandler, handler);
                         subscriptions.Add(channel, sub);
 
-                        // Keeping this inside the `lock` statement to prevent race conditions
-                        // where `subscriptions` dictionary and Redis state diverge due to
-                        // interleaved Subscribe/Unsubscribe commands from different threads.
-                        // Actually it can worth adding this to the AddSubscriptionAsync method
-                        // as well, but currently only synchronous case is interesting for us,
-                        // and `lock` statement doesn't support async/await so another locking
-                        // method should also be implemented.
-                        sub.SubscribeToServer(this, channel, flags, false);
+                        return sub.SubscribeToServer(this, channel, flags, false);
                     }
-
                 }
             }
+
+            return null;
         }
 
         internal Task AddSubscriptionAsync(RedisChannel channel, Action<RedisChannel, RedisValue> handler, CommandFlags flags, object asyncState)
@@ -116,24 +110,20 @@ namespace StackExchange.Redis
             if (completable != null) unprocessableCompletionManager.CompleteSyncOrAsync(completable);
         }
 
-        internal void RemoveAllSubscriptions(CommandFlags flags)
+        internal Func<bool> RemoveAllSubscriptions(CommandFlags flags)
         {
+            Func<bool> last = null;
             lock (subscriptions)
             {
                 foreach (var pair in subscriptions)
                 {
                     pair.Value.Remove(null); // always wipes
-                    // Keeping this inside the `lock` statement to prevent race conditions
-                    // where `subscriptions` dictionary and Redis state diverge due to
-                    // interleaved Subscribe/Unsubscribe commands from different threads.
-                    // Actually it can worth adding this to the RemoveAllSubscriptionsAsync method
-                    // as well, but currently only synchronous case is interesting for us,
-                    // and `lock` statement doesn't support async/await so another locking
-                    // method should also be implemented.
-                    pair.Value.UnsubscribeFromServer(pair.Key, flags, false);
+                    var mre = pair.Value.UnsubscribeFromServer(pair.Key, flags, false);
+                    if (mre != null) last = mre;
                 }
                 subscriptions.Clear();
             }
+            return last;
         }
 
         internal Task RemoveAllSubscriptionsAsync(CommandFlags flags, object asyncState)
@@ -152,7 +142,7 @@ namespace StackExchange.Redis
             return last;
         }
 
-        internal void RemoveSubscription(RedisChannel channel, Action<RedisChannel, RedisValue> handler, CommandFlags flags)
+        internal Func<bool> RemoveSubscription(RedisChannel channel, Action<RedisChannel, RedisValue> handler, CommandFlags flags)
         {
             lock (subscriptions)
             {
@@ -161,18 +151,13 @@ namespace StackExchange.Redis
                 {
                     if (sub.Remove(handler))
                     {
-                        // Keeping this inside the `lock` statement to prevent race conditions
-                        // where `subscriptions` dictionary and Redis state diverge due to
-                        // interleaved Subscribe/Unsubscribe commands from different threads.
-                        // Actually it can worth adding this to the RemoveSubscriptionAsync method
-                        // as well, but currently only synchronous case is interesting for us,
-                        // and `lock` statement doesn't support async/await so another locking
-                        // method should also be implemented.
                         subscriptions.Remove(channel);
-                        sub.UnsubscribeFromServer(channel, flags, false);
+                        return sub.UnsubscribeFromServer(channel, flags, false);
                     }
                 }
             }
+
+            return null;
         }
 
         internal Task RemoveSubscriptionAsync(RedisChannel channel, Action<RedisChannel, RedisValue> handler, CommandFlags flags, object asyncState)
@@ -261,16 +246,16 @@ namespace StackExchange.Redis
                 return _syncHandler == null && _asyncHandler == null;
             }
 
-            public void SubscribeToServer(ConnectionMultiplexer multiplexer, RedisChannel channel, CommandFlags flags, bool internalCall)
+            public Func<bool> SubscribeToServer(ConnectionMultiplexer multiplexer, RedisChannel channel, CommandFlags flags, bool internalCall)
             {
                 var cmd = channel.IsPatternBased ? RedisCommand.PSUBSCRIBE : RedisCommand.SUBSCRIBE;
                 var selected = multiplexer.SelectServer(-1, cmd, flags, default(RedisKey));
 
-                if (selected == null || Interlocked.CompareExchange(ref owner, selected, null) != null) return;
+                if (selected == null || Interlocked.CompareExchange(ref owner, selected, null) != null) return null;
 
                 var msg = Message.Create(-1, flags, cmd, channel);
 
-                selected.QueueDirect(msg, ResultProcessor.TrackSubscriptions);
+                return selected.QueueDirect(msg, ResultProcessor.TrackSubscriptions);
             }
 
             public Task SubscribeToServerAsync(ConnectionMultiplexer multiplexer, RedisChannel channel, CommandFlags flags, object asyncState, bool internalCall)
@@ -285,15 +270,15 @@ namespace StackExchange.Redis
                 return selected.QueueDirectAsync(msg, ResultProcessor.TrackSubscriptions, asyncState);
             }
 
-            public void UnsubscribeFromServer(RedisChannel channel, CommandFlags flags, bool internalCall)
+            public Func<bool> UnsubscribeFromServer(RedisChannel channel, CommandFlags flags, bool internalCall)
             {
                 var oldOwner = Interlocked.Exchange(ref owner, null);
-                if (oldOwner == null) return;
+                if (oldOwner == null) return null;
 
                 var cmd = channel.IsPatternBased ? RedisCommand.PUNSUBSCRIBE : RedisCommand.UNSUBSCRIBE;
                 var msg = Message.Create(-1, flags, cmd, channel);
                 if (internalCall) msg.SetInternalCall();
-                oldOwner.QueueDirect(msg, ResultProcessor.TrackSubscriptions);
+                return oldOwner.QueueDirect(msg, ResultProcessor.TrackSubscriptions);
             }
 
             public Task UnsubscribeFromServerAsync(RedisChannel channel, CommandFlags flags, object asyncState, bool internalCall)
@@ -406,7 +391,7 @@ namespace StackExchange.Redis
         public void Subscribe(RedisChannel channel, Action<RedisChannel, RedisValue> handler, CommandFlags flags = CommandFlags.None)
         {
             if (channel.IsNullOrEmpty) throw new ArgumentNullException(nameof(channel));
-            multiplexer.AddSubscription(channel, handler, flags);
+            multiplexer.AddSubscription(channel, handler, flags)?.Invoke();
         }
 
         public Task SubscribeAsync(RedisChannel channel, Action<RedisChannel, RedisValue> handler, CommandFlags flags = CommandFlags.None)
@@ -426,12 +411,13 @@ namespace StackExchange.Redis
         public void Unsubscribe(RedisChannel channel, Action<RedisChannel, RedisValue> handler = null, CommandFlags flags = CommandFlags.None)
         {
             if (channel.IsNullOrEmpty) throw new ArgumentNullException(nameof(channel));
-            multiplexer.RemoveSubscription(channel, handler, flags);
+
+            multiplexer.RemoveSubscription(channel, handler, flags)?.Invoke();
         }
 
         public void UnsubscribeAll(CommandFlags flags = CommandFlags.None)
         {
-            multiplexer.RemoveAllSubscriptions(flags);
+            multiplexer.RemoveAllSubscriptions(flags)?.Invoke();
         }
 
         public Task UnsubscribeAllAsync(CommandFlags flags = CommandFlags.None)
