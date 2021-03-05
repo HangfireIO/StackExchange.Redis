@@ -1631,7 +1631,7 @@ namespace StackExchange.Redis
                 WaitAllIgnoreErrors(tieBreakers, 50, log);
                 for (int i = 0; i < tieBreakers.Length; i++)
                 {
-                    ResultBox<string>.UnwrapAndRecycle(tieBreakers[i].Item1, false, out var result, out var exception, out var completed);
+                    ResultBox<string>.UnwrapAndRecycle(tieBreakers[i].Item1, false, out var result, out var exception);
                     var ep = servers[i].EndPoint;
                     if (exception != null)
                     {
