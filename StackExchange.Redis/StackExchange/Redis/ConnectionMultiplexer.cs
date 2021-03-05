@@ -2218,6 +2218,20 @@ namespace StackExchange.Redis
             throw timeoutEx;
         }
 
+        internal void ThrowIfMultiplexerIsChanging(Message message, ServerEndPoint server)
+        {
+            if (this.changingMultiplexer)
+            {
+                throw ExceptionFactory.NoConnectionAvailable(IncludeDetailInExceptions,
+                    IncludePerformanceCountersInExceptions, message.Command, message, server, GetServerSnapshot());
+            }
+        }
+
+        internal void ThrowIfDisposed()
+        {
+            if (isDisposed) throw new ObjectDisposedException(ToString());
+        }
+
 #if !CORE_CLR
         internal static string GetThreadPoolAndCPUSummary(bool includePerformanceCounters)
         {
@@ -2237,20 +2251,6 @@ namespace StackExchange.Redis
             }
 #endif
             return "unavailable";
-        }
-
-        internal void ThrowIfMultiplexerIsChanging(Message message, ServerEndPoint server)
-        {
-            if (this.changingMultiplexer)
-            {
-                throw ExceptionFactory.NoConnectionAvailable(IncludeDetailInExceptions,
-                    IncludePerformanceCountersInExceptions, message.Command, message, server, GetServerSnapshot());
-            }
-        }
-
-        internal void ThrowIfDisposed()
-        {
-            if (isDisposed) throw new ObjectDisposedException(ToString());
         }
 
         private static int GetThreadPoolStats(out string iocp, out string worker)
@@ -2276,9 +2276,9 @@ namespace StackExchange.Redis
         }
 #endif
 
-            /// <summary>
-            /// Should exceptions include identifiable details? (key names, additional .Data annotations)
-            /// </summary>
+        /// <summary>
+        /// Should exceptions include identifiable details? (key names, additional .Data annotations)
+        /// </summary>
         public bool IncludeDetailInExceptions { get; set; }
 
         /// <summary>
