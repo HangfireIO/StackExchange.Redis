@@ -902,7 +902,7 @@ namespace StackExchange.Redis
                     server = (ServerEndPoint)servers[endpoint];
                     if (server == null)
                     {
-                        if (isDisposed) throw new ObjectDisposedException(ToString());
+                        ThrowIfDisposed();
 
                         server = new ServerEndPoint(this, endpoint, null);
                         // ^^ this could indirectly cause servers to become changes, so treble-check!
@@ -1243,7 +1243,7 @@ namespace StackExchange.Redis
         }
         internal bool Reconfigure(bool first, bool reconfigureAll, Action<string> log, EndPoint blame, string cause, bool publishReconfigure = false, CommandFlags publishReconfigureFlags = CommandFlags.None)
         {
-            if (isDisposed) throw new ObjectDisposedException(ToString());
+            ThrowIfDisposed();
             bool showStats = true;
 
             if (log == null)
@@ -2040,7 +2040,7 @@ namespace StackExchange.Redis
 
         internal Task<T> ExecuteAsyncImpl<T>(Message message, ResultProcessor<T> processor, object state, ServerEndPoint server)
         {
-            if (isDisposed) throw new ObjectDisposedException(ToString());
+            ThrowIfDisposed();
 
             if (message == null)
             {
@@ -2078,7 +2078,7 @@ namespace StackExchange.Redis
         }
         internal T ExecuteSyncImpl<T>(Message message, ResultProcessor<T> processor, ServerEndPoint server)
         {
-            if (isDisposed) throw new ObjectDisposedException(ToString());
+            ThrowIfDisposed();
 
             if (message == null) // fire-and forget could involve a no-op, represented by null - for example Increment by 0
             {
@@ -2224,6 +2224,10 @@ namespace StackExchange.Redis
             }
 #endif
             return "unavailable"; 
+
+        internal void ThrowIfDisposed()
+        {
+            if (isDisposed) throw new ObjectDisposedException(ToString());
         }
 
         private static int GetThreadPoolStats(out string iocp, out string worker)
