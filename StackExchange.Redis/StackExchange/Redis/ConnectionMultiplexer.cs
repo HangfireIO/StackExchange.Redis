@@ -1404,15 +1404,14 @@ namespace StackExchange.Redis
                         EndPointCollection updatedClusterEndpointCollection = null;
                         for (int i = 0; i < available.Length; i++)
                         {
-                            ResultBox<bool>.UnwrapAndRecycle(available[i].Item1, false, out var result, out var exception, out var completed);
-                            Trace(Format.ToString(endpoints[i]) + ": " + (completed ? "Completed" : "NotCompleted"));
-                            if (completed && exception != null)
+                            ResultBox<bool>.UnwrapAndRecycle(available[i].Item1, false, out var result, out var exception);
+                            if (exception != null)
                             {
                                 servers[i].SetUnselectable(UnselectableFlags.DidNotRespond);
                                 LogLocked(log, "{0} faulted: {1}", Format.ToString(endpoints[i]), exception.Message);
                                 failureMessage = exception.Message;
                             }
-                            else if (completed && exception == null)
+                            else if (available[i].Item2.WaitOne(TimeSpan.Zero))
                             {
                                 var server = servers[i];
                                 if (result)
@@ -1634,7 +1633,13 @@ namespace StackExchange.Redis
                 {
                     ResultBox<string>.UnwrapAndRecycle(tieBreakers[i].Item1, false, out var result, out var exception, out var completed);
                     var ep = servers[i].EndPoint;
-                    if (completed && exception == null)
+                    if (exception != null)
+                    {
+                        LogLocked(log, "{0} failed to nominate (faulted)", Format.ToString(ep));
+                        if (exception.Message.StartsWith("MOVED ") || exception.Message.StartsWith("ASK ")) continue;
+                        LogLocked(log, "> {0}", exception.Message);
+                    }
+                    else if (tieBreakers[i].Item2.WaitOne(TimeSpan.Zero))
                     {
                         string s = result;
                         if (string.IsNullOrWhiteSpace(s))
@@ -1648,12 +1653,6 @@ namespace StackExchange.Redis
                             if (!uniques.TryGetValue(s, out count)) count = 0;
                             uniques[s] = count + 1;
                         }
-                    }
-                    else if (completed && exception != null)
-                    {
-                        LogLocked(log, "{0} failed to nominate (faulted)", Format.ToString(ep));
-                        if (exception.Message.StartsWith("MOVED ") || exception.Message.StartsWith("ASK ")) continue;
-                        LogLocked(log, "> {0}", exception.Message);
                     }
                     else
                     {
