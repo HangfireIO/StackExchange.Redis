@@ -815,6 +815,7 @@ namespace StackExchange.Redis
             return fallback;
         }
 
+        volatile bool changingMultiplexer;
         volatile bool isDisposed;
         internal bool IsDisposed => isDisposed;
 
@@ -1910,6 +1911,16 @@ namespace StackExchange.Redis
         /// </summary>
         public void Close(bool allowCommandsToComplete = true)
         {
+            Close(allowCommandsToComplete, false);
+        }
+
+        /// <summary>
+        /// Close all connections and release all resources associated with this object and
+        /// clarify the intention to create a new multiplexer in the near future.
+        /// </summary>
+        public void Close(bool allowCommandsToComplete, bool changingMultiplexer)
+        {
+            this.changingMultiplexer = changingMultiplexer;
             isDisposed = true;
             using (var tmp = pulse)
             {
@@ -2040,6 +2051,7 @@ namespace StackExchange.Redis
 
         internal Task<T> ExecuteAsyncImpl<T>(Message message, ResultProcessor<T> processor, object state, ServerEndPoint server)
         {
+            ThrowIfMultiplexerIsChanging(message, server);
             ThrowIfDisposed();
 
             if (message == null)
@@ -2078,6 +2090,7 @@ namespace StackExchange.Redis
         }
         internal T ExecuteSyncImpl<T>(Message message, ResultProcessor<T> processor, ServerEndPoint server)
         {
+            ThrowIfMultiplexerIsChanging(message, server);
             ThrowIfDisposed();
 
             if (message == null) // fire-and forget could involve a no-op, represented by null - for example Increment by 0
@@ -2224,6 +2237,15 @@ namespace StackExchange.Redis
             }
 #endif
             return "unavailable"; 
+
+        internal void ThrowIfMultiplexerIsChanging(Message message, ServerEndPoint server)
+        {
+            if (this.changingMultiplexer)
+            {
+                throw ExceptionFactory.NoConnectionAvailable(IncludeDetailInExceptions,
+                    IncludePerformanceCountersInExceptions, message.Command, message, server, GetServerSnapshot());
+            }
+        }
 
         internal void ThrowIfDisposed()
         {
