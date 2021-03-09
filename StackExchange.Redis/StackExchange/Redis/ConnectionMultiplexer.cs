@@ -2040,7 +2040,7 @@ namespace StackExchange.Redis
 
         internal Task<T> ExecuteAsyncImpl<T>(Message message, ResultProcessor<T> processor, object state, ServerEndPoint server)
         {
-            if (isDisposed) ThrowNoConnectionAvailable(message, server);
+            if (isDisposed) throw new ObjectDisposedException(ToString());
 
             if (message == null)
             {
@@ -2064,7 +2064,6 @@ namespace StackExchange.Redis
             }
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining)]
         internal static void ThrowFailed<T>(TaskCompletionSource<T> source, Exception unthrownException)
         {
             try
@@ -2079,12 +2078,14 @@ namespace StackExchange.Redis
         }
         internal T ExecuteSyncImpl<T>(Message message, ResultProcessor<T> processor, ServerEndPoint server)
         {
-            if (isDisposed) ThrowNoConnectionAvailable(message, server);
+            if (isDisposed) throw new ObjectDisposedException(ToString());
 
             if (message == null) // fire-and forget could involve a no-op, represented by null - for example Increment by 0
             {
                 return default(T);
             }
+
+            var manager = this.socketManager;
 
             if (message.IsFireAndForget)
             {
@@ -2100,7 +2101,7 @@ namespace StackExchange.Redis
 
                     if (!TryPushMessageToBridge(message, processor, source, ref server))
                     {
-                        ThrowNoConnectionAvailable(message, server);
+                        throw ExceptionFactory.NoConnectionAvailable(IncludeDetailInExceptions, IncludePerformanceCountersInExceptions, message.Command, message, server, GetServerSnapshot());
                     }
 
                     if (completedEvent.Wait(timeoutMilliseconds))
@@ -2118,26 +2119,13 @@ namespace StackExchange.Redis
                     Exception ex;
                     T val;
                     ResultBox<T>.UnwrapAndRecycle(source, true, out val, out ex); // now that we aren't locking it...
-                    if (ex != null) ThrowException(ex);
+                    if (ex != null) throw ex;
                     Trace(message + " received " + val);
                     return val;
                 }
             }
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        private static void ThrowException(Exception ex)
-        {
-            throw ex;
-        }
-        
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        private void ThrowNoConnectionAvailable(Message message, ServerEndPoint server)
-        {
-            throw ExceptionFactory.NoConnectionAvailable(IncludeDetailInExceptions, IncludePerformanceCountersInExceptions, message.Command, message, server, GetServerSnapshot());
-        }
-
-        [MethodImpl(MethodImplOptions.NoInlining)]
         internal void ThrowTimeoutException(Message message, ServerEndPoint server)
         {
             Trace("Timeout performing " + message.ToString());
