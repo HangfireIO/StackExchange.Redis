@@ -154,7 +154,7 @@ namespace StackExchange.Redis
 
         internal void OnConnectionFailed(EndPoint endpoint, ConnectionType connectionType, ConnectionFailureType failureType, Exception exception, bool reconfigure)
         {
-            if (isDisposed) return;
+            if (IsDisposed) return;
             var handler = ConnectionFailed;
             if (handler != null)
             {
@@ -172,7 +172,7 @@ namespace StackExchange.Redis
             try
             {
                 Trace("Internal error: " + origin + ", " + exception == null ? "unknown" : exception.Message);
-                if (isDisposed) return;
+                if (IsDisposed) return;
                 var handler = InternalError;
                 if (handler != null)
                 {
@@ -188,7 +188,7 @@ namespace StackExchange.Redis
 
         internal void OnConnectionRestored(EndPoint endpoint, ConnectionType connectionType)
         {
-            if (isDisposed) return;
+            if (IsDisposed) return;
             var handler = ConnectionRestored;
             if (handler != null)
             {
@@ -202,7 +202,7 @@ namespace StackExchange.Redis
 
         private void OnEndpointChanged(EndPoint endpoint, EventHandler<EndPointEventArgs> handler)
         {
-            if (isDisposed) return;
+            if (IsDisposed) return;
             if (handler != null)
             {
                 unprocessableCompletionManager.CompleteSyncOrAsync(
@@ -225,7 +225,7 @@ namespace StackExchange.Redis
         public event EventHandler<RedisErrorEventArgs> ErrorMessage;
         internal void OnErrorMessage(EndPoint endpoint, string message)
         {
-            if (isDisposed) return;
+            if (IsDisposed) return;
             var handler = ErrorMessage;
             if (handler != null)
             {
@@ -815,9 +815,8 @@ namespace StackExchange.Redis
             return fallback;
         }
 
-        volatile bool changingMultiplexer;
-        volatile bool isDisposed;
-        internal bool IsDisposed => isDisposed;
+        volatile int isDisposed;
+        internal bool IsDisposed => isDisposed > 0;
 
         static ConnectionMultiplexer CreateMultiplexer(object configuration)
         {
@@ -903,7 +902,7 @@ namespace StackExchange.Redis
                     server = (ServerEndPoint)servers[endpoint];
                     if (server == null)
                     {
-                        ThrowIfDisposed();
+                        ThrowIfDisposedOrMultiplexerIsChanging();
 
                         server = new ServerEndPoint(this, endpoint, null);
                         // ^^ this could indirectly cause servers to become changes, so treble-check!
@@ -1010,7 +1009,7 @@ namespace StackExchange.Redis
         private static int lastGlobalHeartbeatTicks = Environment.TickCount;
         internal long LastHeartbeatSecondsAgo {
             get {
-                if (isDisposed) return -1;
+                if (IsDisposed) return -1;
                 return unchecked(Environment.TickCount - VolatileWrapper.Read(ref lastHeartbeatTicks)) / 1000;
             }
         }
@@ -1244,7 +1243,7 @@ namespace StackExchange.Redis
         }
         internal bool Reconfigure(bool first, bool reconfigureAll, Action<string> log, EndPoint blame, string cause, bool publishReconfigure = false, CommandFlags publishReconfigureFlags = CommandFlags.None)
         {
-            ThrowIfDisposed();
+            ThrowIfDisposedOrMultiplexerIsChanging();
             bool showStats = true;
 
             if (log == null)
@@ -1920,8 +1919,11 @@ namespace StackExchange.Redis
         /// </summary>
         public void Close(bool allowCommandsToComplete, bool changingMultiplexer)
         {
-            this.changingMultiplexer = changingMultiplexer;
-            isDisposed = true;
+            if (!IsDisposed)
+            {
+                isDisposed = changingMultiplexer ? 2 : 1;
+            }
+
             using (var tmp = pulse)
             {
                 pulse = null;
@@ -2023,9 +2025,21 @@ namespace StackExchange.Redis
         /// <summary>
         /// Close all connections and release all resources associated with this object
         /// </summary>
-        public async Task CloseAsync(bool allowCommandsToComplete = true)
+        public Task CloseAsync(bool allowCommandsToComplete = true)
         {
-            isDisposed = true;
+            return CloseAsync(allowCommandsToComplete, false);
+        }
+
+        /// <summary>
+        /// Close all connections and release all resources associated with this object
+        /// </summary>
+        public async Task CloseAsync(bool allowCommandsToComplete, bool changingMultiplexer)
+        {
+            if (!IsDisposed)
+            {
+                isDisposed = changingMultiplexer ? 2 : 1;
+            }
+
             using (var tmp = pulse)
             {
                 pulse = null;
@@ -2045,14 +2059,13 @@ namespace StackExchange.Redis
         /// </summary>
         public void Dispose()
         {
-            Close(!isDisposed);
+            Close(!IsDisposed);
         }
 
 
         internal Task<T> ExecuteAsyncImpl<T>(Message message, ResultProcessor<T> processor, object state, ServerEndPoint server)
         {
-            ThrowIfMultiplexerIsChanging(message, server);
-            ThrowIfDisposed();
+            ThrowIfDisposedOrMultiplexerIsChanging(message, server);
 
             if (message == null)
             {
@@ -2090,8 +2103,7 @@ namespace StackExchange.Redis
         }
         internal T ExecuteSyncImpl<T>(Message message, ResultProcessor<T> processor, ServerEndPoint server)
         {
-            ThrowIfMultiplexerIsChanging(message, server);
-            ThrowIfDisposed();
+            ThrowIfDisposedOrMultiplexerIsChanging(message, server);
 
             if (message == null) // fire-and forget could involve a no-op, represented by null - for example Increment by 0
             {
@@ -2218,18 +2230,13 @@ namespace StackExchange.Redis
             throw timeoutEx;
         }
 
-        internal void ThrowIfMultiplexerIsChanging(Message message, ServerEndPoint server)
+        internal void ThrowIfDisposedOrMultiplexerIsChanging(Message message = null, ServerEndPoint server = null)
         {
-            if (this.changingMultiplexer)
-            {
-                throw ExceptionFactory.NoConnectionAvailable(IncludeDetailInExceptions,
-                    IncludePerformanceCountersInExceptions, message.Command, message, server, GetServerSnapshot());
-            }
-        }
+            var reason = isDisposed;
 
-        internal void ThrowIfDisposed()
-        {
-            if (isDisposed) throw new ObjectDisposedException(ToString());
+            if (reason == 1) throw new ObjectDisposedException(ToString());
+            if (reason == 2 && message != null && server != null) throw ExceptionFactory.NoConnectionAvailable(IncludeDetailInExceptions,
+                IncludePerformanceCountersInExceptions, message.Command, message, server, GetServerSnapshot());
         }
 
 #if !CORE_CLR

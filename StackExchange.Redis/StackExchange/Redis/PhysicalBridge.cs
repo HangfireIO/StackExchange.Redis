@@ -120,8 +120,7 @@ namespace StackExchange.Redis
 
         public bool TryEnqueue(Message message, bool isSlave)
         {
-            Multiplexer.ThrowIfMultiplexerIsChanging(message, ServerEndPoint);
-            if (isDisposed) throw new ObjectDisposedException(Name);
+            Multiplexer.ThrowIfDisposedOrMultiplexerIsChanging(message, ServerEndPoint);
             if (!IsConnected)
             {
                 if (message.IsInternalCall)
@@ -498,8 +497,7 @@ namespace StackExchange.Redis
         internal bool TryEnqueue(List<Message> messages, bool isSlave)
         {
             if (messages == null || messages.Count == 0) return true;
-            Multiplexer.ThrowIfMultiplexerIsChanging(messages[0], ServerEndPoint);
-            if (isDisposed) throw new ObjectDisposedException(Name);
+            Multiplexer.ThrowIfDisposedOrMultiplexerIsChanging(messages[0], ServerEndPoint);
 
             if (!IsConnected)
             {
