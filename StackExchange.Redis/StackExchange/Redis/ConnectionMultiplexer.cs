@@ -2236,8 +2236,7 @@ namespace StackExchange.Redis
                 return Math.Round(systemCPU, 2) + "%";
             }
 #endif
-            return "unavailable";
-        }
+            return "unavailable"; 
 
         internal void ThrowIfMultiplexerIsChanging(Message message, ServerEndPoint server)
         {
