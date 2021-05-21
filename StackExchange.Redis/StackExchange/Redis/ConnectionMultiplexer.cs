@@ -1116,36 +1116,63 @@ namespace StackExchange.Redis
             return new RedisServer(this, server, asyncState);
         }
 
-
-        [Conditional("VERBOSE")]
         internal void Trace(string message, [System.Runtime.CompilerServices.CallerMemberName] string category = null)
         {
             OnTrace(message, category);
         }
-        [Conditional("VERBOSE")]
+
         internal void Trace(bool condition, string message, [System.Runtime.CompilerServices.CallerMemberName] string category = null)
         {
             if (condition) OnTrace(message, category);
         }
 
-        partial void OnTrace(string message, string category);
-        static partial void OnTraceWithoutContext(string message, string category);
+        private static Action<string, Exception> Logger;
 
-        [Conditional("VERBOSE")]
+        /// <summary>
+        /// Sets a global logging action for diagnostic purposes.
+        /// </summary>
+        public static void SetLoggingAction(Action<string, Exception> logger)
+        {
+            Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        }
+
+        private void OnTrace(string message, string category)
+        {
+            if (!String.IsNullOrEmpty(category))
+            {
+                Logger(category + ": " + message, null);
+            }
+            else
+            {
+                Logger(message, null);
+            }
+        }
+
+        private static void OnTraceWithoutContext(string message, string category, Exception exception)
+        {
+            if (!String.IsNullOrEmpty(category))
+            {
+                Logger(category + ": " + message, exception);
+            }
+            else
+            {
+                Logger(message, exception);
+            }
+        }
+
         internal static void TraceExceptionWithoutContext(Exception exception, string message = null, [System.Runtime.CompilerServices.CallerMemberName] string category = null)
         {
-            OnTraceWithoutContext(message + (exception?.ToString() ?? "(no exception)"), category);
+            OnTraceWithoutContext(message + (exception?.Message ?? "(no exception)"), category, exception);
         }
 
-        [Conditional("VERBOSE")]
         internal static void TraceWithoutContext(string message, [System.Runtime.CompilerServices.CallerMemberName] string category = null)
         {
-            OnTraceWithoutContext(message, category);
+            OnTraceWithoutContext(message, category, null);
         }
-        [Conditional("VERBOSE")]
+
         internal static void TraceWithoutContext(bool condition, string message, [System.Runtime.CompilerServices.CallerMemberName] string category = null)
         {
-            if(condition) OnTraceWithoutContext(message, category);
+            if(condition) OnTraceWithoutContext(message, category, null);
         }
 
         private readonly CompletionManager unprocessableCompletionManager;
