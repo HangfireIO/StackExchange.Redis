@@ -19,9 +19,13 @@ namespace StackExchange.Redis
                 foreach (EventHandler<T> sub in handler.GetInvocationList())
                 {
                     try
-                    { sub.Invoke(sender, args); }
+                    {
+                        sub.Invoke(sender, args);
+                    }
                     catch (Exception ex) when (!(ex is OutOfMemoryException))
-                    { }
+                    {
+                        TraceExceptionWithoutContext(ex);
+                    }
                 }
                 return true;
             }

@@ -174,6 +174,7 @@ namespace StackExchange.Redis
             }
             catch (Exception ex) when (!(ex is OutOfMemoryException))
             {
+                ConnectionMultiplexer.TraceExceptionWithoutContext(ex);
                 return false;
             }
         }

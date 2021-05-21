@@ -767,9 +767,13 @@ namespace StackExchange.Redis
                     case ResultType.BulkString:
                         string nodes = result.GetString();
                         try
-                        { ClusterNodesProcessor.Parse(connection, nodes); }
+                        {
+                            ClusterNodesProcessor.Parse(connection, nodes);
+                        }
                         catch (Exception ex) when (!(ex is OutOfMemoryException))
-                        { /* tralalalala */}
+                        {
+                            ConnectionMultiplexer.TraceExceptionWithoutContext(ex);
+                        }
                         SetResult(message, nodes);
                         return true;
                 }

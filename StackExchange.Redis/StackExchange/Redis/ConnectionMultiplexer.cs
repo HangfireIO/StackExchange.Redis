@@ -182,7 +182,9 @@ namespace StackExchange.Redis
                 }
             }
             catch (Exception ex) when (!(ex is OutOfMemoryException))
-            { // our internal error event failed; whatcha gonna do, exactly?
+            {
+                // our internal error event failed; whatcha gonna do, exactly?
+                ConnectionMultiplexer.TraceExceptionWithoutContext(ex);
             }
         }
 
@@ -580,7 +582,9 @@ namespace StackExchange.Redis
                 if (Task.WaitAll(tasks, timeout)) return true;
             }
             catch (Exception ex) when (!(ex is OutOfMemoryException))
-            { }
+            {
+                TraceExceptionWithoutContext(ex);
+            }
             // if we get problems, need to give the non-failing ones time to finish
             // to be fair and reasonable
             for (int i = 0; i < tasks.Length; i++)
@@ -595,7 +599,9 @@ namespace StackExchange.Redis
                         task.Wait(remaining);
                     }
                     catch (Exception ex) when (!(ex is OutOfMemoryException))
-                    { }
+                    {
+                        TraceExceptionWithoutContext(ex);
+                    }
                 }
             }
             return false;
@@ -716,7 +722,9 @@ namespace StackExchange.Redis
                 return all;
             }
             catch (Exception ex) when (!(ex is OutOfMemoryException))
-            { }
+            {
+                TraceExceptionWithoutContext(ex);
+            }
 
             // if we get problems, need to give the non-failing ones time to finish
             // to be fair and reasonable
@@ -743,7 +751,9 @@ namespace StackExchange.Redis
                         await any.ForAwait();
                     }
                     catch (Exception ex) when (!(ex is OutOfMemoryException))
-                    { }
+                    {
+                        TraceExceptionWithoutContext(ex);
+                    }
                 }
             }
 #if !CORE_CLR
@@ -881,7 +891,17 @@ namespace StackExchange.Redis
             }
             finally
             {
-                if (killMe != null) try { killMe.Dispose(); } catch (Exception ex) when (!(ex is OutOfMemoryException)) { }
+                if (killMe != null)
+                {
+                    try
+                    {
+                        killMe.Dispose();
+                    }
+                    catch (Exception ex) when (!(ex is OutOfMemoryException))
+                    {
+                        TraceExceptionWithoutContext(ex);
+                    }
+                }
             }
         }
 
@@ -1583,7 +1603,9 @@ namespace StackExchange.Redis
                         PublishReconfigureImpl(publishReconfigureFlags);
                     }
                     catch (Exception ex) when (!(ex is OutOfMemoryException))
-                    { }
+                    {
+                        TraceExceptionWithoutContext(ex);
+                    }
                 }
                 return true;
 

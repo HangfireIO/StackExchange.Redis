@@ -101,12 +101,26 @@ namespace StackExchange.Redis
         }
         private static readonly ParameterizedThreadStart writeAllQueues = context =>
         {
-            try { ((SocketManager)context).WriteAllQueues(); } catch (Exception ex) when (!(ex is OutOfMemoryException)) { }
+            try
+            {
+                ((SocketManager) context).WriteAllQueues();
+            }
+            catch (Exception ex) when (!(ex is OutOfMemoryException))
+            {
+                ConnectionMultiplexer.TraceExceptionWithoutContext(ex);
+            }
         };
 
         private static readonly ParameterizedThreadStart writeOneQueue = context =>
         {
-            try { ((SocketManager)context).WriteOneQueue(); } catch (Exception ex) when (!(ex is OutOfMemoryException)) { }
+            try
+            {
+                ((SocketManager) context).WriteOneQueue();
+            }
+            catch (Exception ex) when (!(ex is OutOfMemoryException))
+            {
+                ConnectionMultiplexer.TraceExceptionWithoutContext(ex);
+            }
         };
 
         private readonly string name;
@@ -517,7 +531,14 @@ namespace StackExchange.Redis
 
         private static readonly ParameterizedThreadStart performSyncRead = context =>
         {
-            try { ((ISocketCallback)context).Read(); } catch (Exception ex) when (!(ex is OutOfMemoryException)) { }
+            try
+            {
+                ((ISocketCallback) context).Read();
+            }
+            catch (Exception ex) when (!(ex is OutOfMemoryException))
+            {
+                ConnectionMultiplexer.TraceExceptionWithoutContext(ex);
+            }
         };
 
         partial void OnDispose();
@@ -533,11 +554,32 @@ namespace StackExchange.Redis
             if (socket != null)
             {
                 OnShutdown(socket);
-                try { socket.Shutdown(SocketShutdown.Both); } catch (Exception ex) when (!(ex is OutOfMemoryException)) { }
+                try
+                {
+                    socket.Shutdown(SocketShutdown.Both);
+                }
+                catch (Exception ex) when (!(ex is OutOfMemoryException))
+                {
+                    ConnectionMultiplexer.TraceExceptionWithoutContext(ex);
+                }
 #if !CORE_CLR
-                try { socket.Close(); } catch (Exception ex) when (!(ex is OutOfMemoryException)) { }
+                try
+                {
+                    socket.Close();
+                }
+                catch (Exception ex) when (!(ex is OutOfMemoryException))
+                {
+                    ConnectionMultiplexer.TraceExceptionWithoutContext(ex);
+                }
 #endif
-                try { socket.Dispose(); } catch (Exception ex) when (!(ex is OutOfMemoryException)) { }
+                try
+                {
+                    socket.Dispose();
+                }
+                catch (Exception ex) when (!(ex is OutOfMemoryException))
+                {
+                    ConnectionMultiplexer.TraceExceptionWithoutContext(ex);
+                }
             }
         }
 

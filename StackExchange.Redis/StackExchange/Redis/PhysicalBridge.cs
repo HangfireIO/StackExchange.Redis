@@ -285,7 +285,9 @@ namespace StackExchange.Redis
                     connection.Dispose();
                 }
                 catch (Exception ex) when (!(ex is OutOfMemoryException))
-                { }
+                {
+                    ConnectionMultiplexer.TraceExceptionWithoutContext(ex);
+                }
             }
         }
 
@@ -360,7 +362,14 @@ namespace StackExchange.Redis
             }
             else
             {
-                try { connection.Dispose(); } catch (Exception ex) when (!(ex is OutOfMemoryException)) { }
+                try
+                {
+                    connection.Dispose();
+                }
+                catch (Exception ex) when (!(ex is OutOfMemoryException))
+                {
+                    ConnectionMultiplexer.TraceExceptionWithoutContext(ex);
+                }
             }
         }
 

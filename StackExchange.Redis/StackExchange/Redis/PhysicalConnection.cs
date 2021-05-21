@@ -152,17 +152,45 @@ namespace StackExchange.Redis
             {
                 Multiplexer.Trace("Disconnecting...", physicalName);
 #if !CORE_CLR
-                try { outStream.Close(); } catch (Exception ex) when (!(ex is OutOfMemoryException)) { }
+                try
+                {
+                    outStream.Close();
+                }
+                catch (Exception ex) when (!(ex is OutOfMemoryException))
+                {
+                    ConnectionMultiplexer.TraceExceptionWithoutContext(ex);
+                }
 #endif
-                try { outStream.Dispose(); } catch (Exception ex) when (!(ex is OutOfMemoryException)) { }
+                try
+                {
+                    outStream.Dispose();
+                }
+                catch (Exception ex) when (!(ex is OutOfMemoryException))
+                {
+                    ConnectionMultiplexer.TraceExceptionWithoutContext(ex);
+                }
                 outStream = null;
             }
             if (netStream != null)
             {
 #if !CORE_CLR
-                try { netStream.Close(); } catch (Exception ex) when (!(ex is OutOfMemoryException)) { }
+                try
+                {
+                    netStream.Close();
+                }
+                catch (Exception ex) when (!(ex is OutOfMemoryException))
+                {
+                    ConnectionMultiplexer.TraceExceptionWithoutContext(ex);
+                }
 #endif
-                try { netStream.Dispose(); } catch (Exception ex) when (!(ex is OutOfMemoryException)) { }
+                try
+                {
+                    netStream.Dispose();
+                }
+                catch (Exception ex) when (!(ex is OutOfMemoryException))
+                {
+                    ConnectionMultiplexer.TraceExceptionWithoutContext(ex);
+                }
                 netStream = null;
             }
             if (socketToken.HasValue)
@@ -797,8 +825,11 @@ namespace StackExchange.Redis
                 {
                     return delegate { return new X509Certificate2(pfxPath, pfxPassword ?? "", flags ?? X509KeyStorageFlags.DefaultKeySet); };
                 }
-            } catch (Exception ex) when (!(ex is OutOfMemoryException))
-            { }
+            }
+            catch (Exception ex) when (!(ex is OutOfMemoryException))
+            {
+                ConnectionMultiplexer.TraceExceptionWithoutContext(ex);
+            }
             return null;
         }
         bool ISocketCallback.Connected(Stream stream, Action<string> log)
