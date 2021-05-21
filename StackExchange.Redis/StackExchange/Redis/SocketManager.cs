@@ -457,7 +457,7 @@ namespace StackExchange.Redis
                         { callback.StartReading(); }
                         catch (Exception ex) when (!(ex is OutOfMemoryException))
                         {
-                            ConnectionMultiplexer.TraceWithoutContext(ex.Message);
+                            ConnectionMultiplexer.TraceExceptionWithoutContext(ex);
                             Shutdown(socket);
                         }
                         break;
@@ -477,7 +477,7 @@ namespace StackExchange.Redis
                         }
                         catch (Exception ex) when (!(ex is OutOfMemoryException))
                         {
-                            ConnectionMultiplexer.TraceWithoutContext(ex.Message);
+                            ConnectionMultiplexer.TraceExceptionWithoutContext(ex);
                             Shutdown(socket);
                         }
                         break;
@@ -496,20 +496,20 @@ namespace StackExchange.Redis
                     { tuple.Item2.Error(null); }
                     catch (Exception inner) when (!(inner is OutOfMemoryException))
                     {
-                        ConnectionMultiplexer.TraceWithoutContext(inner.Message);
+                        ConnectionMultiplexer.TraceExceptionWithoutContext(inner);
                     }
                 }
             }
             catch(Exception outer) when (!(outer is OutOfMemoryException))
             {
-                ConnectionMultiplexer.TraceWithoutContext(outer.Message);
+                ConnectionMultiplexer.TraceExceptionWithoutContext(outer);
                 if (tuple != null)
                 {
                     try
                     { tuple.Item2.Error(outer); }
                     catch (Exception inner) when (!(inner is OutOfMemoryException))
                     {
-                        ConnectionMultiplexer.TraceWithoutContext(inner.Message);
+                        ConnectionMultiplexer.TraceExceptionWithoutContext(inner);
                     }
                 }
             }

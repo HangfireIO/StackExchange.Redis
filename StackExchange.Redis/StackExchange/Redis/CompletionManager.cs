@@ -101,7 +101,7 @@ namespace StackExchange.Redis
             }
             catch (Exception ex) when (!(ex is OutOfMemoryException))
             {
-                ConnectionMultiplexer.TraceWithoutContext("Async completion error: " + ex.Message);
+                ConnectionMultiplexer.TraceExceptionWithoutContext(ex, "Async completion error: ");
             }
         }
 
@@ -164,7 +164,7 @@ namespace StackExchange.Redis
                     }
                     catch (Exception ex) when (!(ex is OutOfMemoryException))
                     {
-                        multiplexer.Trace("Async completion error: " + ex.Message, name);
+                        ConnectionMultiplexer.TraceExceptionWithoutContext(ex, "Async completion error: ", name);
                         Interlocked.Increment(ref failedAsync);
                     }
                     total++;

@@ -171,7 +171,7 @@ namespace StackExchange.Redis
         {
             try
             {
-                Trace("Internal error: " + origin + ", " + exception == null ? "unknown" : exception.Message);
+                TraceExceptionWithoutContext(exception, "Internal error: " + origin, origin);
                 if (isDisposed) return;
                 var handler = InternalError;
                 if (handler != null)
@@ -1112,6 +1112,12 @@ namespace StackExchange.Redis
         static partial void OnTraceWithoutContext(string message, string category);
 
         [Conditional("VERBOSE")]
+        internal static void TraceExceptionWithoutContext(Exception exception, string message = null, [System.Runtime.CompilerServices.CallerMemberName] string category = null)
+        {
+            OnTraceWithoutContext(message + (exception?.ToString() ?? "(no exception)"), category);
+        }
+
+        [Conditional("VERBOSE")]
         internal static void TraceWithoutContext(string message, [System.Runtime.CompilerServices.CallerMemberName] string category = null)
         {
             OnTraceWithoutContext(message, category);
@@ -1164,7 +1170,7 @@ namespace StackExchange.Redis
                         }
                         catch (Exception ex)
                         {
-                            Trace("Exception thrown in Reconfig thread: " + ex);
+                            TraceExceptionWithoutContext(ex);
                         }
                     }
 #if !CORE_CLR
@@ -1583,7 +1589,7 @@ namespace StackExchange.Redis
 
             } catch (Exception ex) when (!(ex is OutOfMemoryException))
             {
-                Trace(ex.Message);
+                TraceExceptionWithoutContext(ex);
                 throw;
             }
             finally

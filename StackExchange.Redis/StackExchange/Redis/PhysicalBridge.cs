@@ -850,7 +850,7 @@ namespace StackExchange.Redis
             }
             catch (Exception ex) when (!(ex is OutOfMemoryException))
             {
-                Trace("Write failed: " + ex.Message);
+                ConnectionMultiplexer.TraceExceptionWithoutContext(ex, "Write failed: ");
                 message.Fail(ConnectionFailureType.InternalFailure, ex);
                 CompleteSyncOrAsync(message);
 
