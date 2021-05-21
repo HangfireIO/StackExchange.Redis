@@ -1138,25 +1138,39 @@ namespace StackExchange.Redis
 
         private void OnTrace(string message, string category)
         {
-            if (!String.IsNullOrEmpty(category))
+            try
             {
-                Logger(category + ": " + message, null);
+                if (!String.IsNullOrEmpty(category))
+                {
+                    Logger(category + ": " + message, null);
+                }
+                else
+                {
+                    Logger(message, null);
+                }
             }
-            else
+            catch
             {
-                Logger(message, null);
+                // 
             }
         }
 
         private static void OnTraceWithoutContext(string message, string category, Exception exception)
         {
-            if (!String.IsNullOrEmpty(category))
+            try
             {
-                Logger(category + ": " + message, exception);
+                if (!String.IsNullOrEmpty(category))
+                {
+                    Logger(category + ": " + message, exception);
+                }
+                else
+                {
+                    Logger(message, exception);
+                }
             }
-            else
+            catch
             {
-                Logger(message, exception);
+                // 
             }
         }
 
