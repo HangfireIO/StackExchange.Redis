@@ -1310,7 +1310,7 @@ namespace StackExchange.Redis
         }
         internal bool Reconfigure(bool first, bool reconfigureAll, Action<string> log, EndPoint blame, string cause, bool publishReconfigure = false, CommandFlags publishReconfigureFlags = CommandFlags.None)
         {
-            if (isDisposed) throw new ObjectDisposedException(ToString());
+            if (isDisposed) return false;
             bool showStats = true;
 
             if (log == null)
