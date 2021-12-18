@@ -558,6 +558,9 @@ namespace StackExchange.Redis
                 {
                     socket.Shutdown(SocketShutdown.Both);
                 }
+                catch (ObjectDisposedException)
+                {
+                }
                 catch (Exception ex) when (!(ex is OutOfMemoryException))
                 {
                     ConnectionMultiplexer.TraceExceptionWithoutContext(ex);
@@ -566,6 +569,9 @@ namespace StackExchange.Redis
                 try
                 {
                     socket.Close();
+                }
+                catch (ObjectDisposedException)
+                {
                 }
                 catch (Exception ex) when (!(ex is OutOfMemoryException))
                 {
