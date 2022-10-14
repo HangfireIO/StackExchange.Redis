@@ -556,39 +556,45 @@ namespace StackExchange.Redis
                 OnShutdown(socket);
                 try
                 {
-                    socket.Shutdown(SocketShutdown.Both);
-                }
-                catch (ObjectDisposedException)
-                {
-                }
-                catch (SocketException)
-                {
-                    // Socket might not be connected yet
-                }
-                catch (Exception ex) when (!(ex is OutOfMemoryException))
-                {
-                    ConnectionMultiplexer.TraceExceptionWithoutContext(ex);
-                }
+                    try
+                    {
+                        socket.Shutdown(SocketShutdown.Both);
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                    }
+                    catch (SocketException)
+                    {
+                        // Socket might not be connected yet
+                    }
+                    catch (Exception ex) when (!(ex is OutOfMemoryException))
+                    {
+                        ConnectionMultiplexer.TraceExceptionWithoutContext(ex);
+                    }
 #if !CORE_CLR
-                try
-                {
-                    socket.Close();
-                }
-                catch (ObjectDisposedException)
-                {
-                }
-                catch (Exception ex) when (!(ex is OutOfMemoryException))
-                {
-                    ConnectionMultiplexer.TraceExceptionWithoutContext(ex);
-                }
+                    try
+                    {
+                        socket.Close();
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                    }
+                    catch (Exception ex) when (!(ex is OutOfMemoryException))
+                    {
+                        ConnectionMultiplexer.TraceExceptionWithoutContext(ex);
+                    }
 #endif
-                try
-                {
-                    socket.Dispose();
                 }
-                catch (Exception ex) when (!(ex is OutOfMemoryException))
+                finally
                 {
-                    ConnectionMultiplexer.TraceExceptionWithoutContext(ex);
+                    try
+                    {
+                        socket.Dispose();
+                    }
+                    catch (Exception ex) when (!(ex is OutOfMemoryException))
+                    {
+                        ConnectionMultiplexer.TraceExceptionWithoutContext(ex);
+                    }
                 }
             }
         }
