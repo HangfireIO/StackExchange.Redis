@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -807,7 +808,21 @@ namespace StackExchange.Redis
             return this.socketToken.Available;
         }
 
-        static LocalCertificateSelectionCallback GetAmbientCertificateCallback()
+        private static RemoteCertificateValidationCallback GetAmbientIssuerCertificateCallback()
+        {
+            try
+            {
+                var issuerPath = Environment.GetEnvironmentVariable("SERedis_IssuerCertPath");
+                if (!string.IsNullOrEmpty(issuerPath)) return ConfigurationOptions.TrustIssuerCallback(issuerPath);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+            return null;
+        }
+
+        static LocalCertificateSelectionCallback GetAmbientClientCertificateCallback()
         {
             try
             {
@@ -849,8 +864,9 @@ namespace StackExchange.Redis
                     var host = config.SslHost;
                     if (string.IsNullOrWhiteSpace(host)) host = Format.ToStringHostOnly(Bridge.ServerEndPoint.EndPoint);
 
-                    var ssl = new SslStream(stream, false, config.CertificateValidationCallback,
-                        config.CertificateSelectionCallback ?? GetAmbientCertificateCallback()
+                    var ssl = new SslStream(stream, false,
+                        config.CertificateValidationCallback ?? GetAmbientIssuerCertificateCallback(),
+                        config.CertificateSelectionCallback ?? GetAmbientClientCertificateCallback()
 #if !__MonoCS__
                         , EncryptionPolicy.RequireEncryption
 #endif
