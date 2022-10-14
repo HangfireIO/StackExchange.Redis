@@ -865,8 +865,8 @@ namespace StackExchange.Redis
                     }
                     catch (AuthenticationException authexception)
                     {
-                        RecordConnectionFailed(ConnectionFailureType.AuthenticationFailure, authexception);
-                        Multiplexer.Trace("Encryption failure");
+                        Multiplexer.LogLocked(log, $"SSL authentication exception: {(authexception.InnerException ?? authexception).Message}");
+                        RecordConnectionFailed(ConnectionFailureType.AuthenticationFailure, authexception.InnerException ?? authexception);
                         return false;
                     }
                     stream = ssl;
