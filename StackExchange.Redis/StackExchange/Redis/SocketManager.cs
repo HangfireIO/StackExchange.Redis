@@ -561,6 +561,10 @@ namespace StackExchange.Redis
                 catch (ObjectDisposedException)
                 {
                 }
+                catch (SocketException)
+                {
+                    // Socket might not be connected yet
+                }
                 catch (Exception ex) when (!(ex is OutOfMemoryException))
                 {
                     ConnectionMultiplexer.TraceExceptionWithoutContext(ex);
