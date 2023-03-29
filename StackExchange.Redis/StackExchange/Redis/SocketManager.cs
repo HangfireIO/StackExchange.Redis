@@ -400,37 +400,7 @@ namespace StackExchange.Redis
                 lock (writeQueue)
                 {
                     writeQueue.Enqueue(bridge);
-                    if (writeQueue.Count == 1)
-                    {
-                        Monitor.PulseAll(writeQueue);
-                    }
-                    else if (writeQueue.Count >= 2)
-                    { 
-                        // struggling are we? let's have some help dealing with the backlog
-#if NETSTANDARD1_5
-                        var thread = new Thread(writeOneQueue)
-#else
-                        var thread = new Thread(writeOneQueue, 256 * 1024) // don't need a huge stack
-#endif
-                        {
-#if !NETSTANDARD1_5
-                            Priority = useHighPrioritySocketThreads ? ThreadPriority.AboveNormal : ThreadPriority.Normal,
-#endif
-                            Name = name + ":WriteHelper",
-                            IsBackground = true // should not keep process alive
-                        };
-
-                        try
-                        {
-                            thread.Start(this);
-                        }
-                        catch (OutOfMemoryException)
-                        {
-                            // For constrained scenarios, where 256KB is too much, we are simply
-                            // signaling the generic writer thread.
-                            Monitor.PulseAll(writeQueue);
-                        }
-                    }
+                    Monitor.PulseAll(writeQueue);
                 }
             }
         }
