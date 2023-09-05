@@ -100,7 +100,7 @@ namespace StackExchange.Redis
 
         public static readonly ResultProcessor<KeyValuePair<string, string>[][]>
             SentinelArrayOfArrays = new SentinelArrayOfArraysProcessor();
-
+        
         public static readonly ResultProcessor<EndPoint[]>
             SentinelAddressesEndPoints = new SentinelGetSentinelAddressesProcessor();
 
@@ -1258,134 +1258,6 @@ The coordinates as a two items x,y array (longitude,latitude).
                 return false;
             }
         }
-        private class ScriptResultProcessor : ResultProcessor<RedisResult>
-        {
-            static readonly byte[] NOSCRIPT = Encoding.UTF8.GetBytes("NOSCRIPT ");
-            public override bool SetResult(PhysicalConnection connection, Message message, RawResult result)
-            {
-                if (result.Type == ResultType.Error && result.AssertStarts(NOSCRIPT))
-                { // scripts are not flushed individually, so assume the entire script cache is toast ("SCRIPT FLUSH")
-                    connection.Bridge.ServerEndPoint.FlushScriptCache();
-                    message.SetScriptUnavailable();
-                }
-                // and apply usual processing for the rest
-                return base.SetResult(connection, message, result);
-            }
-
-            // note that top-level error messages still get handled by SetResult, but nested errors
-            // (is that a thing?) will be wrapped in the RedisResult
-            protected override bool SetResultCore(PhysicalConnection connection, Message message, RawResult result)
-            {
-                var value = Redis.RedisResult.TryCreate(connection, result);
-                if (value != null)
-                {
-                    SetResult(message, value);
-                    return true;
-                }
-                return false;
-            }
-        }
-
-        sealed class StringPairInterleavedProcessor : ValuePairInterleavedProcessorBase<KeyValuePair<string, string>>
-        {
-            protected override KeyValuePair<string, string> Parse(RawResult first, RawResult second)
-            {
-                return new KeyValuePair<string, string>(first.GetString(), second.GetString());
-            }
-        }
-
-        sealed class StringProcessor : ResultProcessor<string>
-        {
-            protected override bool SetResultCore(PhysicalConnection connection, Message message, RawResult result)
-            {
-                switch (result.Type)
-                {
-                    case ResultType.Integer:
-                    case ResultType.SimpleString:
-                    case ResultType.BulkString:
-                        SetResult(message, result.GetString());
-                        return true;
-                    case ResultType.MultiBulk:
-                        var arr = result.GetItems();
-                        if(arr.Length == 1)
-                        {
-                            SetResult(message, arr[0].GetString());
-                            return true;
-                        }
-                        break;
-                }
-                return false;
-            }
-        }
-        private class TracerProcessor : ResultProcessor<bool>
-        {
-            static readonly byte[]
-                authRequired = Encoding.UTF8.GetBytes("NOAUTH Authentication required."),
-                authFail = Encoding.UTF8.GetBytes("ERR operation not permitted"),
-                loading = Encoding.UTF8.GetBytes("LOADING ");
-
-            private readonly bool establishConnection;
-
-            public TracerProcessor(bool establishConnection)
-            {
-                this.establishConnection = establishConnection;
-            }
-            public override bool SetResult(PhysicalConnection connection, Message message, RawResult result)
-            {
-                var final = base.SetResult(connection, message, result);
-                if (result.IsError)
-                {
-                    if (result.IsEqual(authFail) || result.IsEqual(authRequired))
-                    {
-                        connection.RecordConnectionFailed(ConnectionFailureType.AuthenticationFailure, new Exception(result.ToString() + " Verify if the Redis password provided is correct."));
-                    }
-                    else if (result.AssertStarts(loading))
-                    {
-                        connection.RecordConnectionFailed(ConnectionFailureType.Loading);
-                    }
-                    else
-                    {
-                        connection.RecordConnectionFailed(ConnectionFailureType.ProtocolFailure);
-                    }
-                }
-                return final;
-            }
-
-            protected override bool SetResultCore(PhysicalConnection connection, Message message, RawResult result)
-            {
-                bool happy;
-                switch (message.Command)
-                {
-                    case RedisCommand.ECHO:
-                        happy = result.Type == ResultType.BulkString && (!establishConnection || result.IsEqual(connection.Multiplexer.UniqueId));
-                        break;
-                    case RedisCommand.PING:
-                        happy = result.Type == ResultType.SimpleString && result.IsEqual(RedisLiterals.BytesPONG);
-                        break;
-                    case RedisCommand.TIME:
-                        happy = result.Type == ResultType.MultiBulk && result.GetItems().Length == 2;
-                        break;
-                    case RedisCommand.EXISTS:
-                        happy = result.Type == ResultType.Integer;
-                        break;
-                    default:
-                        happy = true;
-                        break;
-                }
-                if (happy)
-                {
-                    if (establishConnection) connection.Bridge.OnFullyEstablished(connection);
-                    SetResult(message, happy);
-                    return true;
-                }
-                else
-                {
-                    connection.RecordConnectionFailed(ConnectionFailureType.ProtocolFailure);
-                    return false;
-                }
-            }
-        }
-
         private sealed class RoleProcessor : ResultProcessor<Role>
         {
             protected override bool SetResultCore(PhysicalConnection connection, Message message, RawResult result)
@@ -1516,6 +1388,134 @@ The coordinates as a two items x,y array (longitude,latitude).
                 return new Role.Sentinel(primaries);
             }
         }
+        private class ScriptResultProcessor : ResultProcessor<RedisResult>
+        {
+            static readonly byte[] NOSCRIPT = Encoding.UTF8.GetBytes("NOSCRIPT ");
+            public override bool SetResult(PhysicalConnection connection, Message message, RawResult result)
+            {
+                if (result.Type == ResultType.Error && result.AssertStarts(NOSCRIPT))
+                { // scripts are not flushed individually, so assume the entire script cache is toast ("SCRIPT FLUSH")
+                    connection.Bridge.ServerEndPoint.FlushScriptCache();
+                    message.SetScriptUnavailable();
+                }
+                // and apply usual processing for the rest
+                return base.SetResult(connection, message, result);
+            }
+
+            // note that top-level error messages still get handled by SetResult, but nested errors
+            // (is that a thing?) will be wrapped in the RedisResult
+            protected override bool SetResultCore(PhysicalConnection connection, Message message, RawResult result)
+            {
+                var value = Redis.RedisResult.TryCreate(connection, result);
+                if (value != null)
+                {
+                    SetResult(message, value);
+                    return true;
+                }
+                return false;
+            }
+        }
+
+        sealed class StringPairInterleavedProcessor : ValuePairInterleavedProcessorBase<KeyValuePair<string, string>>
+        {
+            protected override KeyValuePair<string, string> Parse(RawResult first, RawResult second)
+            {
+                return new KeyValuePair<string, string>(first.GetString(), second.GetString());
+            }
+        }
+
+        sealed class StringProcessor : ResultProcessor<string>
+        {
+            protected override bool SetResultCore(PhysicalConnection connection, Message message, RawResult result)
+            {
+                switch (result.Type)
+                {
+                    case ResultType.Integer:
+                    case ResultType.SimpleString:
+                    case ResultType.BulkString:
+                        SetResult(message, result.GetString());
+                        return true;
+                    case ResultType.MultiBulk:
+                        var arr = result.GetItems();
+                        if(arr.Length == 1)
+                        {
+                            SetResult(message, arr[0].GetString());
+                            return true;
+                        }
+                        break;
+                }
+                return false;
+            }
+        }
+        private class TracerProcessor : ResultProcessor<bool>
+        {
+            static readonly byte[]
+                authRequired = Encoding.UTF8.GetBytes("NOAUTH Authentication required."),
+                authFail = Encoding.UTF8.GetBytes("ERR operation not permitted"),
+                loading = Encoding.UTF8.GetBytes("LOADING ");
+
+            private readonly bool establishConnection;
+
+            public TracerProcessor(bool establishConnection)
+            {
+                this.establishConnection = establishConnection;
+            }
+            public override bool SetResult(PhysicalConnection connection, Message message, RawResult result)
+            {
+                var final = base.SetResult(connection, message, result);
+                if (result.IsError)
+                {
+                    if (result.IsEqual(authFail) || result.IsEqual(authRequired))
+                    {
+                        connection.RecordConnectionFailed(ConnectionFailureType.AuthenticationFailure, new Exception(result.ToString() + " Verify if the Redis password provided is correct."));
+                    }
+                    else if (result.AssertStarts(loading))
+                    {
+                        connection.RecordConnectionFailed(ConnectionFailureType.Loading);
+                    }
+                    else
+                    {
+                        connection.RecordConnectionFailed(ConnectionFailureType.ProtocolFailure);
+                    }
+                }
+                return final;
+            }
+
+            protected override bool SetResultCore(PhysicalConnection connection, Message message, RawResult result)
+            {
+                bool happy;
+                switch (message.Command)
+                {
+                    case RedisCommand.ECHO:
+                        happy = result.Type == ResultType.BulkString && (!establishConnection || result.IsEqual(connection.Multiplexer.UniqueId));
+                        break;
+                    case RedisCommand.PING:
+                        happy = result.Type == ResultType.SimpleString && result.IsEqual(RedisLiterals.BytesPONG);
+                        break;
+                    case RedisCommand.TIME:
+                        happy = result.Type == ResultType.MultiBulk && result.GetItems().Length == 2;
+                        break;
+                    case RedisCommand.EXISTS:
+                        happy = result.Type == ResultType.Integer;
+                        break;
+                    default:
+                        happy = true;
+                        break;
+                }
+                if (happy)
+                {
+                    if (establishConnection) connection.Bridge.OnFullyEstablished(connection);
+                    SetResult(message, happy);
+                    return true;
+                }
+                else
+                {
+                    connection.RecordConnectionFailed(ConnectionFailureType.ProtocolFailure);
+                    return false;
+                }
+            }
+        }
+
         #region Sentinel
 
         sealed class SentinelGetMasterAddressByNameProcessor : ResultProcessor<EndPoint>
@@ -1548,39 +1548,40 @@ The coordinates as a two items x,y array (longitude,latitude).
                 return false;
             }
         }
-
-        sealed class SentinelArrayOfArraysProcessor : ResultProcessor<KeyValuePair<string, string>[][]>
+        
+        private sealed class SentinelGetSentinelAddressesProcessor : ResultProcessor<EndPoint[]>
         {
             protected override bool SetResultCore(PhysicalConnection connection, Message message, RawResult result)
             {
-                var innerProcessor = StringPairInterleaved as StringPairInterleavedProcessor;
-                if (innerProcessor == null)
-                {
-                    return false;
-                }
+                List<EndPoint> endPoints = new List<EndPoint>();
 
                 switch (result.Type)
                 {
                     case ResultType.MultiBulk:
-                        var arrayOfArrays = result.GetArrayOfRawResults();
-
-                        var returnArray = new KeyValuePair<string, string>[arrayOfArrays.Length][];
-
-                        for (int i = 0; i < arrayOfArrays.Length; i++)
+                        foreach (RawResult item in result.GetItems())
                         {
-                            var rawInnerArray = arrayOfArrays[i];
-                            KeyValuePair<string, string>[] kvpArray;
-                            innerProcessor.TryParse(rawInnerArray, out kvpArray);
-                            returnArray[i] = kvpArray;
+                            var pairs = item.GetItems();
+                            string ip = null;
+                            int port = default;
+                            if (KeyValuePairParser.TryRead(pairs, KeyValuePairParser.IP, ref ip)
+                                && KeyValuePairParser.TryRead(pairs, KeyValuePairParser.Port, ref port))
+                            {
+                                endPoints.Add(Format.ParseEndPoint(ip, port));
+                            }
                         }
-
-                        SetResult(message, returnArray);
+                        SetResult(message, endPoints.ToArray());
                         return true;
+
+                    case ResultType.SimpleString:
+                        // We don't want to blow up if the primary is not found
+                        if (result.IsNull)
+                            return true;
+                        break;
                 }
+
                 return false;
             }
         }
-
         
         private static class KeyValuePairParser
         {
@@ -1633,6 +1634,39 @@ The coordinates as a two items x,y array (longitude,latitude).
                 return false;
             }
         }
+
+        sealed class SentinelArrayOfArraysProcessor : ResultProcessor<KeyValuePair<string, string>[][]>
+        {
+            protected override bool SetResultCore(PhysicalConnection connection, Message message, RawResult result)
+            {
+                var innerProcessor = StringPairInterleaved as StringPairInterleavedProcessor;
+                if (innerProcessor == null)
+                {
+                    return false;
+                }
+
+                switch (result.Type)
+                {
+                    case ResultType.MultiBulk:
+                        var arrayOfArrays = result.GetArrayOfRawResults();
+
+                        var returnArray = new KeyValuePair<string, string>[arrayOfArrays.Length][];
+
+                        for (int i = 0; i < arrayOfArrays.Length; i++)
+                        {
+                            var rawInnerArray = arrayOfArrays[i];
+                            KeyValuePair<string, string>[] kvpArray;
+                            innerProcessor.TryParse(rawInnerArray, out kvpArray);
+                            returnArray[i] = kvpArray;
+                        }
+
+                        SetResult(message, returnArray);
+                        return true;
+                }
+                return false;
+            }
+        }
+
         #endregion
     }
     internal abstract class ResultProcessor<T> : ResultProcessor

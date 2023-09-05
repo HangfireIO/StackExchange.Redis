@@ -92,7 +92,7 @@ namespace StackExchange.Redis
         /// <summary>
         /// Gets the client-name that will be used on all new connections
         /// </summary>
-        public string ClientName => configuration.ClientName ?? ConnectionMultiplexer.GetDefaultClientName();
+        public string ClientName => RawConfig.ClientName ?? ConnectionMultiplexer.GetDefaultClientName();
 
         private static string defaultClientName;
         private static string GetDefaultClientName()
@@ -103,6 +103,8 @@ namespace StackExchange.Redis
             }
             return defaultClientName;
         }
+        
+        internal EndPointCollection EndPoints { get; }
 
         /// Tries to get the Roleinstance Id if Microsoft.WindowsAzure.ServiceRuntime is loaded.
         /// In case of any failure, swallows the exception and returns null
@@ -127,7 +129,9 @@ namespace StackExchange.Redis
 
                 var type = asm.GetType("Microsoft.WindowsAzure.ServiceRuntime.RoleEnvironment");
 
-                // https://msdn.microsoft.com/en-us/library/microsoft.windowsazure.serviceruntime.roleenvironment.isavailable.aspx                if (!(bool)type.GetProperty("IsAvailable").GetValue(null, null))                    return null;
+                // https://msdn.microsoft.com/en-us/library/microsoft.windowsazure.serviceruntime.roleenvironment.isavailable.aspx
+                if (!(bool)type.GetProperty("IsAvailable").GetValue(null, null))
+                    return null;
 
                 var currentRoleInstanceProp = type.GetProperty("CurrentRoleInstance");
                 var currentRoleInstanceId = currentRoleInstanceProp.GetValue(null, null);
