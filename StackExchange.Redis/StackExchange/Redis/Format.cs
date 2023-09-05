@@ -56,6 +56,17 @@ namespace StackExchange.Redis
             return TryParseInt32(port, out i) ? ParseEndPoint(host, i) : null;
         }
 
+        internal static bool TryParseEndPoint(string host, string port, out EndPoint endpoint)
+        {
+            if (!String.IsNullOrEmpty(host) && !String.IsNullOrEmpty(port) && TryParseInt32(port, out int i))
+            {
+                endpoint = ParseEndPoint(host, i);
+                return true;
+            }
+            endpoint = null;
+            return false;
+        }
+
         internal static string ToString(long value)
         {
             return value.ToString(NumberFormatInfo.InvariantInfo);

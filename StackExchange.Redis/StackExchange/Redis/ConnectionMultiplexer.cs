@@ -150,7 +150,7 @@ namespace StackExchange.Redis
         /// <summary>
         /// Gets the configuration of the connection
         /// </summary>
-        public string Configuration => configuration.ToString();
+        public string Configuration => RawConfig.ToString();
 
         internal void OnConnectionFailed(EndPoint endpoint, ConnectionType connectionType, ConnectionFailureType failureType, Exception exception, bool reconfigure)
         {
@@ -349,7 +349,7 @@ namespace StackExchange.Redis
         internal void MakeMaster(ServerEndPoint server, ReplicationChangeOptions options, Action<string> log)
         {
             CommandMap.AssertAvailable(RedisCommand.SLAVEOF);
-            if (!configuration.AllowAdmin) throw ExceptionFactory.AdminModeNotEnabled(IncludeDetailInExceptions, RedisCommand.SLAVEOF, null, server);
+            if (!RawConfig.AllowAdmin) throw ExceptionFactory.AdminModeNotEnabled(IncludeDetailInExceptions, RedisCommand.SLAVEOF, null, server);
 
             if (server == null) throw new ArgumentNullException(nameof(server));
             var srv = new RedisServer(this, server, null);
@@ -373,16 +373,14 @@ namespace StackExchange.Redis
             var nodes = serverSnapshot;
             RedisValue newMaster = Format.ToString(server.EndPoint);
 
-            RedisKey tieBreakerKey = default(RedisKey);
             // try and write this everywhere; don't worry if some folks reject our advances
-            if ((options & ReplicationChangeOptions.SetTiebreaker) != 0 && !string.IsNullOrWhiteSpace(configuration.TieBreaker)
-                && CommandMap.IsAvailable(RedisCommand.SET))
+            if (RawConfig.TryGetTieBreaker(out var tieBreakerKey) &&
+                (options & ReplicationChangeOptions.SetTiebreaker) != 0 &&
+                CommandMap.IsAvailable(RedisCommand.SET))
             {
-                tieBreakerKey = configuration.TieBreaker;
-
                 foreach (var node in nodes)
                 {
-                    if (!node.IsConnected) continue;
+                    if (!node.IsConnected || node.IsSlave) continue;
                     LogLocked(log, "Attempting to set tie-breaker on {0}...", Format.ToString(node.EndPoint));
                     msg = Message.Create(0, flags, RedisCommand.SET, tieBreakerKey, newMaster);
                     node.QueueDirectFireAndForget(msg, ResultProcessor.DemandOK);
@@ -470,7 +468,7 @@ namespace StackExchange.Redis
 
         internal void CheckMessage(Message message)
         {
-            if (!configuration.AllowAdmin && message.IsAdmin)
+            if (!RawConfig.AllowAdmin && message.IsAdmin)
                 throw ExceptionFactory.AdminModeNotEnabled(IncludeDetailInExceptions, message.Command, message, null);
             CommandMap.AssertAvailable(message.Command);
         }
@@ -522,14 +520,12 @@ namespace StackExchange.Redis
         /// <returns></returns>
         public EndPoint[] GetEndPoints(bool configuredOnly = false)
         {
-            if (configuredOnly) return configuration.EndPoints.ToArray();
+            if (configuredOnly) return EndPoints.ToArray();
 
             return ConvertHelper.ConvertAll(serverSnapshot, x => x.EndPoint);
         }
 
         private readonly int timeoutMilliseconds;
-
-        private readonly ConfigurationOptions configuration;
 
 
         internal bool TryResend(int hashSlot, Message message, EndPoint endpoint, bool isMoved)
@@ -828,7 +824,7 @@ namespace StackExchange.Redis
         volatile bool isDisposed;
         internal bool IsDisposed => isDisposed;
 
-        static ConnectionMultiplexer CreateMultiplexer(object configuration)
+        static ConnectionMultiplexer CreateMultiplexer(object configuration, ServerType? serverType, EndPointCollection endpoints)
         {
             if (configuration == null) throw new ArgumentNullException(nameof(configuration));
             ConfigurationOptions config;
@@ -844,30 +840,46 @@ namespace StackExchange.Redis
             }
             if (config.EndPoints.Count == 0) throw new ArgumentException("No endpoints specified", nameof(configuration));
             config.SetDefaultPorts();
-            return new ConnectionMultiplexer(config);
+            return new ConnectionMultiplexer(config, serverType, endpoints);
         }
         /// <summary>
         /// Create a new ConnectionMultiplexer instance
         /// </summary>
-        public static ConnectionMultiplexer Connect(string configuration, Action<string> log = null)
+        public static ConnectionMultiplexer Connect(string configuration, Action<string> log = null, ServerType? serverType = null, EndPointCollection endpoints = null)
         {
-            return ConnectImpl(() => CreateMultiplexer(configuration), log);
+            return Connect(ConfigurationOptions.Parse(configuration), log);
+        }
+        
+        private static void Validate(ConfigurationOptions config)
+        {
+            if (config is null)
+            {
+                throw new ArgumentNullException(nameof(config));
+            }
+            if (config.EndPoints.Count == 0)
+            {
+                throw new ArgumentException("No endpoints specified", nameof(config));
+            }
         }
 
         /// <summary>
         /// Create a new ConnectionMultiplexer instance
         /// </summary>
-        public static ConnectionMultiplexer Connect(ConfigurationOptions configuration, Action<string> log = null)
+        public static ConnectionMultiplexer Connect(ConfigurationOptions configuration, Action<string> log = null, ServerType? serverType = null, EndPointCollection endpoints = null)
         {
-            return ConnectImpl(() => CreateMultiplexer(configuration), log);
+            Validate(configuration);
+
+            return configuration.IsSentinel
+                ? SentinelPrimaryConnect(configuration, log)
+                : ConnectImpl(configuration, log);
         }
 
-        private static ConnectionMultiplexer ConnectImpl(Func<ConnectionMultiplexer> multiplexerFactory, Action<string> log)
+        private static ConnectionMultiplexer ConnectImpl(ConfigurationOptions configuration, Action<string> log, ServerType? serverType = null, EndPointCollection endpoints = null)
         {
             IDisposable killMe = null;
             try
             {
-                var muxer = multiplexerFactory();
+                var muxer = CreateMultiplexer(configuration, serverType, endpoints);
                 killMe = muxer;
                 // note that task has timeouts internally, so it might take *just over* the regular timeout
                 if (!muxer.Reconfigure(true, false, log, null, "connect"))
@@ -884,6 +896,12 @@ namespace StackExchange.Redis
                     {
                         muxer.LastException = exception;
                     }
+                }
+                
+                if (muxer.ServerSelectionStrategy.ServerType == ServerType.Sentinel)
+                {
+                    // Initialize the Sentinel handlers
+                    muxer.InitializeSentinel(log);
                 }
 
                 killMe = null;
@@ -943,15 +961,18 @@ namespace StackExchange.Redis
         }
 
         internal readonly CommandMap CommandMap;
-        private ConnectionMultiplexer(ConfigurationOptions configuration)
+        private ConnectionMultiplexer(ConfigurationOptions configuration, ServerType? serverType = null, EndPointCollection endpoints = null)
         {
             if (configuration == null) throw new ArgumentNullException(nameof(configuration));
+            
+            RawConfig = configuration ?? throw new ArgumentNullException(nameof(configuration));
+            EndPoints = endpoints ?? RawConfig.EndPoints.Clone();
+            EndPoints.SetDefaultPorts(serverType, ssl: RawConfig.Ssl);
+            
             IncludeDetailInExceptions = true;
             IncludePerformanceCountersInExceptions = false;
             
-            this.configuration = configuration;
-            
-            var map = CommandMap = configuration.CommandMap;
+            var map = CommandMap = configuration.GetCommandMap(serverType);
             if (!string.IsNullOrWhiteSpace(configuration.Password)) map.AssertAvailable(RedisCommand.AUTH);
 
             if(!map.IsAvailable(RedisCommand.ECHO) && !map.IsAvailable(RedisCommand.PING) && !map.IsAvailable(RedisCommand.TIME))
@@ -1054,7 +1075,7 @@ namespace StackExchange.Redis
         public IDatabase GetDatabase(int db = -1, object asyncState = null)
         {
             if (db == -1)
-                db = configuration.DefaultDatabase ?? 0;
+                db = RawConfig.DefaultDatabase ?? 0;
 
             if (db < 0) throw new ArgumentOutOfRangeException(nameof(db));
             if (db != 0 && RawConfig.Proxy == Proxy.Twemproxy) throw new NotSupportedException("Twemproxy only supports database 0");
@@ -1142,11 +1163,11 @@ namespace StackExchange.Redis
             {
                 if (!String.IsNullOrEmpty(category))
                 {
-                    Logger(category + ": " + message, null);
+                    Logger?.Invoke(category + ": " + message, null);
                 }
                 else
                 {
-                    Logger(message, null);
+                    Logger?.Invoke(message, null);
                 }
             }
             catch
@@ -1161,11 +1182,11 @@ namespace StackExchange.Redis
             {
                 if (!String.IsNullOrEmpty(category))
                 {
-                    Logger(category + ": " + message, exception);
+                    Logger?.Invoke(category + ": " + message, exception);
                 }
                 else
                 {
-                    Logger(message, exception);
+                    Logger?.Invoke(message, exception);
                 }
             }
             catch
@@ -1242,7 +1263,7 @@ namespace StackExchange.Redis
                     IsBackground = true,
                     Name = name + ":Reconfig",
 #if !CORE_CLR
-                    Priority = configuration.HighPrioritySocketThreads
+                    Priority = RawConfig.HighPrioritySocketThreads
                         ? ThreadPriority.AboveNormal
                         : ThreadPriority.Normal
 #endif
@@ -1273,7 +1294,7 @@ namespace StackExchange.Redis
             int retryCount = forConnect ? RawConfig.ConnectRetry : 1;
             if (retryCount <= 0) retryCount = 1;
 
-            int timeout = configuration.ConnectTimeout;            
+            int timeout = RawConfig.ConnectTimeout;            
             if (timeout >= int.MaxValue / retryCount) return int.MaxValue;
 
             timeout *= retryCount;
@@ -1330,21 +1351,21 @@ namespace StackExchange.Redis
                 Trace("Starting reconfiguration...");
                 Trace(blame != null, "Blaming: " + Format.ToString(blame));
 
-                LogLocked(log, configuration.ToString(includePassword: false));
+                LogLocked(log, RawConfig.ToString(includePassword: false));
                 LogLocked(log, "");
 
 
                 if (first)
                 {
-                    if (configuration.ResolveDns && configuration.HasDnsEndPoints())
+                    if (RawConfig.ResolveDns && EndPoints.HasDnsEndPoints())
                     {
-                        configuration.ResolveEndPoints(this, log);
+                        EndPoints.ResolveEndPoints(this, log);
                     }
                     int index = 0;
                     lock (servers)
                     {
-                        serverSnapshot = new ServerEndPoint[configuration.EndPoints.Count];
-                        foreach (var endpoint in configuration.EndPoints)
+                        serverSnapshot = new ServerEndPoint[EndPoints.Count];
+                        foreach (var endpoint in EndPoints)
                         {
                             var server = (ServerEndPoint)servers[endpoint];
                             if (server == null)
@@ -1368,7 +1389,7 @@ namespace StackExchange.Redis
                         }
                     }
                 }
-                int attemptsLeft = first ? configuration.ConnectRetry : 1;
+                int attemptsLeft = first ? RawConfig.ConnectRetry : 1;
 
                 bool healthy = false;
                 do
@@ -1378,7 +1399,7 @@ namespace StackExchange.Redis
                         attemptsLeft--;
                     }
                     int standaloneCount = 0, clusterCount = 0, sentinelCount = 0;
-                    var endpoints = configuration.EndPoints;
+                    var endpoints = EndPoints;
                     LogLocked(log, "{0} unique nodes specified", endpoints.Count);
 
                     if (endpoints.Count == 0)
@@ -1388,7 +1409,7 @@ namespace StackExchange.Redis
 
                     const CommandFlags flags = CommandFlags.NoRedirect | CommandFlags.HighPriority;
                     List<ServerEndPoint> masters = new List<ServerEndPoint>(endpoints.Count);
-                    bool useTieBreakers = !string.IsNullOrWhiteSpace(configuration.TieBreaker);
+                    bool useTieBreakers = RawConfig.TryGetTieBreaker(out var tieBreakerKey);
                     
                     ServerEndPoint[] servers = null;
                     Tuple<ResultBox<string>, ManualResetEvent>[] tieBreakers = null;
@@ -1410,8 +1431,6 @@ namespace StackExchange.Redis
                         tieBreakers = useTieBreakers ? new Tuple<ResultBox<string>, ManualResetEvent>[endpoints.Count] : null;
                         servers = new ServerEndPoint[available.Length];
                         
-                        RedisKey tieBreakerKey = useTieBreakers ? (RedisKey)configuration.TieBreaker : default(RedisKey);
-                    
                         for (int i = 0; i < available.Length; i++)
                         {
                             Trace("Testing: " + Format.ToString(endpoints[i]));
@@ -1443,7 +1462,7 @@ namespace StackExchange.Redis
 
                             if (useTieBreakers)
                             {
-                                LogLocked(log, "Requesting tie-break from {0} > {1}...", Format.ToString(server.EndPoint), configuration.TieBreaker);
+                                LogLocked(log, "Requesting tie-break from {0} > {1}...", Format.ToString(server.EndPoint), RawConfig.TieBreaker);
                                 Message msg = Message.Create(0, flags, RedisCommand.GET, tieBreakerKey);
                                 msg.SetInternalCall();
                                 msg = LoggingMessage.Create(log, msg);
@@ -1463,7 +1482,7 @@ namespace StackExchange.Redis
                         }
 
                         watch = watch ?? Stopwatch.StartNew();
-                        var remaining = configuration.ConnectTimeout - checked((int)watch.ElapsedMilliseconds);
+                        var remaining = RawConfig.ConnectTimeout - checked((int)watch.ElapsedMilliseconds);
                         LogLocked(log, "Allowing endpoints {0} to respond...", TimeSpan.FromMilliseconds(remaining));
                         Trace("Allowing endpoints " + TimeSpan.FromMilliseconds(remaining) + " to respond...");
                         WaitAllIgnoreErrors(available, remaining, log);
@@ -1627,14 +1646,14 @@ namespace StackExchange.Redis
                     //WTF("?: " + attempts);
                 } while (first && !healthy && attemptsLeft > 0);
 
-                if(first && configuration.AbortOnConnectFail && !healthy)
+                if(first && RawConfig.AbortOnConnectFail && !healthy)
                 {
                     return false;
                 }
-                if (first && configuration.HeartbeatInterval > 0)
+                if (first && RawConfig.HeartbeatInterval > 0)
                 {
                     LogLocked(log, "Starting heartbeat...");
-                    pulse = new Timer(heartbeat, this, configuration.HeartbeatInterval, configuration.HeartbeatInterval);
+                    pulse = new Timer(heartbeat, this, RawConfig.HeartbeatInterval, RawConfig.HeartbeatInterval);
                 }
                 if(publishReconfigure)
                 {
@@ -1969,7 +1988,7 @@ namespace StackExchange.Redis
             }
         }
 
-        internal ConfigurationOptions RawConfig => configuration;
+        internal ConfigurationOptions RawConfig { get; }
 
         internal ServerSelectionStrategy ServerSelectionStrategy => serverSelectionStrategy;
 
@@ -2092,7 +2111,7 @@ namespace StackExchange.Redis
             if (allowCommandsToComplete)
             {
                 var quits = QuitAllServersAsync();
-                await WaitAllIgnoreErrorsAsync(quits, configuration.SyncTimeout, null).ForAwait();
+                await WaitAllIgnoreErrorsAsync(quits, RawConfig.SyncTimeout, null).ForAwait();
             }
 
             DisposeAndClearServers();
@@ -2104,6 +2123,9 @@ namespace StackExchange.Redis
         public void Dispose()
         {
             Close(!isDisposed);
+            sentinelConnection?.Dispose();
+            var oldTimer = Interlocked.Exchange(ref sentinelPrimaryReconnectTimer, null);
+            oldTimer?.Dispose();
         }
 
 

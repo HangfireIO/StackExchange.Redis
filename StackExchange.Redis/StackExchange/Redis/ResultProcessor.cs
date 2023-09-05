@@ -77,6 +77,9 @@ namespace StackExchange.Redis
 
         public static readonly ResultProcessor<TimeSpan>
             ResponseTimer = new TimingProcessor();
+        
+        public static readonly ResultProcessor<Role>
+            Role = new RoleProcessor();
 
         public static readonly ResultProcessor<RedisResult>
             ScriptResult = new ScriptResultProcessor();
@@ -97,6 +100,9 @@ namespace StackExchange.Redis
 
         public static readonly ResultProcessor<KeyValuePair<string, string>[][]>
             SentinelArrayOfArrays = new SentinelArrayOfArraysProcessor();
+
+        public static readonly ResultProcessor<EndPoint[]>
+            SentinelAddressesEndPoints = new SentinelGetSentinelAddressesProcessor();
 
         #endregion
 
@@ -1380,6 +1386,136 @@ The coordinates as a two items x,y array (longitude,latitude).
             }
         }
 
+        private sealed class RoleProcessor : ResultProcessor<Role>
+        {
+            protected override bool SetResultCore(PhysicalConnection connection, Message message, RawResult result)
+            {
+                var items = result.GetItems();
+                if (items.Length == 0)
+                {
+                    return false;
+                }
+
+                ref var val = ref items[0];
+                Role role;
+                if (val.IsEqual(RedisLiterals.master)) role = ParsePrimary(items);
+                else if (val.IsEqual(RedisLiterals.slave)) role = ParseReplica(items, RedisLiterals.slave);
+                else if (val.IsEqual(RedisLiterals.replica)) role = ParseReplica(items, RedisLiterals.replica); // for when "slave" is deprecated
+                else if (val.IsEqual(RedisLiterals.sentinel)) role = ParseSentinel(items);
+                else role = new Role.Unknown(val.GetString());
+
+                if (role is null) return false;
+                SetResult(message, role);
+                return true;
+            }
+
+            private static readonly Role.Master.Replica[] EmptyArray = new Role.Master.Replica[0];
+
+            private static Role ParsePrimary(RawResult[] items)
+            {
+                if (items.Length < 3)
+                {
+                    return null;
+                }
+
+                if (!items[1].TryGetInt64(out var offset))
+                {
+                    return null;
+                }
+
+                var replicaItems = items[2].GetItems();
+                ICollection<Role.Master.Replica> replicas;
+                if (replicaItems.Length == 0)
+                {
+                    replicas = EmptyArray;
+                }
+                else
+                {
+                    replicas = new List<Role.Master.Replica>((int)replicaItems.Length);
+                    for (int i = 0; i < replicaItems.Length; i++)
+                    {
+                        if (TryParsePrimaryReplica(replicaItems[i].GetItems(), out var replica))
+                        {
+                            replicas.Add(replica);
+                        }
+                        else
+                        {
+                            return null;
+                        }
+                    }
+                }
+
+                return new Role.Master(offset, replicas);
+            }
+
+            private static bool TryParsePrimaryReplica(RawResult[] items, out Role.Master.Replica replica)
+            {
+                if (items.Length < 3)
+                {
+                    replica = default;
+                    return false;
+                }
+
+                var primaryIp = items[0].GetString();
+
+                if (!items[1].TryGetInt64(out var primaryPort) || primaryPort > int.MaxValue)
+                {
+                    replica = default;
+                    return false;
+                }
+
+                if (!items[2].TryGetInt64(out var replicationOffset))
+                {
+                    replica = default;
+                    return false;
+                }
+
+                replica = new Role.Master.Replica(primaryIp, (int)primaryPort, replicationOffset);
+                return true;
+            }
+
+            private static Role ParseReplica(RawResult[] items, string role)
+            {
+                if (items.Length < 5)
+                {
+                    return null;
+                }
+
+                var primaryIp = items[1].GetString();
+
+                if (!items[2].TryGetInt64(out var primaryPort) || primaryPort > int.MaxValue)
+                {
+                    return null;
+                }
+
+                ref var val = ref items[3];
+                string replicationState;
+                if (val.IsEqual(RedisLiterals.connect)) replicationState = RedisLiterals.connect;
+                else if (val.IsEqual(RedisLiterals.connecting)) replicationState = RedisLiterals.connecting;
+                else if (val.IsEqual(RedisLiterals.sync)) replicationState = RedisLiterals.sync;
+                else if (val.IsEqual(RedisLiterals.connected)) replicationState = RedisLiterals.connected;
+                else if (val.IsEqual(RedisLiterals.none)) replicationState = RedisLiterals.none;
+                else if (val.IsEqual(RedisLiterals.handshake)) replicationState = RedisLiterals.handshake;
+                else replicationState = val.GetString();
+
+                if (!items[4].TryGetInt64(out var replicationOffset))
+                {
+                    return null;
+                }
+
+                return new Role.Replica(role, primaryIp, (int)primaryPort, replicationState, replicationOffset);
+            }
+
+            private static Role ParseSentinel(RawResult[] items)
+            {
+                if (items.Length < 2)
+                {
+                    return null;
+                }
+                var primaries = items[1].GetItemsAsStrings();
+                return new Role.Sentinel(primaries);
+            }
+        }
         #region Sentinel
 
         sealed class SentinelGetMasterAddressByNameProcessor : ResultProcessor<EndPoint>
@@ -1445,6 +1581,58 @@ The coordinates as a two items x,y array (longitude,latitude).
             }
         }
 
+        
+        private static class KeyValuePairParser
+        {
+            internal static readonly byte[]
+                Name = Encoding.UTF8.GetBytes("name"),
+                Consumers = Encoding.UTF8.GetBytes("consumers"),
+                Pending = Encoding.UTF8.GetBytes("pending"),
+                Idle = Encoding.UTF8.GetBytes("idle"),
+                LastDeliveredId = Encoding.UTF8.GetBytes("last-delivered-id"),
+                EntriesRead = Encoding.UTF8.GetBytes("entries-read"),
+                Lag = Encoding.UTF8.GetBytes("lag"),
+                IP = Encoding.UTF8.GetBytes("ip"),
+                Port = Encoding.UTF8.GetBytes("port");
+
+            internal static bool TryRead(RawResult[] pairs, byte[] key, ref long value)
+            {
+                var len = pairs.Length / 2;
+                for (int i = 0; i < len; i++)
+                {
+                    if (pairs[i * 2].IsEqual(key) && pairs[(i * 2) + 1].TryGetInt64(out var tmp))
+                    {
+                        value = tmp;
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            internal static bool TryRead(RawResult[] pairs, byte[] key, ref int value)
+            {
+                long tmp = default;
+                if(TryRead(pairs, key, ref tmp)) {
+                    value = checked((int)tmp);
+                    return true;
+                }
+                return false;
+            }
+
+            internal static bool TryRead(RawResult[] pairs, byte[] key, ref string value)
+            {
+                var len = pairs.Length / 2;
+                for (int i = 0; i < len; i++)
+                {
+                    if (pairs[i * 2].IsEqual(key))
+                    {
+                        value = pairs[(i * 2) + 1].GetString();
+                        return true;
+                    }
+                }
+                return false;
+            }
+        }
         #endregion
     }
     internal abstract class ResultProcessor<T> : ResultProcessor

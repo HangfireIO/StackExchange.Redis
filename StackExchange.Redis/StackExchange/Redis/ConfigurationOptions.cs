@@ -464,13 +464,27 @@ namespace StackExchange.Redis
             return options;
 
         }
+        
+        internal bool IsSentinel => !string.IsNullOrEmpty(ServiceName);
+        
+        internal bool TryGetTieBreaker(out RedisKey tieBreaker)
+        {
+            var key = TieBreaker;
+            if (!IsSentinel && !string.IsNullOrWhiteSpace(key))
+            {
+                tieBreaker = key;
+                return true;
+            }
+            tieBreaker = default;
+            return false;
+        }
 
         /// <summary>
         /// Resolve the default port for any endpoints that did not have a port explicitly specified
         /// </summary>
         public void SetDefaultPorts()
         {
-            endpoints.SetDefaultPorts(Ssl ? 6380 : 6379);
+            EndPoints.SetDefaultPorts(ServerType.Standalone, ssl: Ssl);
         }
 
         /// <summary>
@@ -522,62 +536,17 @@ namespace StackExchange.Redis
             commandMap?.AppendDeltas(sb);
             return sb.ToString();
         }
-
-        internal bool HasDnsEndPoints()
+        
+        /// <summary>
+        /// Gets the command map for a given server type, since some supersede settings when connecting.
+        /// </summary>
+        internal CommandMap GetCommandMap(ServerType? serverType)
         {
-            foreach (var endpoint in endpoints) if (endpoint is DnsEndPoint) return true;
-            return false;
+            if (serverType == ServerType.Sentinel) return CommandMap.Sentinel;
+            return CommandMap;
         }
 
-#pragma warning disable 1998 // NET40 is sync, not async, currently
-        internal void ResolveEndPoints(ConnectionMultiplexer multiplexer, Action<string> log)
-        {
-            Dictionary<string, IPAddress> cache = new Dictionary<string, IPAddress>(StringComparer.OrdinalIgnoreCase);
-            for (int i = 0; i < endpoints.Count; i++)
-            {
-                var dns = endpoints[i] as DnsEndPoint;
-                if (dns != null)
-                {
-                    try
-                    {
-                        IPAddress ip;
-                        if (dns.Host == ".")
-                        {
-                            endpoints[i] = new IPEndPoint(IPAddress.Loopback, dns.Port);
-                        }
-                        else if (cache.TryGetValue(dns.Host, out ip))
-                        { // use cache
-                            endpoints[i] = new IPEndPoint(ip, dns.Port);
-                        }
-                        else
-                        {
-                            multiplexer.LogLocked(log, "Using DNS to resolve '{0}'...", dns.Host);
-#if !CORE_CLR
-                            var ips = Dns.GetHostAddresses(dns.Host);
-#else
-                            var ips = Dns.GetHostAddressesAsync(dns.Host).ObserveErrors().ForAwait().GetAwaiter().GetResult();
-#endif
-                            if (ips.Length > 0)
-                            {
-                                ip = ips.FirstOrDefault(x => x.AddressFamily == AddressFamily.InterNetwork || x.AddressFamily == AddressFamily.InterNetworkV6);
-                                if (ip != null)
-                                {
-                                    multiplexer.LogLocked(log, "'{0}' => {1}", dns.Host, ip);
-                                    cache[dns.Host] = ip;
-                                    endpoints[i] = new IPEndPoint(ip, dns.Port);
-                                }
-                            }
-                        }
-                    }
-                    catch (Exception ex) when (!(ex is OutOfMemoryException))
-                    {
-                        multiplexer.OnInternalError(ex);
-                        multiplexer.LogLocked(log, ex.Message);
-                    }
-                }
-            }
-        }
-#pragma warning restore 1998
+
         static void Append(StringBuilder sb, object value)
         {
             if (value == null) return;

@@ -319,6 +319,19 @@ namespace StackExchange.Redis
         {
             multiplexer.MakeMaster(server, options, log);
         }
+        
+        public Role Role(CommandFlags flags = CommandFlags.None)
+        {
+            var msg = Message.Create(-1, flags, RedisCommand.ROLE);
+            return ExecuteSync(msg, ResultProcessor.Role);
+        }
+
+        public Task<Role> RoleAsync(CommandFlags flags = CommandFlags.None)
+        {
+            var msg = Message.Create(-1, flags, RedisCommand.ROLE);
+            return ExecuteAsync(msg, ResultProcessor.Role);
+        }
+        
         public void Save(SaveType type, CommandFlags flags = CommandFlags.None)
         {
             var msg = GetSaveMessage(type, flags);
@@ -752,6 +765,30 @@ namespace StackExchange.Redis
         }
 
         #region Sentinel
+        
+        public EndPoint[] SentinelGetSentinelAddresses(string serviceName, CommandFlags flags = CommandFlags.None)
+        {
+            var msg = Message.Create(-1, flags, RedisCommand.SENTINEL, RedisLiterals.SENTINELS, (RedisValue)serviceName);
+            return ExecuteSync(msg, ResultProcessor.SentinelAddressesEndPoints);
+        }
+
+        public Task<EndPoint[]> SentinelGetSentinelAddressesAsync(string serviceName, CommandFlags flags = CommandFlags.None)
+        {
+            var msg = Message.Create(-1, flags, RedisCommand.SENTINEL, RedisLiterals.SENTINELS, (RedisValue)serviceName);
+            return ExecuteAsync(msg, ResultProcessor.SentinelAddressesEndPoints);
+        }
+        
+        public EndPoint[] SentinelGetReplicaAddresses(string serviceName, CommandFlags flags = CommandFlags.None)
+        {
+            var msg = Message.Create(-1, flags, RedisCommand.SENTINEL, Features.ReplicaCommands ? RedisLiterals.REPLICAS : RedisLiterals.SLAVES, (RedisValue)serviceName);
+            return ExecuteSync(msg, ResultProcessor.SentinelAddressesEndPoints);
+        }
+
+        public Task<EndPoint[]> SentinelGetReplicaAddressesAsync(string serviceName, CommandFlags flags = CommandFlags.None)
+        {
+            var msg = Message.Create(-1, flags, RedisCommand.SENTINEL, Features.ReplicaCommands ? RedisLiterals.REPLICAS : RedisLiterals.SLAVES, (RedisValue)serviceName);
+            return ExecuteAsync(msg, ResultProcessor.SentinelAddressesEndPoints);
+        }
 
         public EndPoint SentinelGetMasterAddressByName(string serviceName, CommandFlags flags = CommandFlags.None)
         {

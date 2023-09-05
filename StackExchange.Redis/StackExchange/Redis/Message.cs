@@ -494,6 +494,7 @@ namespace StackExchange.Redis
                 case RedisCommand.RENAME:
                 case RedisCommand.RENAMENX:
                 case RedisCommand.RESTORE:
+                case RedisCommand.ROLE:
                 case RedisCommand.RPOP:
                 case RedisCommand.RPOPLPUSH:
                 case RedisCommand.RPUSH:
@@ -676,6 +677,7 @@ namespace StackExchange.Redis
                 case RedisCommand.QUIT:
                 case RedisCommand.READONLY:
                 case RedisCommand.READWRITE:
+                case RedisCommand.ROLE:
                 case RedisCommand.SAVE:
                 case RedisCommand.SCRIPT:
                 case RedisCommand.SHUTDOWN:

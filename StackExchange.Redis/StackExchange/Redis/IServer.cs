@@ -273,6 +273,15 @@ namespace StackExchange.Redis
         void MakeMaster(ReplicationChangeOptions options, Action<string> log = null);
 
         /// <summary>
+        /// Returns the role info for the current server.
+        /// </summary>
+        /// <remarks><seealso href="https://redis.io/commands/role"/></remarks>
+        Role Role(CommandFlags flags = CommandFlags.None);
+
+        /// <inheritdoc cref="Role(CommandFlags)"/>
+        Task<Role> RoleAsync(CommandFlags flags = CommandFlags.None);
+
+        /// <summary>
         /// Explicitly request the database to persist the current state to disk
         /// </summary>
         /// <remarks>http://redis.io/commands/bgrewriteaof</remarks>
@@ -449,6 +458,30 @@ namespace StackExchange.Redis
         /// <returns>the master ip and port</returns>
         /// <remarks>http://redis.io/topics/sentinel</remarks>
         Task<EndPoint> SentinelGetMasterAddressByNameAsync(string serviceName, CommandFlags flags = CommandFlags.None);
+        
+        /// <summary>
+        /// Returns the IP and port numbers of all known Sentinels for the given service name.
+        /// </summary>
+        /// <param name="serviceName">The sentinel service name.</param>
+        /// <param name="flags">The command flags to use.</param>
+        /// <returns>A list of the sentinel IPs and ports.</returns>
+        /// <remarks><seealso href="https://redis.io/topics/sentinel"/></remarks>
+        EndPoint[] SentinelGetSentinelAddresses(string serviceName, CommandFlags flags = CommandFlags.None);
+
+        /// <inheritdoc cref="SentinelGetSentinelAddresses(string, CommandFlags)"/>
+        Task<EndPoint[]> SentinelGetSentinelAddressesAsync(string serviceName, CommandFlags flags = CommandFlags.None);
+        
+        /// <summary>
+        /// Returns the IP and port numbers of all known Sentinel replicas for the given service name.
+        /// </summary>
+        /// <param name="serviceName">The sentinel service name.</param>
+        /// <param name="flags">The command flags to use.</param>
+        /// <returns>A list of the replica IPs and ports.</returns>
+        /// <remarks><seealso href="https://redis.io/topics/sentinel"/></remarks>
+        EndPoint[] SentinelGetReplicaAddresses(string serviceName, CommandFlags flags = CommandFlags.None);
+
+        /// <inheritdoc cref="SentinelGetReplicaAddresses(string, CommandFlags)"/>
+        Task<EndPoint[]> SentinelGetReplicaAddressesAsync(string serviceName, CommandFlags flags = CommandFlags.None);
 
         /// <summary>
         /// Show the state and info of the specified master.

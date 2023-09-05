@@ -327,7 +327,7 @@ namespace StackExchange.Redis
             }
 
             NodeId = parts[0];
-            IsSlave = flags.Contains("slave");
+            IsSlave = flags.Contains("slave") || flags.Contains("replica");
             IsNoAddr = flags.Contains("noaddr");
             ParentNodeId = string.IsNullOrWhiteSpace(parts[3]) ? null : parts[3];
 

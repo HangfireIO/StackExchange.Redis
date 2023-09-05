@@ -65,9 +65,11 @@ namespace StackExchange.Redis
             MASTERS = "MASTERS",
             MASTER = "MASTER",
             SLAVES = "SLAVES",
+            REPLICAS = "REPLICAS",
             GETMASTERADDRBYNAME = "GET-MASTER-ADDR-BY-NAME",
 //            RESET = "RESET",
             FAILOVER = "FAILOVER", 
+            SENTINELS = "SENTINELS",
 
             // Sentinel Literals as of 2.8.4
             MONITOR = "MONITOR",
@@ -76,15 +78,26 @@ namespace StackExchange.Redis
 
             // DO NOT CHANGE CASE: these are configuration settings and MUST be as-is
             databases = "databases",
+            master = "master",
             no = "no",
             normal = "normal",
             pubsub = "pubsub",
+            replica = "replica",
             replication = "replication",
+            sentinel = "sentinel",
             server = "server",
             slave = "slave",
             slave_read_only = "slave-read-only",
             timeout = "timeout",
             yes = "yes",
+            
+            // replication states
+            connect = "connect",
+            connected = "connected",
+            connecting = "connecting",
+            handshake = "handshake",
+            none = "none",
+            sync = "sync",
 
             MinusSymbol = "-",
             PlusSumbol = "+",
