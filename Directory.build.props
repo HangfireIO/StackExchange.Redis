@@ -9,8 +9,7 @@
     <PackageId>$(AssemblyName)</PackageId>
     <Authors>Stack Exchange, Inc.; marc.gravell</Authors>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <WarningsNotAsErrors>NU1901;NU1902;NU1903;NU1904</WarningsNotAsErrors>
-    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    <WarningsNotAsErrors>NU1901;NU1902;NU1903;NU1904</WarningsNotAsErrors>    
     
     <PackageReleaseNotes>https://stackexchange.github.io/StackExchange.Redis/ReleaseNotes</PackageReleaseNotes>
     <PackageProjectUrl>https://github.com/StackExchange/StackExchange.Redis/</PackageProjectUrl>
@@ -27,6 +26,10 @@
 
     <LibraryTargetFrameworks>net45;net46;netstandard1.5;netstandard2.0;netcoreapp3.0;</LibraryTargetFrameworks><!--net40;-->
     <CoreFxVersion>4.3.0</CoreFxVersion>
+  </PropertyGroup>
+  
+  <PropertyGroup  Condition="'$(Configuration)' == 'Release'">
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
   </PropertyGroup>
   
    <!-- Workarounds for https://github.com/NuGet/Home/issues/4853 -->
