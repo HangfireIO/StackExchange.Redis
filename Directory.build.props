@@ -30,6 +30,8 @@
   
   <PropertyGroup  Condition="'$(Configuration)' == 'Release'">
     <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    <!-- Deterministic paths work bad when using ILRepack, because it combines everything with a wrong repository -->
+    <DeterministicSourcePaths>false</DeterministicSourcePaths>
   </PropertyGroup>
   
    <!-- Workarounds for https://github.com/NuGet/Home/issues/4853 -->
