@@ -279,13 +279,11 @@ namespace StackExchange.Redis
                 CompletionType connectCompletionType = CompletionType.Any;
                 this.ShouldForceConnectCompletionType(ref connectCompletionType);
 
-                var tuple = Tuple.Create(socket, callback);
+                var tuple = Tuple.Create(endpoint, socket, callback);
                 {
 #if CORE_CLR
-                    multiplexer.LogLocked(log, "BeginConnect: {0}", formattedEndpoint);
                     socket.ConnectAsync(endpoint).ContinueWith(t =>
                     {
-                        multiplexer.LogLocked(log, "EndConnect: {0}", formattedEndpoint);
                         EndConnectImpl(t, multiplexer, log, tuple);
                     });
 #else
@@ -410,15 +408,16 @@ namespace StackExchange.Redis
             Shutdown(token.Socket);
         }
 
-        private void EndConnectImpl(IAsyncResult ar, ConnectionMultiplexer multiplexer, Action<string> log, Tuple<Socket, ISocketCallback> tuple)
+        private void EndConnectImpl(IAsyncResult ar, ConnectionMultiplexer multiplexer, Action<string> log, Tuple<EndPoint, Socket, ISocketCallback> tuple)
         {
             try
             {
                 bool ignoreConnect = false;
-                ShouldIgnoreConnect(tuple.Item2, ref ignoreConnect);
+                ShouldIgnoreConnect(tuple.Item3, ref ignoreConnect);
                 if (ignoreConnect) return;
-                var socket = tuple.Item1;
-                var callback = tuple.Item2;
+                var endpoint = tuple.Item1;
+                var socket = tuple.Item2;
+                var callback = tuple.Item3;
 #if CORE_CLR
                 multiplexer.Wait((Task)ar); // make it explode if invalid (note: already complete at this point)
 #else
@@ -436,7 +435,7 @@ namespace StackExchange.Redis
                 switch (socketMode)
                 {
                     case SocketMode.Async:
-                        multiplexer.LogLocked(log, "Starting read");
+                        multiplexer.LogLocked(log, $"{Format.ToString(endpoint)}: Starting read");
                         try
                         { callback.StartReading(); }
                         catch (Exception ex) when (!(ex is OutOfMemoryException))
@@ -446,7 +445,7 @@ namespace StackExchange.Redis
                         }
                         break;
                     case SocketMode.Sync:
-                        multiplexer.LogLocked(log, "Starting reader thread");
+                        multiplexer.LogLocked(log, $"{Format.ToString(endpoint)}: Starting reader thread");
                         try
                         {
 #if !CORE_CLR
@@ -473,11 +472,11 @@ namespace StackExchange.Redis
             }
             catch (ObjectDisposedException)
             {
-                multiplexer.LogLocked(log, "(socket shutdown)");
                 if (tuple != null)
                 {
+                    multiplexer.LogLocked(log, $"{Format.ToString(tuple.Item2)}: (socket shutdown)");
                     try
-                    { tuple.Item2.Error(null); }
+                    { tuple.Item3.Error(null); }
                     catch (Exception inner) when (!(inner is OutOfMemoryException))
                     {
                         ConnectionMultiplexer.TraceExceptionWithoutContext(inner);
@@ -490,7 +489,7 @@ namespace StackExchange.Redis
                 if (tuple != null)
                 {
                     try
-                    { tuple.Item2.Error(outer); }
+                    { tuple.Item3.Error(outer); }
                     catch (Exception inner) when (!(inner is OutOfMemoryException))
                     {
                         ConnectionMultiplexer.TraceExceptionWithoutContext(inner);

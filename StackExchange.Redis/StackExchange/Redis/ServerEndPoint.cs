@@ -276,7 +276,7 @@ namespace StackExchange.Redis
             }
         }
 
-        internal void AutoConfigure(PhysicalConnection connection)
+        internal void AutoConfigure(PhysicalConnection connection, Action<string> log)
         {
             if (serverType == ServerType.Twemproxy)
             {
@@ -284,6 +284,10 @@ namespace StackExchange.Redis
                 // the fallback master/slave detection won't help
                 return;
             }
+
+            multiplexer.LogLocked(log, $"{Format.ToString(this)}: Auto-configuring...");
+
+            var autoConfigProcessor = new ResultProcessor.AutoConfigureProcessor(log);
 
             var commandMap = multiplexer.CommandMap;
             const CommandFlags flags = CommandFlags.FireAndForget | CommandFlags.HighPriority | CommandFlags.NoRedirect;
@@ -297,14 +301,14 @@ namespace StackExchange.Redis
                 {
                     msg = Message.Create(-1, flags, RedisCommand.CONFIG, RedisLiterals.GET, RedisLiterals.timeout);
                     msg.SetInternalCall();
-                    WriteDirectOrQueueFireAndForget(connection, msg, ResultProcessor.AutoConfigure);
+                    WriteDirectOrQueueFireAndForget(connection, msg, autoConfigProcessor);
                 }
                 msg = Message.Create(-1, flags, RedisCommand.CONFIG, RedisLiterals.GET, RedisLiterals.slave_read_only);
                 msg.SetInternalCall();
-                WriteDirectOrQueueFireAndForget(connection, msg, ResultProcessor.AutoConfigure);
+                WriteDirectOrQueueFireAndForget(connection, msg, autoConfigProcessor);
                 msg = Message.Create(-1, flags, RedisCommand.CONFIG, RedisLiterals.GET, RedisLiterals.databases);
                 msg.SetInternalCall();
-                WriteDirectOrQueueFireAndForget(connection, msg, ResultProcessor.AutoConfigure);
+                WriteDirectOrQueueFireAndForget(connection, msg, autoConfigProcessor);
             }
             if (commandMap.IsAvailable(RedisCommand.INFO))
             {
@@ -313,17 +317,17 @@ namespace StackExchange.Redis
                 {
                     msg = Message.Create(-1, flags, RedisCommand.INFO, RedisLiterals.replication);
                     msg.SetInternalCall();
-                    WriteDirectOrQueueFireAndForget(connection, msg, ResultProcessor.AutoConfigure);
+                    WriteDirectOrQueueFireAndForget(connection, msg, autoConfigProcessor);
 
                     msg = Message.Create(-1, flags, RedisCommand.INFO, RedisLiterals.server);
                     msg.SetInternalCall();
-                    WriteDirectOrQueueFireAndForget(connection, msg, ResultProcessor.AutoConfigure);
+                    WriteDirectOrQueueFireAndForget(connection, msg, autoConfigProcessor);
                 }
                 else
                 {
                     msg = Message.Create(-1, flags, RedisCommand.INFO);
                     msg.SetInternalCall();
-                    WriteDirectOrQueueFireAndForget(connection, msg, ResultProcessor.AutoConfigure);
+                    WriteDirectOrQueueFireAndForget(connection, msg, autoConfigProcessor);
                 }
             }
             else if (commandMap.IsAvailable(RedisCommand.SET))
@@ -332,7 +336,7 @@ namespace StackExchange.Redis
                 RedisKey key = Guid.NewGuid().ToByteArray();
                 msg = Message.Create(0, flags, RedisCommand.SET, key, RedisLiterals.slave_read_only, RedisLiterals.PX, 1, RedisLiterals.NX);
                 msg.SetInternalCall();
-                WriteDirectOrQueueFireAndForget(connection, msg, ResultProcessor.AutoConfigure);
+                WriteDirectOrQueueFireAndForget(connection, msg, autoConfigProcessor);
             }
             if (commandMap.IsAvailable(RedisCommand.CLUSTER))
             {
@@ -711,25 +715,25 @@ namespace StackExchange.Redis
         }
         void Handshake(PhysicalConnection connection, Action<string> log)
         {
-            multiplexer.LogLocked(log, "Server handshake");
             if (connection == null)
             {
                 multiplexer.Trace("No connection!?");
                 return;
             }
+            multiplexer.LogLocked(log, $"{Format.ToString(connection.Bridge.Name)}: Server handshake");
             Message msg;
             // note that we need "" (not null) for password in the case of 'nopass' logins
             string username = Multiplexer.RawConfig.UserName, password = Multiplexer.RawConfig.Password ?? "";
             if (!string.IsNullOrWhiteSpace(username))
             {
-                multiplexer.LogLocked(log, "Authenticating (user/password)");
+                multiplexer.LogLocked(log, $"{Format.ToString(connection.Bridge.Name)}: Authenticating (user/password)");
                 msg = Message.Create(-1, CommandFlags.FireAndForget, RedisCommand.AUTH, (RedisValue)username, (RedisValue)password);
                 msg.SetInternalCall();
                 WriteDirectOrQueueFireAndForget(connection, msg, ResultProcessor.DemandOK);
             }
             else if (!string.IsNullOrWhiteSpace(password))
             {
-                multiplexer.LogLocked(log, "Authenticating (password)");
+                multiplexer.LogLocked(log, $"{Format.ToString(connection.Bridge.Name)}: Authenticating (password)");
                 msg = Message.Create(-1, CommandFlags.FireAndForget, RedisCommand.AUTH, (RedisValue)password);
                 msg.SetInternalCall();
                 WriteDirectOrQueueFireAndForget(connection, msg, ResultProcessor.DemandOK);
@@ -742,7 +746,7 @@ namespace StackExchange.Redis
                     name = nameSanitizer.Replace(name, "");
                     if (!string.IsNullOrWhiteSpace(name))
                     {
-                        multiplexer.LogLocked(log, "Setting client name: {0}", name);
+                        multiplexer.LogLocked(log, $"{Format.ToString(connection.Bridge.Name)}: Setting client name: {name}");
                         msg = Message.Create(-1, CommandFlags.FireAndForget, RedisCommand.CLIENT, RedisLiterals.SETNAME, (RedisValue)name);
                         msg.SetInternalCall();
                         WriteDirectOrQueueFireAndForget(connection, msg, ResultProcessor.DemandOK);
@@ -754,11 +758,10 @@ namespace StackExchange.Redis
 
             if (connType == ConnectionType.Interactive)
             {
-                multiplexer.LogLocked(log, "Auto-configure...");
-                AutoConfigure(connection);
+                AutoConfigure(connection, log);
             }
-            multiplexer.LogLocked(log, "Sending critical tracer: {0}", connection.Bridge);
             var tracer = GetTracerMessage(true);
+            multiplexer.LogLocked(log, $"{Format.ToString(connection.Bridge.Name)}: Sending critical tracer (handshake): {tracer.CommandAndKey}");
             tracer = LoggingMessage.Create(log, tracer);
             WriteDirectOrQueueFireAndForget(connection, tracer, ResultProcessor.EstablishConnection);
 
@@ -774,7 +777,7 @@ namespace StackExchange.Redis
                     WriteDirectOrQueueFireAndForget(connection, msg, ResultProcessor.TrackSubscriptions);
                 }
             }
-            multiplexer.LogLocked(log, "Flushing outbound buffer");
+            multiplexer.LogLocked(log, $"{Format.ToString(connection.Bridge.Name)}: Flushing outbound buffer");
             connection.Flush();
         }
 

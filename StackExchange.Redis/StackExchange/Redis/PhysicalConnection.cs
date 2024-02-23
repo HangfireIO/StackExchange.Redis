@@ -122,7 +122,7 @@ namespace StackExchange.Redis
             VolatileWrapper.Write(ref firstUnansweredWriteTickCount, 0);
             var endpoint = this.Bridge.ServerEndPoint.EndPoint;
 
-            Multiplexer.Trace("Connecting...", physicalName);
+            Multiplexer.LogLocked(log, $"{Format.ToString(this.Bridge.Name)}: BeginConnect");
             this.socketToken = Multiplexer.SocketManager.BeginConnect(endpoint, this, Multiplexer, log);
         }
 
@@ -894,7 +894,7 @@ namespace StackExchange.Redis
                 int bufferSize = config.WriteBuffer;
                 this.netStream = stream;
                 this.outStream = bufferSize <= 0 ? stream : new BufferedStream(stream, bufferSize);
-                Multiplexer.LogLocked(log, "Connected {0}", Bridge);
+                Multiplexer.LogLocked(log, $"{Bridge.Name}: Connected");
 
                 Bridge.OnConnected(this, log);
                 return true;
@@ -902,7 +902,7 @@ namespace StackExchange.Redis
             catch (Exception ex) when (!(ex is OutOfMemoryException))
             {
                 RecordConnectionFailed(ConnectionFailureType.InternalFailure, ex); // includes a bridge.OnDisconnected
-                Multiplexer.Trace("Could not connect: " + ex.Message, physicalName);
+                Multiplexer.Trace($"{Bridge.Name}: Could not connect: " + ex.Message, physicalName);
                 return false;
             }
         }

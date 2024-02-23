@@ -634,7 +634,7 @@ namespace StackExchange.Redis
             return true;
         }
 
-        private bool WaitAllIgnoreErrors<T>(Tuple<ResultBox<T>, ManualResetEvent>[] events, int timeoutMilliseconds, Action<string> log)
+        private bool WaitAllIgnoreErrors<T>(string name, Tuple<ResultBox<T>, ManualResetEvent>[] events, int timeoutMilliseconds, Action<string> log)
         {
             if (events == null) throw new ArgumentNullException(nameof(events));
             if (events.Length == 0)
@@ -647,7 +647,7 @@ namespace StackExchange.Redis
             var index = 0;
             var started = Stopwatch.StartNew();
             
-            LogLocked(log, "Waiting for event completion");
+            LogLocked(log, $"Waiting for {events.Length} {name} event completion");
 
             // Working around the limitation that WaitHandle.WaitAll can take maximum 64 handles
             while (index < events.Length)
@@ -673,6 +673,7 @@ namespace StackExchange.Redis
                 index = i;
             }
 
+            LogLocked(log, $"All {events.Length} {name} events completed cleanly");
             return true;
         }
 
@@ -1356,7 +1357,6 @@ namespace StackExchange.Redis
                 Trace(blame != null, "Blaming: " + Format.ToString(blame));
 
                 LogLocked(log, RawConfig.ToString(includePassword: false));
-                LogLocked(log, "");
 
 
                 if (first)
@@ -1446,7 +1446,7 @@ namespace StackExchange.Redis
                                 LogLocked(log, "Refreshing {0}...", Format.ToString(server.EndPoint));
                                 // note that these will be processed synchronously *BEFORE* the tracer is processed,
                                 // so we know that the configuration will be up to date if we see the tracer
-                                server.AutoConfigure(null);
+                                server.AutoConfigure(null, log);
                             }
 
                             var mre = new ManualResetEvent(false);
@@ -1463,9 +1463,27 @@ namespace StackExchange.Redis
                             }
 
                             available[i] = new Tuple<ResultBox<bool>, ManualResetEvent>(source, mre);
+                        }
+                        
+                        //Thread.Sleep(100);
 
-                            if (useTieBreakers)
+                        // Log current state after await
+                        foreach (var server in servers)
+                        {
+                            LogLocked(log, "{0}: Endpoint is {1}", Format.ToString(server.EndPoint), server.ConnectionState);
+                        }
+
+                        watch = watch ?? Stopwatch.StartNew();
+                        var remaining = RawConfig.ConnectTimeout - checked((int)watch.ElapsedMilliseconds);
+                        LogLocked(log, "Allowing endpoints {0} to respond...", TimeSpan.FromMilliseconds(remaining));
+                        Trace("Allowing endpoints " + TimeSpan.FromMilliseconds(remaining) + " to respond...");
+                        WaitAllIgnoreErrors("available", available, remaining, log);
+                        
+                        if (useTieBreakers)
+                        {
+                            for (int i = 0; i < available.Length; i++)
                             {
+                                var server = GetServerEndPoint(endpoints[i]);
                                 LogLocked(log, "Requesting tie-break from {0} > {1}...", Format.ToString(server.EndPoint), RawConfig.TieBreaker);
                                 Message msg = Message.Create(0, flags, RedisCommand.GET, tieBreakerKey);
                                 msg.SetInternalCall();
@@ -1485,29 +1503,23 @@ namespace StackExchange.Redis
                             }
                         }
 
-                        watch = watch ?? Stopwatch.StartNew();
-                        var remaining = RawConfig.ConnectTimeout - checked((int)watch.ElapsedMilliseconds);
-                        LogLocked(log, "Allowing endpoints {0} to respond...", TimeSpan.FromMilliseconds(remaining));
-                        Trace("Allowing endpoints " + TimeSpan.FromMilliseconds(remaining) + " to respond...");
-                        WaitAllIgnoreErrors(available, remaining, log);
-
                         EndPointCollection updatedClusterEndpointCollection = null;
                         for (int i = 0; i < available.Length; i++)
                         {
                             ResultBox<bool>.UnwrapAndRecycle(available[i].Item1, false, out var result, out var exception);
+                            var server = servers[i];
                             if (exception != null)
                             {
-                                servers[i].SetUnselectable(UnselectableFlags.DidNotRespond);
-                                LogLocked(log, "{0} faulted: {1}", Format.ToString(endpoints[i]), exception.Message);
+                                server.SetUnselectable(UnselectableFlags.DidNotRespond);
+                                LogLocked(log, "{0} faulted: {1}", Format.ToString(server), exception.Message);
                                 failureMessage = exception.Message;
                             }
                             else if (available[i].Item2.WaitOne(TimeSpan.Zero))
                             {
-                                var server = servers[i];
                                 if (result)
                                 {
-                                    servers[i].ClearUnselectable(UnselectableFlags.DidNotRespond);
-                                    LogLocked(log, "{0} returned with success", Format.ToString(endpoints[i]));
+                                    server.ClearUnselectable(UnselectableFlags.DidNotRespond);
+                                    LogLocked(log, "{0} returned with success as {1} {2}", Format.ToString(server), server.ServerType, (server.IsSlave ? "replica" : "primary"));
                                     
                                     // count the server types
                                     switch (server.ServerType)
@@ -1540,10 +1552,10 @@ namespace StackExchange.Redis
                                         case ServerType.Sentinel:
                                         case ServerType.Standalone:
                                         case ServerType.Cluster:
-                                            servers[i].ClearUnselectable(UnselectableFlags.ServerType);
+                                            server.ClearUnselectable(UnselectableFlags.ServerType);
                                             if (server.IsSlave)
                                             {
-                                                servers[i].ClearUnselectable(UnselectableFlags.RedundantMaster);
+                                                server.ClearUnselectable(UnselectableFlags.RedundantMaster);
                                             }
                                             else
                                             {
@@ -1551,20 +1563,20 @@ namespace StackExchange.Redis
                                             }
                                             break;
                                         default:
-                                            servers[i].SetUnselectable(UnselectableFlags.ServerType);
+                                            server.SetUnselectable(UnselectableFlags.ServerType);
                                             break;
                                     }
                                 }
                                 else
                                 {
                                     servers[i].SetUnselectable(UnselectableFlags.DidNotRespond);
-                                    LogLocked(log, "{0} returned, but incorrectly", Format.ToString(endpoints[i]));
+                                    LogLocked(log, "{0} returned, but incorrectly", Format.ToString(server));
                                 }
                             }
                             else
                             {
                                 servers[i].SetUnselectable(UnselectableFlags.DidNotRespond);
-                                LogLocked(log, "{0} did not respond", Format.ToString(endpoints[i]));
+                                LogLocked(log, "{0} did not respond", Format.ToString(server));
                             }
                         }
 
@@ -1601,10 +1613,12 @@ namespace StackExchange.Redis
                             {
                                 if (master == preferred)
                                 {
+                                    LogLocked(log, $"{Format.ToString(master)}: Clearing as RedundantMaster");
                                     master.ClearUnselectable(UnselectableFlags.RedundantMaster);
                                 }
                                 else
                                 {
+                                    LogLocked(log, $"{Format.ToString(master)}: Setting as RedundantMaster");
                                     master.SetUnselectable(UnselectableFlags.RedundantMaster);
                                 }
                             }
@@ -1637,7 +1651,6 @@ namespace StackExchange.Redis
                     string stormLog = GetStormLog();
                     if (!string.IsNullOrWhiteSpace(stormLog))
                     {
-                        LogLocked(log, "");
                         LogLocked(log, stormLog);
                     }
 
@@ -1720,7 +1733,7 @@ namespace StackExchange.Redis
             if (useTieBreakers)
             {   // count the votes
                 uniques = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-                WaitAllIgnoreErrors(tieBreakers, 50, log);
+                WaitAllIgnoreErrors("tiebreaker", tieBreakers, 50, log);
                 for (int i = 0; i < tieBreakers.Length; i++)
                 {
                     ResultBox<string>.UnwrapAndRecycle(tieBreakers[i].Item1, false, out var result, out var exception);
@@ -1736,11 +1749,11 @@ namespace StackExchange.Redis
                         string s = result;
                         if (string.IsNullOrWhiteSpace(s))
                         {
-                            LogLocked(log, "{0} had no tiebreaker set", Format.ToString(ep));
+                            LogLocked(log, "Election: {0} had no tiebreaker set", Format.ToString(ep));
                         }
                         else
                         {
-                            LogLocked(log, "{0} nominates: {1}", Format.ToString(ep), s);
+                            LogLocked(log, "Election: {0} nominates: {1}", Format.ToString(ep), s);
                             int count;
                             if (!uniques.TryGetValue(s, out count)) count = 0;
                             uniques[s] = count + 1;
@@ -1748,7 +1761,7 @@ namespace StackExchange.Redis
                     }
                     else
                     {
-                        LogLocked(log, "{0} failed to nominate (not completed)", Format.ToString(ep));
+                        LogLocked(log, "Election: {0} failed to nominate (not completed)", Format.ToString(ep));
                     }
                 }
             }

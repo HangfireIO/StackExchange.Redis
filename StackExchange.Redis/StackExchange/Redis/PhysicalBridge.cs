@@ -277,6 +277,7 @@ namespace StackExchange.Redis
             if (physical == connection && !isDisposed && ChangeState(State.Connecting, State.ConnectedEstablishing))
             {
                 ServerEndPoint.OnEstablishing(connection, log);
+                Multiplexer.LogLocked(log, $"{Format.ToString(ServerEndPoint)}: OnEstablishing complete");
             }
             else
             {
@@ -703,8 +704,7 @@ namespace StackExchange.Redis
                 {
                     if (!Multiplexer.IsDisposed)
                     {
-                        Multiplexer.LogLocked(log, "Connecting {0}...", Name);
-                        Multiplexer.Trace("Connecting...", Name);
+                        Multiplexer.LogLocked(log, $"{Name}: Connecting...");
                         if (ChangeState(State.Disconnected, State.Connecting))
                         {
                             Interlocked.Increment(ref socketCount);
@@ -719,8 +719,7 @@ namespace StackExchange.Redis
                 }
                 catch (Exception ex) when (!(ex is OutOfMemoryException))
                 {
-                    Multiplexer.LogLocked(log, "Connect {0} failed: {1}", Name, ex.Message);
-                    Multiplexer.Trace("Connect failed: " + ex.Message, Name);
+                    Multiplexer.LogLocked(log, $"{Name}: Connect failed: {ex.Message}");
                     ChangeState(State.Disconnected);
                     OnInternalError(ex);
                     throw;

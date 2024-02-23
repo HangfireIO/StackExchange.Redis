@@ -174,7 +174,7 @@ namespace StackExchange.Redis
         {
             try
             {
-                physical.Multiplexer.LogLocked(log, "Writing to {0}: {1}", physical.Bridge, tail.CommandAndKey);
+                physical.Multiplexer.LogLocked(log, "{0}: Writing {1}", physical.Bridge.Name, tail.CommandAndKey);
             }
             catch { }
             tail.WriteImpl(physical);
