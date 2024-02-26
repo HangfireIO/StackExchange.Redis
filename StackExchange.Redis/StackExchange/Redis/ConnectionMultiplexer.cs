@@ -954,8 +954,8 @@ namespace StackExchange.Redis
                             servers.Add(endpoint, server);
                         }
 
-                        var newSnapshot = serverSnapshot;
-                        Array.Resize(ref newSnapshot, newSnapshot.Length + 1);
+                        var newSnapshot = new ServerEndPoint[serverSnapshot.Length + 1];
+                        serverSnapshot.CopyTo(newSnapshot, 0);
                         newSnapshot[newSnapshot.Length - 1] = server;
                         serverSnapshot = newSnapshot;
                     }
