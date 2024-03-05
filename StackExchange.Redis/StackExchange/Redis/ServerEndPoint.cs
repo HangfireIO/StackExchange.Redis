@@ -759,10 +759,6 @@ namespace StackExchange.Redis
 
             var connType = connection.Bridge.ConnectionType;
 
-            if (connType == ConnectionType.Interactive)
-            {
-                AutoConfigure(connection, log);
-            }
             var tracer = GetTracerMessage(true);
             multiplexer.LogLocked(log, $"{Format.ToString(connection.Bridge.Name)}: Sending critical tracer (handshake): {tracer.CommandAndKey}");
             tracer = LoggingMessage.Create(log, tracer);

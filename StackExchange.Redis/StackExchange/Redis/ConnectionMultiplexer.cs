@@ -1394,34 +1394,6 @@ namespace StackExchange.Redis
                     }
                 }
 
-                LogLocked(log, "Waiting for any endpoint to fully establish connection...");
-
-                var watch = Stopwatch.StartNew();
-                var remaining = RawConfig.ConnectTimeout - checked((int)watch.ElapsedMilliseconds);
-
-                // We need to synchronize connection establishing logic to prevent cases, when
-                // cluster configuration isn't detected, because Handshake with AutoConfigure
-                // methods race with this method. If they are slow enough, server configuration
-                // isn't timely updated, and we set cluster node as a standalone master. Such
-                // way of waiting is not ideal, but still practical, however we need to understand
-                // how to get rid of race condition completely.
-                while (remaining > 0)
-                {
-                    if (serverSnapshot.Any(x => x.IsConnected))
-                    {
-                        break;
-                    }
-
-                    Thread.Sleep(10);
-                    remaining = RawConfig.ConnectTimeout - checked((int)watch.ElapsedMilliseconds);
-                }
-
-                // Log current state after await
-                foreach (var server in serverSnapshot)
-                {
-                    LogLocked(log, "{0}: Endpoint is {1}", Format.ToString(server.EndPoint), server.ConnectionState);
-                }
-
                 int attemptsLeft = first ? RawConfig.ConnectRetry : 1;
 
                 bool healthy = false;
@@ -1467,15 +1439,9 @@ namespace StackExchange.Redis
                         {
                             Trace("Testing: " + Format.ToString(endpoints[i]));
                             var server = GetServerEndPoint(endpoints[i]);
-                            //server.ReportNextFailure();
+                            server.AutoConfigure(null, log);
+
                             servers[i] = server;
-                            if (reconfigureAll && server.IsConnected)
-                            {
-                                LogLocked(log, "Refreshing {0}...", Format.ToString(server.EndPoint));
-                                // note that these will be processed synchronously *BEFORE* the tracer is processed,
-                                // so we know that the configuration will be up to date if we see the tracer
-                                server.AutoConfigure(null, log);
-                            }
 
                             var mre = new ManualResetEvent(false);
                             var source = ResultBox<bool>.Get(mre);
@@ -1493,12 +1459,18 @@ namespace StackExchange.Redis
                             available[i] = new Tuple<ResultBox<bool>, ManualResetEvent>(source, mre);
                         }
                         
-                        watch = watch ?? Stopwatch.StartNew();
-                        remaining = RawConfig.ConnectTimeout - checked((int)watch.ElapsedMilliseconds);
+                        var watch = Stopwatch.StartNew();
+                        var remaining = RawConfig.ConnectTimeout - checked((int)watch.ElapsedMilliseconds);
                         LogLocked(log, "Allowing endpoints {0} to respond...", TimeSpan.FromMilliseconds(remaining));
                         Trace("Allowing endpoints " + TimeSpan.FromMilliseconds(remaining) + " to respond...");
                         WaitAllIgnoreErrors("available", available, remaining, log);
-                        
+
+                        // Log current state after await
+                        foreach (var server in serverSnapshot)
+                        {
+                            LogLocked(log, "{0} Endpoint: State is {1}", Format.ToString(server.EndPoint), server.ConnectionState);
+                        }
+
                         if (useTieBreakers)
                         {
                             for (int i = 0; i < available.Length; i++)
