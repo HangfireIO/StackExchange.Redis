@@ -289,13 +289,12 @@ namespace StackExchange.Redis
 #else
                     CompletionTypeHelper.RunWithCompletionType(
                         cb => {
-                            multiplexer.LogLocked(log, "BeginConnect: {0}", formattedEndpoint);
+                            multiplexer.LogLocked(log, "{0} Socket Manager: BeginConnect", formattedEndpoint);
                             return socket.BeginConnect(endpoint, cb, tuple);
                         },
                         ar => {
-                            multiplexer.LogLocked(log, "EndConnect: {0}", formattedEndpoint);
+                            multiplexer.LogLocked(log, "{0} Socket Manager: EndConnect", formattedEndpoint);
                             EndConnectImpl(ar, multiplexer, log, tuple);
-                            multiplexer.LogLocked(log, "Connect complete: {0}", formattedEndpoint);
                         },
                         connectCompletionType,
                         multiplexer.SyncConnectTimeout(false));
@@ -435,7 +434,7 @@ namespace StackExchange.Redis
                 switch (socketMode)
                 {
                     case SocketMode.Async:
-                        multiplexer.LogLocked(log, $"{Format.ToString(endpoint)}: Starting read");
+                        multiplexer.LogLocked(log, $"{Format.ToString(endpoint)} Socket Manager: Starting read");
                         try
                         { callback.StartReading(); }
                         catch (Exception ex) when (!(ex is OutOfMemoryException))
@@ -445,7 +444,7 @@ namespace StackExchange.Redis
                         }
                         break;
                     case SocketMode.Sync:
-                        multiplexer.LogLocked(log, $"{Format.ToString(endpoint)}: Starting reader thread");
+                        multiplexer.LogLocked(log, $"{Format.ToString(endpoint)} Socket Manager: Starting reader thread");
                         try
                         {
 #if !CORE_CLR
@@ -488,6 +487,7 @@ namespace StackExchange.Redis
                 ConnectionMultiplexer.TraceExceptionWithoutContext(outer);
                 if (tuple != null)
                 {
+                    multiplexer.LogLocked(log, "{0} Socket Manager: Connection Error: {1}", tuple.Item1, outer.Message);
                     try
                     { tuple.Item3.Error(outer); }
                     catch (Exception inner) when (!(inner is OutOfMemoryException))

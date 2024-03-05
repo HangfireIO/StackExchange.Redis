@@ -285,7 +285,7 @@ namespace StackExchange.Redis
                 return;
             }
 
-            multiplexer.LogLocked(log, $"{Format.ToString(this)}: Auto-configuring...");
+            multiplexer.LogLocked(log, $"{Format.ToString(this)} Endpoint: Auto-configuring...");
 
             var autoConfigProcessor = new ResultProcessor.AutoConfigureProcessor(log);
 
@@ -658,8 +658,11 @@ namespace StackExchange.Redis
 
         internal string Summary()
         {
+            var serverTypeString = ConnectionState == PhysicalBridge.State.ConnectedEstablished
+                ? serverType.ToString() + " v" + version
+                : "Unknown";
             var sb = new StringBuilder(Format.ToString(endpoint))
-                .Append(": ").Append(serverType).Append(" v").Append(version).Append(", ").Append(isSlave ? "slave" : "master");
+                .Append(" Endpoint: ").Append(serverTypeString).Append(", ").Append(isSlave ? "slave" : "master");
             
 
             if (databases > 0) sb.Append("; ").Append(databases).Append(" databases");

@@ -673,7 +673,7 @@ namespace StackExchange.Redis
                 index = i;
             }
 
-            LogLocked(log, $"All {events.Length} {name} events completed cleanly");
+            LogLocked(log, $"Wait for {events.Length} {name} events completed");
             return true;
         }
 
@@ -1531,7 +1531,7 @@ namespace StackExchange.Redis
                             if (exception != null)
                             {
                                 server.SetUnselectable(UnselectableFlags.DidNotRespond);
-                                LogLocked(log, "{0} faulted: {1}", Format.ToString(server), exception.Message);
+                                LogLocked(log, "{0} Endpoint: Faulted: {1}", Format.ToString(server), exception.Message);
                                 failureMessage = exception.Message;
                             }
                             else if (available[i].Item2.WaitOne(TimeSpan.Zero))
@@ -1539,7 +1539,7 @@ namespace StackExchange.Redis
                                 if (result)
                                 {
                                     server.ClearUnselectable(UnselectableFlags.DidNotRespond);
-                                    LogLocked(log, "{0} returned with success as {1} {2}", Format.ToString(server), server.ServerType, (server.IsSlave ? "replica" : "primary"));
+                                    LogLocked(log, "{0} Endpoint: returned with success as {1} {2}", Format.ToString(server), server.ServerType, (server.IsSlave ? "replica" : "primary"));
                                     
                                     // count the server types
                                     switch (server.ServerType)
@@ -1590,13 +1590,13 @@ namespace StackExchange.Redis
                                 else
                                 {
                                     servers[i].SetUnselectable(UnselectableFlags.DidNotRespond);
-                                    LogLocked(log, "{0} returned, but incorrectly", Format.ToString(server));
+                                    LogLocked(log, "{0} Endpoint: returned, but incorrectly", Format.ToString(server));
                                 }
                             }
                             else
                             {
                                 servers[i].SetUnselectable(UnselectableFlags.DidNotRespond);
-                                LogLocked(log, "{0} did not respond", Format.ToString(server));
+                                LogLocked(log, "{0} Endpoint: did not respond", Format.ToString(server));
                             }
                         }
 

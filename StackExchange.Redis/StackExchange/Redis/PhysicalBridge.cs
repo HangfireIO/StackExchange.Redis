@@ -277,7 +277,7 @@ namespace StackExchange.Redis
             if (physical == connection && !isDisposed && ChangeState(State.Connecting, State.ConnectedEstablishing))
             {
                 ServerEndPoint.OnEstablishing(connection, log);
-                Multiplexer.LogLocked(log, $"{Format.ToString(ServerEndPoint)}: OnEstablishing complete");
+                Multiplexer.LogLocked(log, $"{Name}: OnEstablishing complete");
             }
             else
             {
