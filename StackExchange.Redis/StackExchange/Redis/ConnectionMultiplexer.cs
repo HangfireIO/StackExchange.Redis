@@ -1464,14 +1464,6 @@ namespace StackExchange.Redis
 
                             available[i] = new Tuple<ResultBox<bool>, ManualResetEvent>(source, mre);
                         }
-                        
-                        //Thread.Sleep(100);
-
-                        // Log current state after await
-                        foreach (var server in servers)
-                        {
-                            LogLocked(log, "{0}: Endpoint is {1}", Format.ToString(server.EndPoint), server.ConnectionState);
-                        }
 
                         watch = watch ?? Stopwatch.StartNew();
                         var remaining = RawConfig.ConnectTimeout - checked((int)watch.ElapsedMilliseconds);
