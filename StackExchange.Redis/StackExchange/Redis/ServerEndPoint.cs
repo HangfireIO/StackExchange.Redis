@@ -40,7 +40,7 @@ namespace StackExchange.Redis
 
         bool isDisposed;
 
-        ServerType serverType;
+        private volatile ServerType serverType;
 
         private bool slaveReadOnly, isSlave;
 
