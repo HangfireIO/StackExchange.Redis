@@ -166,10 +166,6 @@ namespace StackExchange.Redis
                     new ConnectionFailedEventArgs(handler, this, endpoint, connectionType, failureType, exception)
                 );
             }
-            if (reconfigure)
-            {
-                ReconfigureIfNeeded(endpoint, false, "connection failed");
-            }
         }
         internal void OnInternalError(Exception exception, EndPoint endpoint = null, ConnectionType connectionType = ConnectionType.None, [System.Runtime.CompilerServices.CallerMemberName] string origin = null)
         {
@@ -202,7 +198,6 @@ namespace StackExchange.Redis
                     new ConnectionFailedEventArgs(handler, this, endpoint, connectionType, ConnectionFailureType.None, null)
                 );
             }
-            ReconfigureIfNeeded(endpoint, false, "connection restored");
         }
 
 

@@ -40,7 +40,7 @@ namespace StackExchange.Redis
 
         bool isDisposed;
 
-        ServerType serverType;
+        int serverType;
 
         private bool slaveReadOnly, isSlave;
 
@@ -66,23 +66,23 @@ namespace StackExchange.Redis
             writeEverySeconds = config.KeepAlive > 0 ? config.KeepAlive : 60;
             interactive = CreateBridge(ConnectionType.Interactive, log);
             subscription = CreateBridge(ConnectionType.Subscription, null);
-            serverType = ServerType.Standalone;
+            serverType = (int)ServerType.Standalone;
 
             // overrides for twemproxy
             if (multiplexer.RawConfig.Proxy == Proxy.Twemproxy)
             {
                 databases = 1;
-                serverType = ServerType.Twemproxy;
+                serverType = (int)ServerType.Twemproxy;
             }
         }
 
         public ClusterConfiguration ClusterConfiguration { get; private set; }
 
-        public int Databases { get { return databases; } set { SetConfig(ref databases, value); } }
+        public int Databases { get { return Volatile.Read(ref databases); } set { Volatile.Write(ref databases, value); } }
 
         public EndPoint EndPoint => endpoint;
 
-        public bool HasDatabases => serverType == ServerType.Standalone;
+        public bool HasDatabases => ServerType == ServerType.Standalone;
 
         public bool IsConnected
         {
@@ -121,7 +121,7 @@ namespace StackExchange.Redis
             }
         }
 
-        public bool IsSlave { get { return isSlave; } set { SetConfig(ref isSlave, value); } }
+        public bool IsSlave { get { return Volatile.Read(ref isSlave); } set { Volatile.Write(ref isSlave, value); } }
 
         public long OperationCount
         {
@@ -136,17 +136,17 @@ namespace StackExchange.Redis
             }
         }
 
-        public bool RequiresReadMode => serverType == ServerType.Cluster && IsSlave;
+        public bool RequiresReadMode => ServerType == ServerType.Cluster && IsSlave;
 
-        public ServerType ServerType { get { return serverType; } set { SetConfig(ref serverType, value); } }
+        public ServerType ServerType { get { return (ServerType)Volatile.Read(ref serverType); } set { Volatile.Write(ref serverType, (int)value); } }
 
-        public bool SlaveReadOnly { get { return slaveReadOnly; } set { SetConfig(ref slaveReadOnly, value); } }
+        public bool SlaveReadOnly { get { return Volatile.Read(ref slaveReadOnly); } set { Volatile.Write(ref slaveReadOnly, value); } }
 
         public bool AllowSlaveWrites { get; set; }
 
-        public Version Version { get { return version; } set { SetConfig(ref version, value); } }
+        public Version Version { get { return Volatile.Read(ref version); } set { Volatile.Write(ref version, value); } }
 
-        public int WriteEverySeconds { get { return writeEverySeconds; } set { SetConfig(ref writeEverySeconds, value); } }
+        public int WriteEverySeconds { get { return Volatile.Read(ref writeEverySeconds); } set { Volatile.Write(ref writeEverySeconds, value); } }
         internal ConnectionMultiplexer Multiplexer => multiplexer;
 
         public void ClearUnselectable(UnselectableFlags flags)
@@ -278,7 +278,7 @@ namespace StackExchange.Redis
 
         internal void AutoConfigure(PhysicalConnection connection, Action<string> log)
         {
-            if (serverType == ServerType.Twemproxy)
+            if (ServerType == ServerType.Twemproxy)
             {
                 // don't try to detect configuration; all the config commands are disabled, and
                 // the fallback master/slave detection won't help
@@ -526,8 +526,8 @@ namespace StackExchange.Redis
         private EndPoint masterEndPoint;
         public EndPoint MasterEndPoint
         {
-            get { return masterEndPoint; }
-            set { SetConfig(ref masterEndPoint, value); }
+            get { return Volatile.Read(ref masterEndPoint); }
+            set { Volatile.Write(ref masterEndPoint, value); }
         }
 
 
@@ -659,7 +659,7 @@ namespace StackExchange.Redis
         internal string Summary()
         {
             var serverTypeString = ConnectionState == PhysicalBridge.State.ConnectedEstablished
-                ? serverType.ToString() + " v" + version
+                ? ServerType.ToString() + " v" + version
                 : "Unknown";
             var sb = new StringBuilder(Format.ToString(endpoint))
                 .Append(" Endpoint: ").Append(serverTypeString).Append(", ").Append(isSlave ? "slave" : "master");
@@ -782,16 +782,6 @@ namespace StackExchange.Redis
             }
             multiplexer.LogLocked(log, $"{Format.ToString(connection.Bridge.Name)}: Flushing outbound buffer");
             connection.Flush();
-        }
-
-        private void SetConfig<T>(ref T field, T value, [CallerMemberName] string caller = null)
-        {
-            if(!EqualityComparer<T>.Default.Equals(field, value))
-            {
-                multiplexer.Trace(caller + " changed from " + field + " to " + value, "Configuration");
-                field = value;
-                multiplexer.ReconfigureIfNeeded(endpoint, false, caller);
-            }
         }
     }
 }
