@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 
 namespace StackExchange.Redis
 {
@@ -760,7 +761,6 @@ namespace StackExchange.Redis
             {
                 var server = connection.Bridge.ServerEndPoint;
                 var config = new ClusterConfiguration(connection.Multiplexer.ServerSelectionStrategy, nodes, server.EndPoint);
-                server.SetClusterConfiguration(config);
                 return config;
             }
 

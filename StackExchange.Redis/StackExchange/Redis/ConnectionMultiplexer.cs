@@ -1694,6 +1694,7 @@ namespace StackExchange.Redis
             try
             {
                 var clusterConfig = ExecuteSyncImpl(message, ResultProcessor.ClusterNodes, server);
+                server.SetClusterConfiguration(clusterConfig, log);
                 return new EndPointCollection(clusterConfig.Nodes.Select(node => node.EndPoint).ToList());
             }
             catch (Exception ex) when (!(ex is OutOfMemoryException))

@@ -206,16 +206,16 @@ namespace StackExchange.Redis
             return new RedisFeatures(version);
         }
 
-        public void SetClusterConfiguration(ClusterConfiguration configuration)
+        public void SetClusterConfiguration(ClusterConfiguration configuration, Action<string> log)
         {
 
             ClusterConfiguration = configuration;
 
             if (configuration != null)
             {
-                multiplexer.Trace("Updating cluster ranges...");
+                multiplexer.LogLocked(log, "Updating cluster ranges...");
                 multiplexer.UpdateClusterRange(configuration);
-                multiplexer.Trace("Resolving genealogy...");
+                multiplexer.LogLocked(log, "Resolving cluster genealogy...");
                 var thisNode = configuration.Nodes.FirstOrDefault(x => x.EndPoint.Equals(this.EndPoint));
                 if (thisNode != null)
                 {
@@ -236,7 +236,7 @@ namespace StackExchange.Redis
                     Master = master;
                     Slaves = slaves?.ToArray() ?? NoSlaves;
                 }
-                multiplexer.Trace("Cluster configured");
+                multiplexer.LogLocked(log, "Cluster configured");
             }
         }
 
@@ -337,12 +337,6 @@ namespace StackExchange.Redis
                 msg = Message.Create(0, flags, RedisCommand.SET, key, RedisLiterals.slave_read_only, RedisLiterals.PX, 1, RedisLiterals.NX);
                 msg.SetInternalCall();
                 WriteDirectOrQueueFireAndForget(connection, msg, autoConfigProcessor);
-            }
-            if (commandMap.IsAvailable(RedisCommand.CLUSTER))
-            {
-                msg = Message.Create(-1, flags, RedisCommand.CLUSTER, RedisLiterals.NODES);
-                msg.SetInternalCall();
-                WriteDirectOrQueueFireAndForget(connection, msg, ResultProcessor.ClusterNodes);
             }
         }
 
