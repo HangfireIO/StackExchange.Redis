@@ -929,12 +929,13 @@ namespace StackExchange.Redis
 
         private static readonly ServerEndPoint[] NilServers = new ServerEndPoint[0];
 
-        internal ServerEndPoint GetServerEndPoint(EndPoint endpoint)
+        internal ServerEndPoint GetServerEndPoint(EndPoint endpoint, bool activate = false, Action<string> log = null)
         {
             if (endpoint == null) return null;
             var server = (ServerEndPoint)servers[endpoint];
             if (server == null)
             {
+                var isNew = false;
                 lock (servers)
                 {
                     server = (ServerEndPoint)servers[endpoint];
@@ -942,7 +943,8 @@ namespace StackExchange.Redis
                     {
                         if (isDisposed) throw new ObjectDisposedException(ToString());
 
-                        server = new ServerEndPoint(this, endpoint, null);
+                        server = new ServerEndPoint(this, endpoint, log);
+                        isNew = true;
                         // ^^ this could indirectly cause servers to become changes, so treble-check!
                         if (!servers.ContainsKey(endpoint))
                         {
@@ -954,7 +956,15 @@ namespace StackExchange.Redis
                         newSnapshot[newSnapshot.Length - 1] = server;
                         serverSnapshot = newSnapshot;
                     }
+                }
 
+                if (isNew && activate)
+                {
+                    server.Activate(ConnectionType.Interactive, log);
+                    if (CommandMap.IsAvailable(RedisCommand.SUBSCRIBE))
+                    {
+                        server.Activate(ConnectionType.Subscription, null); // no need to log the SUB stuff
+                    }
                 }
             }
             return server;
@@ -1360,32 +1370,9 @@ namespace StackExchange.Redis
                     {
                         EndPoints.ResolveEndPoints(this, log);
                     }
-                    int index = 0;
-                    lock (servers)
+                    foreach (var endpoint in EndPoints)
                     {
-                        serverSnapshot = new ServerEndPoint[EndPoints.Count];
-                        foreach (var endpoint in EndPoints)
-                        {
-                            var server = (ServerEndPoint)servers[endpoint];
-                            if (server == null)
-                            {
-                                server = new ServerEndPoint(this, endpoint, log);
-                                // ^^ this could indirectly cause servers to become changes, so treble-check!
-                                if (!servers.ContainsKey(endpoint))
-                                {
-                                    servers.Add(endpoint, server);
-                                }
-                            }
-                            serverSnapshot[index++] = server;
-                        }
-                    }
-                    foreach (var server in serverSnapshot)
-                    {
-                        server.Activate(ConnectionType.Interactive, log);
-                        if (CommandMap.IsAvailable(RedisCommand.SUBSCRIBE))
-                        {
-                            server.Activate(ConnectionType.Subscription, null); // no need to log the SUB stuff
-                        }
+                        GetServerEndPoint(endpoint, activate: true, log);
                     }
                 }
                 int attemptsLeft = first ? RawConfig.ConnectRetry : 1;
