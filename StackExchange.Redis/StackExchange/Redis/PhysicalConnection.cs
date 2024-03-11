@@ -896,8 +896,7 @@ namespace StackExchange.Redis
                 this.outStream = bufferSize <= 0 ? stream : new BufferedStream(stream, bufferSize);
                 Multiplexer.LogLocked(log, $"{Bridge.Name}: Connected");
 
-                Bridge.OnConnected(this, log);
-                return true;
+                return Bridge.OnConnected(this, log);
             }
             catch (Exception ex) when (!(ex is OutOfMemoryException))
             {

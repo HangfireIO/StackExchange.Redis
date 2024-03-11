@@ -271,13 +271,14 @@ namespace StackExchange.Redis
             }
         }
 
-        internal void OnConnected(PhysicalConnection connection, Action<string> log)
+        internal bool OnConnected(PhysicalConnection connection, Action<string> log)
         {
             Trace("OnConnected");
             if (physical == connection && !isDisposed && ChangeState(State.Connecting, State.ConnectedEstablishing))
             {
-                ServerEndPoint.OnEstablishing(connection, log);
+                var result = ServerEndPoint.OnEstablishing(connection, log);
                 Multiplexer.LogLocked(log, $"{Name}: OnEstablishing complete");
+                return result;
             }
             else
             {
@@ -289,6 +290,8 @@ namespace StackExchange.Redis
                 {
                     ConnectionMultiplexer.TraceExceptionWithoutContext(ex);
                 }
+
+                return false;
             }
         }
 

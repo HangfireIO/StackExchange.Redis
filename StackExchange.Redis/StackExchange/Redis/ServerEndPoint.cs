@@ -475,16 +475,17 @@ namespace StackExchange.Redis
             return bridge != null && bridge.IsConnected;
         }
 
-        internal void OnEstablishing(PhysicalConnection connection, Action<string> log)
+        internal bool OnEstablishing(PhysicalConnection connection, Action<string> log)
         {
             try
             {
-                if (connection == null) return;
-                Handshake(connection, log);
+                if (connection == null) return false;
+                return Handshake(connection, log);
             }
             catch (Exception ex) when (!(ex is OutOfMemoryException))
             {
                 connection.RecordConnectionFailed(ConnectionFailureType.InternalFailure, ex);
+                return false;
             }
         }
 
@@ -710,12 +711,12 @@ namespace StackExchange.Redis
             bridge.TryConnect(log);
             return bridge;
         }
-        void Handshake(PhysicalConnection connection, Action<string> log)
+        bool Handshake(PhysicalConnection connection, Action<string> log)
         {
             if (connection == null)
             {
                 multiplexer.Trace("No connection!?");
-                return;
+                return false;
             }
             multiplexer.LogLocked(log, $"{Format.ToString(connection.Bridge.Name)}: Server handshake");
             Message msg;
@@ -776,6 +777,7 @@ namespace StackExchange.Redis
             }
             multiplexer.LogLocked(log, $"{Format.ToString(connection.Bridge.Name)}: Flushing outbound buffer");
             connection.Flush();
+            return true;
         }
     }
 }
