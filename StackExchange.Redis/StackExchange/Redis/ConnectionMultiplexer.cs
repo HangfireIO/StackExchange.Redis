@@ -929,7 +929,7 @@ namespace StackExchange.Redis
 
         private static readonly ServerEndPoint[] NilServers = new ServerEndPoint[0];
 
-        internal ServerEndPoint GetServerEndPoint(EndPoint endpoint, bool activate = false, Action<string> log = null)
+        internal ServerEndPoint GetServerEndPoint(EndPoint endpoint, bool activate = true, Action<string> log = null)
         {
             if (endpoint == null) return null;
             var server = (ServerEndPoint)servers[endpoint];

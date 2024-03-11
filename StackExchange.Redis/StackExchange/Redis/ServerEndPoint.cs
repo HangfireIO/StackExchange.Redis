@@ -64,8 +64,6 @@ namespace StackExchange.Redis
             isSlave = false;
             databases = 0;
             writeEverySeconds = config.KeepAlive > 0 ? config.KeepAlive : 60;
-            interactive = CreateBridge(ConnectionType.Interactive, log);
-            subscription = CreateBridge(ConnectionType.Subscription, null);
             serverType = (int)ServerType.Standalone;
 
             // overrides for twemproxy
