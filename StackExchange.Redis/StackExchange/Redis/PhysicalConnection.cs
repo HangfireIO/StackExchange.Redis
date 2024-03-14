@@ -860,7 +860,7 @@ namespace StackExchange.Redis
 
                 if(config.Ssl)
                 {
-                    Multiplexer.LogLocked(log, "Configuring SSL");
+                    Multiplexer.LogLocked(log, $"{Bridge.Name}: Configuring SSL");
                     var host = config.SslHost;
                     if (string.IsNullOrWhiteSpace(host)) host = Format.ToStringHostOnly(Bridge.ServerEndPoint.EndPoint);
 
@@ -877,7 +877,7 @@ namespace StackExchange.Redis
                         ssl.AuthenticateAsClient(host, config.SslProtocols, config.CheckCertificateRevocation);
                         ssl.ReadTimeout = Timeout.Infinite;
 
-                        Multiplexer.LogLocked(log, $"SSL connection established successfully using protocol: {ssl.SslProtocol}");
+                        Multiplexer.LogLocked(log, $"{Bridge.Name}: SSL connection established successfully using protocol: {ssl.SslProtocol}");
                     }
                     catch (Exception authexception)
                     {
