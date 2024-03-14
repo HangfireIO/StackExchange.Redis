@@ -1355,13 +1355,13 @@ namespace StackExchange.Redis
 
                 if (!ranThisCall)
                 {
-                    LogLocked(log, "Reconfiguration was already in progress");
+                    LogLocked(log, "Reconfigure: Reconfiguration was already in progress");
                     return false;
                 }
                 Trace("Starting reconfiguration...");
                 Trace(blame != null, "Blaming: " + Format.ToString(blame));
 
-                LogLocked(log, RawConfig.ToString(includePassword: false));
+                LogLocked(log, $"Reconfigure: {RawConfig.ToString(includePassword: false)}");
 
 
                 if (first)
@@ -1386,7 +1386,7 @@ namespace StackExchange.Redis
                     }
                     int standaloneCount = 0, clusterCount = 0, sentinelCount = 0;
                     var endpoints = EndPoints;
-                    LogLocked(log, "{0} unique nodes specified", endpoints.Count);
+                    LogLocked(log, "Reconfigure: {0} unique nodes specified", endpoints.Count);
 
                     if (endpoints.Count == 0)
                     {
@@ -1425,7 +1425,7 @@ namespace StackExchange.Redis
                             servers[i] = server;
                             if (reconfigureAll && server.IsConnected)
                             {
-                                LogLocked(log, "Refreshing {0}...", Format.ToString(server.EndPoint));
+                                LogLocked(log, "Reconfigure: Refreshing {0}...", Format.ToString(server.EndPoint));
                                 // note that these will be processed synchronously *BEFORE* the tracer is processed,
                                 // so we know that the configuration will be up to date if we see the tracer
                                 server.AutoConfigure(null, log);
@@ -1449,7 +1449,7 @@ namespace StackExchange.Redis
 
                         watch = watch ?? Stopwatch.StartNew();
                         var remaining = RawConfig.ConnectTimeout - checked((int)watch.ElapsedMilliseconds);
-                        LogLocked(log, "Allowing endpoints {0} to respond...", TimeSpan.FromMilliseconds(remaining));
+                        LogLocked(log, "Reconfigure: Allowing endpoints {0} to respond...", TimeSpan.FromMilliseconds(remaining));
                         Trace("Allowing endpoints " + TimeSpan.FromMilliseconds(remaining) + " to respond...");
                         WaitAllIgnoreErrors("available", available, remaining, log);
                         
@@ -1458,7 +1458,7 @@ namespace StackExchange.Redis
                             for (int i = 0; i < available.Length; i++)
                             {
                                 var server = GetServerEndPoint(endpoints[i]);
-                                LogLocked(log, "Requesting tie-break from {0} > {1}...", Format.ToString(server.EndPoint), RawConfig.TieBreaker);
+                                LogLocked(log, "Reconfigure: Requesting tie-break from {0} > {1}...", Format.ToString(server.EndPoint), RawConfig.TieBreaker);
                                 Message msg = Message.Create(0, flags, RedisCommand.GET, tieBreakerKey);
                                 msg.SetInternalCall();
                                 msg = LoggingMessage.Create(log, msg);
@@ -1485,7 +1485,7 @@ namespace StackExchange.Redis
                             if (exception != null)
                             {
                                 server.SetUnselectable(UnselectableFlags.DidNotRespond);
-                                LogLocked(log, "{0} Endpoint: Faulted: {1}", Format.ToString(server), exception.Message);
+                                LogLocked(log, "Reconfigure: {0} Endpoint: Faulted: {1}", Format.ToString(server), exception.Message);
                                 failureMessage = exception.Message;
                             }
                             else if (available[i].Item2.WaitOne(TimeSpan.Zero))
@@ -1493,7 +1493,7 @@ namespace StackExchange.Redis
                                 if (result)
                                 {
                                     server.ClearUnselectable(UnselectableFlags.DidNotRespond);
-                                    LogLocked(log, "{0} Endpoint: returned with success as {1} {2}", Format.ToString(server), server.ServerType, (server.IsSlave ? "replica" : "primary"));
+                                    LogLocked(log, "Reconfigure: {0} Endpoint: returned with success as {1} {2}", Format.ToString(server), server.ServerType, (server.IsSlave ? "replica" : "primary"));
                                     
                                     // count the server types
                                     switch (server.ServerType)
@@ -1544,13 +1544,13 @@ namespace StackExchange.Redis
                                 else
                                 {
                                     servers[i].SetUnselectable(UnselectableFlags.DidNotRespond);
-                                    LogLocked(log, "{0} Endpoint: returned, but incorrectly", Format.ToString(server));
+                                    LogLocked(log, "Reconfigure: {0} Endpoint: returned, but incorrectly", Format.ToString(server));
                                 }
                             }
                             else
                             {
                                 servers[i].SetUnselectable(UnselectableFlags.DidNotRespond);
-                                LogLocked(log, "{0} Endpoint: did not respond", Format.ToString(server));
+                                LogLocked(log, "Reconfigure: {0} Endpoint: did not respond", Format.ToString(server));
                             }
                         }
 
@@ -1587,12 +1587,12 @@ namespace StackExchange.Redis
                             {
                                 if (master == preferred)
                                 {
-                                    LogLocked(log, $"{Format.ToString(master)}: Clearing as RedundantMaster");
+                                    LogLocked(log, $"Reconfigure: {Format.ToString(master)}: Clearing as RedundantMaster");
                                     master.ClearUnselectable(UnselectableFlags.RedundantMaster);
                                 }
                                 else
                                 {
-                                    LogLocked(log, $"{Format.ToString(master)}: Setting as RedundantMaster");
+                                    LogLocked(log, $"Reconfigure: {Format.ToString(master)}: Setting as RedundantMaster");
                                     master.SetUnselectable(UnselectableFlags.RedundantMaster);
                                 }
                             }
@@ -1601,7 +1601,7 @@ namespace StackExchange.Redis
                         {
                             ServerSelectionStrategy.ServerType = ServerType.Cluster;
                             long coveredSlots = ServerSelectionStrategy.CountCoveredSlots();
-                            LogLocked(log, "Cluster: {0} of {1} slots covered", coveredSlots, serverSelectionStrategy.TotalSlots);
+                            LogLocked(log, "Reconfigure: Cluster: {0} of {1} slots covered", coveredSlots, serverSelectionStrategy.TotalSlots);
                         }
                     }
 
@@ -1610,11 +1610,11 @@ namespace StackExchange.Redis
                         long subscriptionChanges = ValidateSubscriptions();
                         if (subscriptionChanges == 0)
                         {
-                            LogLocked(log, "No subscription changes necessary");
+                            LogLocked(log, "Reconfigure: No subscription changes necessary");
                         }
                         else
                         {
-                            LogLocked(log, "Subscriptions reconfigured: {0}", subscriptionChanges);
+                            LogLocked(log, "Reconfigure: Subscriptions reconfigured: {0}", subscriptionChanges);
                         }
                     }
                     if (showStats)
@@ -1630,9 +1630,9 @@ namespace StackExchange.Redis
 
                     if (first && !healthy && attemptsLeft > 0)
                     {
-                        LogLocked(log, "resetting failing connections to retry...");
+                        LogLocked(log, "Reconfigure: Resetting failing connections to retry...");
                         ResetAllNonConnected(log);
-                        LogLocked(log, "retrying; attempts left: " + attemptsLeft + "...");
+                        LogLocked(log, "Reconfigure: Retrying; attempts left: " + attemptsLeft + "...");
                     }
                     //WTF("?: " + attempts);
                 } while (first && !healthy && attemptsLeft > 0);
@@ -1643,14 +1643,14 @@ namespace StackExchange.Redis
                 }
                 if (first && RawConfig.HeartbeatInterval > 0)
                 {
-                    LogLocked(log, "Starting heartbeat...");
+                    LogLocked(log, "Reconfigure: Starting heartbeat...");
                     pulse = new Timer(heartbeat, this, RawConfig.HeartbeatInterval, RawConfig.HeartbeatInterval);
                 }
                 if(publishReconfigure)
                 {
                     try
                     {
-                        LogLocked(log, "Broadcasting reconfigure...");
+                        LogLocked(log, "Reconfigure: Broadcasting reconfigure...");
                         PublishReconfigureImpl(publishReconfigureFlags);
                     }
                     catch (Exception ex) when (!(ex is OutOfMemoryException))
@@ -1667,11 +1667,11 @@ namespace StackExchange.Redis
             }
             finally
             {
-                Trace("Exiting reconfiguration...");
+                LogLocked(log, "Reconfigure: Exiting reconfiguration...");
                 OnTraceLog(log);
                 if (ranThisCall) Interlocked.Exchange(ref activeConfigCause, null);
                 if (!first) OnConfigurationChanged(blame);
-                Trace("Reconfiguration exited");
+                LogLocked(log, "Reconfigure: Reconfiguration exited");
             }
         }
 
