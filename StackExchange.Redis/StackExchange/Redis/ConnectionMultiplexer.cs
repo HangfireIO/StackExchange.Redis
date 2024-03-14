@@ -1564,6 +1564,8 @@ namespace StackExchange.Redis
                         }
                     }
 
+                    LogLocked(log, $"Reconfigure: Standalone: {standaloneCount}, Cluster: {clusterCount}, Sentinel: {sentinelCount}");
+
                     healthy = standaloneCount != 0 || clusterCount != 0 || sentinelCount != 0;
                     if (healthy)
                     {
