@@ -879,7 +879,7 @@ namespace StackExchange.Redis
 
                         Multiplexer.LogLocked(log, $"SSL connection established successfully using protocol: {ssl.SslProtocol}");
                     }
-                    catch (AuthenticationException authexception)
+                    catch (Exception authexception)
                     {
                         Multiplexer.LogLocked(log, $"SSL authentication exception: {(authexception.InnerException ?? authexception).Message}");
                         RecordConnectionFailed(ConnectionFailureType.AuthenticationFailure, authexception.InnerException ?? authexception);
