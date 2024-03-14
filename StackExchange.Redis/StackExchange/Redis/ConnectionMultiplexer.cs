@@ -1631,7 +1631,7 @@ namespace StackExchange.Redis
                     if (first && !healthy && attemptsLeft > 0)
                     {
                         LogLocked(log, "resetting failing connections to retry...");
-                        ResetAllNonConnected();
+                        ResetAllNonConnected(log);
                         LogLocked(log, "retrying; attempts left: " + attemptsLeft + "...");
                     }
                     //WTF("?: " + attempts);
@@ -1692,12 +1692,12 @@ namespace StackExchange.Redis
         }
 
 
-        private void ResetAllNonConnected()
+        private void ResetAllNonConnected(Action<string> log)
         {
             var snapshot = serverSnapshot;
             foreach(var server in snapshot)
             {
-                server.ResetNonConnected();
+                server.ResetNonConnected(log);
             }
         }
 

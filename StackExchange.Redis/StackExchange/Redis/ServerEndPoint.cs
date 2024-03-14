@@ -49,10 +49,10 @@ namespace StackExchange.Redis
         private Version version;
 
 
-        internal void ResetNonConnected()
+        internal void ResetNonConnected(Action<string> log)
         {
-            interactive?.ResetNonConnected();
-            subscription?.ResetNonConnected();
+            interactive?.ResetNonConnected(log);
+            subscription?.ResetNonConnected(null);
         }
         public ServerEndPoint(ConnectionMultiplexer multiplexer, EndPoint endpoint, Action<string> log)
         {
