@@ -135,7 +135,7 @@ namespace StackExchange.Redis
 
         public void ServerFail(Message message, string errorMessage)
         {
-            SetException(message, new RedisServerException(errorMessage));
+            SetException(message, new RedisServerException($"{errorMessage} for {message.CommandAndKey}"));
         }
 
         public void SetException(Message message, Exception ex)
