@@ -87,6 +87,22 @@ namespace StackExchange.Redis
             // (there is no task for the inner command)
             (pending ?? (pending = new List<QueuedMessage>())).Add(queued);
 
+
+            switch(message.Command)
+            {
+                case RedisCommand.UNKNOWN:
+                case RedisCommand.EVAL:
+                case RedisCommand.EVALSHA:
+                    // people can do very naughty things in an EVAL
+                    // including change the DB; change it back to what we
+                    // think it should be!
+                    var sel = PhysicalConnection.GetSelectDatabaseCommand(message.Db);
+                    queued = new QueuedMessage(sel);
+                    wasQueued = ResultBox<bool>.Get(null);
+                    queued.SetSource(wasQueued, QueuedProcessor.Default);
+                    pending.Add(queued);
+                    break;
+            }
             return task;
         }
 
@@ -203,8 +219,6 @@ namespace StackExchange.Redis
 
             public IEnumerable<Message> GetMessages(PhysicalConnection connection)
             {
-                var resetDatabase = false;
-
                 try
                 {
                     // Important: if the server supports EXECABORT, then we can check the pre-conditions (pause there),
@@ -288,17 +302,6 @@ namespace StackExchange.Redis
 
                             foreach (var op in operations)
                             {
-                                switch (op.Command)
-                                {
-                                    case RedisCommand.UNKNOWN:
-                                    case RedisCommand.EVAL:
-                                    case RedisCommand.EVALSHA:
-                                        // people can do very naughty things in an EVAL
-                                        // including change the DB; change it back to what we
-                                        // think it should be!
-                                        resetDatabase = true;
-                                        break;
-                                }
                                 yield return op;
                             }
 
@@ -352,11 +355,6 @@ namespace StackExchange.Redis
                 }
                 connection.Multiplexer.Trace("End ot transaction: " + Command);
                 yield return this; // acts as either an EXEC or an UNWATCH, depending on "aborted"
-
-                if (resetDatabase)
-                {
-                    yield return PhysicalConnection.GetSelectDatabaseCommand(Db);
-                }
             }
 
             internal override void WriteImpl(PhysicalConnection physical)
