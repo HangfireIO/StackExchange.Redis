@@ -146,7 +146,7 @@ namespace Tests
                 var log = new StringWriter();
                 try
                 {
-                    using (var conn = ConnectionMultiplexer.Connect("doesnot.exist.ds.aasd981230d.com:6500", log)) { }
+                    using (var conn = ConnectionMultiplexer.Connect("doesnot.exist.ds.aasd981230d.com:6500", s => log.WriteLine(s))) { }
                 }
                 finally
                 {
@@ -177,7 +177,7 @@ namespace Tests
             var log = new StringWriter();
             try
             {
-                using (var conn = ConnectionMultiplexer.Connect("doesnot.exist.ds.aasd981230d.com:6500,abortConnect=false", log)) {
+                using (var conn = ConnectionMultiplexer.Connect("doesnot.exist.ds.aasd981230d.com:6500,abortConnect=false", s => log.WriteLine(s))) {
                     Assert.IsFalse(conn.GetServer(conn.GetEndPoints().Single()).IsConnected);
                     Assert.IsFalse(conn.GetDatabase().IsConnected(default(RedisKey)));
                 }
