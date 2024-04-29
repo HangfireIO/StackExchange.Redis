@@ -36,8 +36,12 @@
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
 
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net46' or '$(TargetFramework)' == 'netstandard2.0' or '$(TargetFramework)' == 'netcoreapp3.0' ">
+    <DefineConstants>$(DefineConstants);PLAT_SAFE_CONTINUATIONS;FEATURE_SERIALIZATION</DefineConstants>
+  </PropertyGroup>
+
   <PropertyGroup Condition=" '$(TargetFramework)' == 'net40' or  '$(TargetFramework)' == 'net45' or '$(TargetFramework)' == 'net46'">
-    <DefineConstants>$(DefineConstants);FEATURE_SERIALIZATION;FEATURE_SOCKET_MODE_POLL</DefineConstants>
+    <DefineConstants>$(DefineConstants);FEATURE_SERIALIZATION;FEATURE_PERFCOUNTERS</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard1.5' ">
@@ -67,6 +71,11 @@
     <PackageReference Include="System.Threading.Thread" Version="$(CoreFxVersion)" />
     <PackageReference Include="System.Threading.ThreadPool" Version="$(CoreFxVersion)" />
     <PackageReference Include="System.Threading.Timer" Version="$(CoreFxVersion)" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
+    <PackageReference Include="System.Reflection.Emit.Lightweight" Version="$(CoreFxVersion)" />
+    <PackageReference Include="System.Reflection.Emit.ILGeneration" Version="$(CoreFxVersion)" />
   </ItemGroup>
 
 </Project>
