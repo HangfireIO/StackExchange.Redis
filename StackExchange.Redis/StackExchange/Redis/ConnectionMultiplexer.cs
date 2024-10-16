@@ -1147,11 +1147,13 @@ namespace StackExchange.Redis
             return new RedisServer(this, server, asyncState);
         }
 
+        [Conditional("VERBOSE")]
         internal void Trace(string message, [System.Runtime.CompilerServices.CallerMemberName] string category = null)
         {
             OnTrace(message, category);
         }
 
+        [Conditional("VERBOSE")]
         internal void Trace(bool condition, string message, [System.Runtime.CompilerServices.CallerMemberName] string category = null)
         {
             if (condition) OnTrace(message, category);
@@ -1205,16 +1207,19 @@ namespace StackExchange.Redis
             }
         }
 
+        [Conditional("VERBOSE")]
         internal static void TraceExceptionWithoutContext(Exception exception, string message = null, [System.Runtime.CompilerServices.CallerMemberName] string category = null)
         {
             OnTraceWithoutContext(message + (exception?.Message ?? "(no exception)"), category, exception);
         }
 
+        [Conditional("VERBOSE")]
         internal static void TraceWithoutContext(string message, [System.Runtime.CompilerServices.CallerMemberName] string category = null)
         {
             OnTraceWithoutContext(message, category, null);
         }
 
+        [Conditional("VERBOSE")]
         internal static void TraceWithoutContext(bool condition, string message, [System.Runtime.CompilerServices.CallerMemberName] string category = null)
         {
             if(condition) OnTraceWithoutContext(message, category, null);
