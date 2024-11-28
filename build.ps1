@@ -116,10 +116,14 @@ foreach ($project in $projectsToBuild) {
     Write-Host $semVer -NoNewline -ForegroundColor "Cyan"
     Write-Host ")" -ForegroundColor "Magenta"
 
+    dotnet build "/t:$targets" "/p:Configuration=Release" "/p:Version=$semVer" "/p:PackageOutputPath=$packageOutputFolder" "/p:CI=true"
+    if ($LastExitCode -ne 0) {
+        Write-Host "Error while building, aborting build." -Foreground "Red"
+        Pop-Location
+        Exit 1
+    }
 
-	dotnet build "/t:$targets" "/p:Configuration=Release" "/p:Version=$semVer" "/p:PackageOutputPath=$packageOutputFolder" "/p:CI=true"
-
-	Pop-Location
+    Pop-Location
 
     Write-Host "Done."
     Write-Host ""
