@@ -6,7 +6,7 @@ using NUnit.Framework;
 
 namespace StackExchange.Redis.Tests
 {
-    [TestFixture, Ignore("reason?")]
+    [TestFixture]
     public class Sentinel
     {
         // TODO fill in these constants before running tests
@@ -15,7 +15,8 @@ namespace StackExchange.Redis.Tests
         private const string ServiceName = "mymaster";
 
         private static readonly ConnectionMultiplexer Conn = GetConn();
-        private static readonly IServer Server = Conn.GetServer(IP, Port);
+
+        private static IServer GetServer() => Conn.SentinelConnection.GetServer(IP, Port);
 
         public static ConnectionMultiplexer GetConn()
         {
@@ -38,14 +39,14 @@ namespace StackExchange.Redis.Tests
         [Test]
         public void PingTest()
         {
-            var test = Server.Ping();
+            var test = GetServer().Ping();
             Console.WriteLine("ping took {0} ms", test.TotalMilliseconds);
         }
 
         [Test]
         public void SentinelGetMasterAddressByNameTest()
         {
-            var endpoint = Server.SentinelGetMasterAddressByName(ServiceName);
+            var endpoint = GetServer().SentinelGetMasterAddressByName(ServiceName);
             Assert.IsNotNull(endpoint);
             var ipEndPoint = endpoint as IPEndPoint;
             Assert.IsNotNull(ipEndPoint);
@@ -55,14 +56,14 @@ namespace StackExchange.Redis.Tests
         [Test]
         public void SentinelGetMasterAddressByNameNegativeTest() 
         {
-            var endpoint = Server.SentinelGetMasterAddressByName("FakeServiceName");
+            var endpoint = GetServer().SentinelGetMasterAddressByName("FakeServiceName");
             Assert.IsNull(endpoint);
         }
 
         [Test]
         public void SentinelMasterTest()
         {
-            var dict = Server.SentinelMaster(ServiceName).ToDictionary();
+            var dict = GetServer().SentinelMaster(ServiceName).ToDictionary();
             Assert.AreEqual(ServiceName, dict["name"]);
             foreach (var kvp in dict)
             {
@@ -73,7 +74,7 @@ namespace StackExchange.Redis.Tests
         [Test]
         public void SentinelMastersTest()
         {
-            var masterConfigs = Server.SentinelMasters();
+            var masterConfigs = GetServer().SentinelMasters();
             Assert.IsTrue(masterConfigs.First().ToDictionary().ContainsKey("name"));
             foreach (var config in masterConfigs)
             {
@@ -87,7 +88,7 @@ namespace StackExchange.Redis.Tests
         [Test]
         public void SentinelSlavesTest() 
         {
-            var slaveConfigs = Server.SentinelSlaves(ServiceName);
+            var slaveConfigs = GetServer().SentinelSlaves(ServiceName);
             if (slaveConfigs.Any()) 
             {
                 Assert.IsTrue(slaveConfigs.First().ToDictionary().ContainsKey("name"));
@@ -100,10 +101,10 @@ namespace StackExchange.Redis.Tests
             }
         }
 
-        [Test, Ignore("reason?")]
+        [Test]
         public void SentinelFailoverTest()
         {
-            Server.SentinelFailover(ServiceName);
+            GetServer().SentinelFailover(ServiceName);
         }
     }
 }
