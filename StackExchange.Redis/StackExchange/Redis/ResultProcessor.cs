@@ -1580,10 +1580,15 @@ The coordinates as a two items x,y array (longitude,latitude).
                             var pairs = item.GetItems();
                             string ip = null;
                             int port = default;
+                            string masterLinkStatus = null;
                             if (KeyValuePairParser.TryRead(pairs, KeyValuePairParser.IP, ref ip)
                                 && KeyValuePairParser.TryRead(pairs, KeyValuePairParser.Port, ref port))
                             {
-                                endPoints.Add(Format.ParseEndPoint(ip, port));
+                                if (!KeyValuePairParser.TryRead(pairs, KeyValuePairParser.MasterLinkStatus, ref masterLinkStatus) ||
+                                    masterLinkStatus == null || masterLinkStatus.Equals("ok"))
+                                {
+                                    endPoints.Add(Format.ParseEndPoint(ip, port));
+                                }
                             }
                         }
                         SetResult(message, endPoints.ToArray());
@@ -1611,7 +1616,8 @@ The coordinates as a two items x,y array (longitude,latitude).
                 EntriesRead = Encoding.UTF8.GetBytes("entries-read"),
                 Lag = Encoding.UTF8.GetBytes("lag"),
                 IP = Encoding.UTF8.GetBytes("ip"),
-                Port = Encoding.UTF8.GetBytes("port");
+                Port = Encoding.UTF8.GetBytes("port"),
+                MasterLinkStatus = Encoding.UTF8.GetBytes("master-link-status");
 
             internal static bool TryRead(RawResult[] pairs, byte[] key, ref long value)
             {
