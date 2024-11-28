@@ -77,7 +77,7 @@ if ($RunTests) {
         #Push-Location ".\tests\$project"
         Push-Location ".\$project"
 
-        dotnet xunit -configuration Release -xml ./test-results.xml
+        dotnet test -configuration Release -xml ./test-results.xml
         if ($LastExitCode -ne 0) {
             Write-Host "Error with tests, aborting build." -Foreground "Red"
             Pop-Location
@@ -117,7 +117,7 @@ foreach ($project in $projectsToBuild) {
     Write-Host ")" -ForegroundColor "Magenta"
 
 
-	dotnet msbuild "/t:$targets" "/p:Configuration=Release" "/p:Version=$semVer" "/p:PackageOutputPath=$packageOutputFolder" "/p:CI=true"
+	dotnet build "/t:$targets" "/p:Configuration=Release" "/p:Version=$semVer" "/p:PackageOutputPath=$packageOutputFolder" "/p:CI=true"
 
 	Pop-Location
 
