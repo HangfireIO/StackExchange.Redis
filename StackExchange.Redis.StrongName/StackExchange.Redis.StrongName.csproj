@@ -57,7 +57,7 @@
     <PackageReference Include="System.IO.FileSystem" Version="$(CoreFxVersion)" />
     <PackageReference Include="System.Linq" Version="$(CoreFxVersion)" />
     <PackageReference Include="System.Net.NameResolution" Version="$(CoreFxVersion)" />
-    <PackageReference Include="System.Net.Security" Version="$(CoreFxVersion)" />
+    <PackageReference Include="System.Net.Security" Version="$(CoreFxVersion)" NoWarn="NU1902,NU1903" />
     <PackageReference Include="System.Net.Sockets" Version="$(CoreFxVersion)" />
     <PackageReference Include="System.Reflection.Emit" Version="$(CoreFxVersion)" />
     <PackageReference Include="System.Reflection.Emit.Lightweight" Version="$(CoreFxVersion)" />
@@ -66,7 +66,7 @@
     <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="$(CoreFxVersion)" />
     <PackageReference Include="System.Security.Cryptography.Algorithms" Version="$(CoreFxVersion)" />
     <PackageReference Include="System.Security.Cryptography.X509Certificates" Version="$(CoreFxVersion)" />
-    <PackageReference Include="System.Text.RegularExpressions" Version="$(CoreFxVersion)" />
+    <PackageReference Include="System.Text.RegularExpressions" Version="$(CoreFxVersion)" NoWarn="NU1903" />
     <PackageReference Include="System.Threading" Version="$(CoreFxVersion)" />
     <PackageReference Include="System.Threading.Thread" Version="$(CoreFxVersion)" />
     <PackageReference Include="System.Threading.ThreadPool" Version="$(CoreFxVersion)" />
