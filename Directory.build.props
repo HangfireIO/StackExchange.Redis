@@ -10,6 +10,8 @@
     <Authors>Stack Exchange, Inc.; marc.gravell</Authors>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <WarningsNotAsErrors>NU1901;NU1902;NU1903;NU1904</WarningsNotAsErrors>    
+    <NuGetAuditMode>direct</NuGetAuditMode>
+    <CheckNotRecommendedTargetFramework>false</CheckNotRecommendedTargetFramework>
     
     <PackageReleaseNotes>https://stackexchange.github.io/StackExchange.Redis/ReleaseNotes</PackageReleaseNotes>
     <PackageProjectUrl>https://github.com/StackExchange/StackExchange.Redis/</PackageProjectUrl>
