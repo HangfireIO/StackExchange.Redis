@@ -19,6 +19,12 @@ namespace StackExchange.Redis
         internal ConnectionMultiplexer sentinelConnection;
 
         /// <summary>
+        /// Gets the connection multiplexer instance related to Sentinel, or `null` in case
+        /// of a regular connection.
+        /// </summary>
+        public IConnectionMultiplexer SentinelConnection => sentinelConnection;
+
+        /// <summary>
         /// Initializes the connection as a Sentinel connection and adds the necessary event handlers to track changes to the managed primaries.
         /// </summary>
         internal void InitializeSentinel(Action<string> log)
