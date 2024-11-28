@@ -77,7 +77,7 @@ if ($RunTests) {
         #Push-Location ".\tests\$project"
         Push-Location ".\$project"
 
-        dotnet test -c Release
+        dotnet test -c Release -p:TestTfmsInParallel=false -l:trx;LogFileName=./test-results.xml
         if ($LastExitCode -ne 0) {
             Write-Host "Error with tests, aborting build." -Foreground "Red"
             Pop-Location
