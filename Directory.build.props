@@ -15,7 +15,7 @@
     
     <PackageReleaseNotes>https://stackexchange.github.io/StackExchange.Redis/ReleaseNotes</PackageReleaseNotes>
     <PackageProjectUrl>https://github.com/StackExchange/StackExchange.Redis/</PackageProjectUrl>
-    <PackageLicenseUrl>https://raw.github.com/StackExchange/StackExchange.Redis/master/LICENSE</PackageLicenseUrl>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
     
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/HangfireIO/StackExchange.Redis/</RepositoryUrl>
@@ -45,8 +45,12 @@
      <Reference Include="System.Core" Pack="false" />
    </ItemGroup>
 
+   <ItemGroup>
+     <None Include="..\LICENSE" Pack="true" PackagePath=""/>
+   </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" />
-    <PackageReference Include="NuGet.Build.Tasks.Pack" Version="4.3.0-preview1-4045" PrivateAssets="All" />
+    <PackageReference Include="NuGet.Build.Tasks.Pack" Version="6.12.1" PrivateAssets="All" />
   </ItemGroup>
 </Project>
