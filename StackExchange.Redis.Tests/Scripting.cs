@@ -73,7 +73,7 @@ namespace StackExchange.Redis.Tests
                     {
                         Assert.AreEqual(1, ex.InnerExceptions.Count);
                         Assert.IsInstanceOf<RedisServerException>(ex.InnerExceptions[0]);
-                        Assert.AreEqual("NOSCRIPT No matching script. Please use EVAL.", ex.InnerExceptions[0].Message);
+                        Assert.AreEqual("NOSCRIPT No matching script. Please use EVAL. for EVAL", ex.InnerExceptions[0].Message);
                     }
                 } else
                 {
