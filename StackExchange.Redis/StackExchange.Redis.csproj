@@ -55,7 +55,7 @@
     <PackageReference Include="System.IO.FileSystem" Version="$(CoreFxVersion)" />
     <PackageReference Include="System.Linq" Version="$(CoreFxVersion)" />
     <PackageReference Include="System.Net.NameResolution" Version="$(CoreFxVersion)" />
-    <PackageReference Include="System.Net.Security" Version="$(CoreFxVersion)" NoWarn="NU1903" />
+    <PackageReference Include="System.Net.Security" Version="$(CoreFxVersion)" NoWarn="NU1902,NU1903" />
     <PackageReference Include="System.Net.Sockets" Version="$(CoreFxVersion)" />
     <PackageReference Include="System.Reflection.Emit" Version="$(CoreFxVersion)" />
     <PackageReference Include="System.Reflection.Emit.Lightweight" Version="$(CoreFxVersion)" />
