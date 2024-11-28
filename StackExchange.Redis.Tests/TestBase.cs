@@ -299,6 +299,14 @@ namespace StackExchange.Redis.Tests
         
         protected virtual void GetAzureCredentials(out string name, out string password)
         {
+            name = Environment.GetEnvironmentVariable("STACKEXCHANGE_REDIS_TESTS_AZURE_SERVERNAME");
+            password = Environment.GetEnvironmentVariable("STACKEXCHANGE_REDIS_TESTS_AZURE_PASSWORD");
+
+            if (!String.IsNullOrEmpty(name))
+            {
+                return;
+            }
+
             var lines = File.ReadAllLines(@"d:\dev\azure.txt");
             if (lines == null || lines.Length != 2)
                 Assert.Inconclusive("azure credentials missing");

@@ -1,5 +1,11 @@
 image: Visual Studio 2022
 
+environment:
+  STACKEXCHANGE_REDIS_TESTS_AZURE_SERVERNAME:
+    secure: r3KZkWNHP0m7gN1MerZ8WAnwAnL/wsWUmmgWwPpFph6rw5t+k/Xn96iP7CCu3XLt
+  STACKEXCHANGE_REDIS_TESTS_AZURE_PASSWORD:
+    secure: WwryINia1gbEsKxBQ3ont5ENcyVZctp6MS3OA/tUHtQg6mOjZ8aeK853UGaCQEuc
+
 install:
 - cmd: >-
     cd RedisConfigs\3.0.503
