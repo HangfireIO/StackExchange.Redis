@@ -2121,7 +2121,7 @@ namespace StackExchange.Redis
         /// </summary>
         public void Dispose()
         {
-            Close(!isDisposed);
+            Close(allowCommandsToComplete: false);
             sentinelConnection?.Dispose();
             var oldTimer = Interlocked.Exchange(ref sentinelPrimaryReconnectTimer, null);
             oldTimer?.Dispose();
