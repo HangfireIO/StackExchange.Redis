@@ -28,7 +28,7 @@ namespace StackExchange.Redis.Tests
         [Test]
         public void RandomKey()
         {
-            using(var conn = Create(allowAdmin: true))
+            using(var conn = Create(allowAdmin: true, syncTimeout: 60 * 1000))
             {
                 var db = conn.GetDatabase();
                 conn.GetServer(PrimaryServer, PrimaryPort).FlushDatabase();
