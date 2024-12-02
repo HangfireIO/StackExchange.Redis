@@ -213,28 +213,30 @@ namespace StackExchange.Redis
             {
                 multiplexer.LogLocked(log, "Updating cluster ranges...");
                 multiplexer.UpdateClusterRange(configuration);
-                multiplexer.LogLocked(log, "Resolving cluster genealogy...");
-                var thisNode = configuration.Nodes.FirstOrDefault(x => x.EndPoint.Equals(this.EndPoint));
-                if (thisNode != null)
+            }
+        }
+
+        public void UpdateNodeRelations(ClusterConfiguration configuration)
+        {
+            var thisNode = configuration.Nodes.FirstOrDefault(x => x.EndPoint.Equals(this.EndPoint));
+            if (thisNode != null)
+            {
+                List<ServerEndPoint> slaves = null;
+                ServerEndPoint master = null;
+                foreach (var node in configuration.Nodes)
                 {
-                    List<ServerEndPoint> slaves = null;
-                    ServerEndPoint master = null;
-                    foreach (var node in configuration.Nodes)
+                    if (node.NodeId == thisNode.ParentNodeId)
                     {
-                        if (node.NodeId == thisNode.ParentNodeId)
-                        {
-                            master = multiplexer.GetServerEndPoint(node.EndPoint);
-                        }
-                        else if (node.ParentNodeId == thisNode.NodeId)
-                        {
-                            if (slaves == null) slaves = new List<ServerEndPoint>();
-                            slaves.Add(multiplexer.GetServerEndPoint(node.EndPoint));
-                        }
+                        master = multiplexer.GetServerEndPoint(node.EndPoint);
                     }
-                    Master = master;
-                    Slaves = slaves?.ToArray() ?? NoSlaves;
+                    else if (node.ParentNodeId == thisNode.NodeId)
+                    {
+                        if (slaves == null) slaves = new List<ServerEndPoint>();
+                        slaves.Add(multiplexer.GetServerEndPoint(node.EndPoint));
+                    }
                 }
-                multiplexer.LogLocked(log, "Cluster configured");
+                Master = master;
+                Slaves = slaves?.ToArray() ?? NoSlaves;
             }
         }
 

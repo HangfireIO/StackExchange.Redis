@@ -1689,7 +1689,19 @@ namespace StackExchange.Redis
             {
                 var clusterConfig = ExecuteSyncImpl(message, ResultProcessor.ClusterNodes, server);
                 server.SetClusterConfiguration(clusterConfig, log);
-                return new EndPointCollection(clusterConfig.Nodes.Select(node => node.EndPoint).ToList());
+
+                LogLocked(log, "Resolving cluster genealogy...");
+
+                var clusterEndpoints = new EndPointCollection(clusterConfig.Nodes.Where(node => node.EndPoint != null).Select(node => node.EndPoint).ToList());
+                // Loop through nodes in the cluster and update nodes relations to other nodes
+                foreach (var endpoint in clusterEndpoints)
+                {
+                    var serverEndpoint = GetServerEndPoint(endpoint);
+                    serverEndpoint?.UpdateNodeRelations(clusterConfig);
+                }
+                LogLocked(log, "Cluster configured");
+
+                return clusterEndpoints;
             }
             catch (Exception ex) when (!(ex is OutOfMemoryException))
             {
