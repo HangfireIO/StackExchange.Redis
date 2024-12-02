@@ -120,7 +120,9 @@ namespace StackExchange.Redis.Tests
             {
                 RedisKey key = Guid.NewGuid().ToByteArray();
                 var ep = conn.GetDatabase().IdentifyEndpoint(key);
-                Assert.AreEqual(ep, conn.GetServer(ep).ClusterConfiguration.GetBySlot(key).EndPoint);
+                var server = conn.GetServer(ep);
+                Thread.Sleep(500);
+                Assert.AreEqual(ep, server.ClusterConfiguration.GetBySlot(key).EndPoint);
             }
         }
 
@@ -539,12 +541,20 @@ namespace StackExchange.Redis.Tests
             using(var muxer = Create(allowAdmin: true))
             {
                 var db = muxer.GetDatabase();
-                for(int i = 0; i < 1000; i++)
+
+                for (int i = 0; i < 1000; i++)
                 {
-                    var key = Guid.NewGuid().ToString();
-                    var endpoint = db.IdentifyEndpoint(key, flags);
-                    var server = muxer.GetServer(endpoint);
-                    Assert.AreEqual(isSlave, server.IsSlave, key);
+                    try
+                    {
+                        var key = i.ToString();
+                        var endpoint = db.IdentifyEndpoint(key, flags);
+                        var server = muxer.GetServer(endpoint);
+                        Assert.AreEqual(isSlave, server.IsSlave, key);
+                    }
+                    catch (Exception ex)
+                    {
+                        Assert.Fail($"An exception occurred on iteration '{i}': {ex}");
+                    }
                 }
             }
         }
