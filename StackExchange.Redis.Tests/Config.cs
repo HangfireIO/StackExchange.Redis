@@ -29,6 +29,7 @@ namespace StackExchange.Redis.Tests
                 Thread.Sleep(500);
                 // send a reconfigure/reconnect message
                 long count = sender.PublishReconfigure();
+                Thread.Sleep(100);
                 GetServer(receiver).Ping();
                 GetServer(receiver).Ping();
                 Assert.IsTrue(count == -1 || count >= 2, "subscribers");
