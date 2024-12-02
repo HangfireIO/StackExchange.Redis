@@ -666,7 +666,7 @@ namespace StackExchange.Redis
         {
             switch (type)
             {
-                case SaveType.BackgroundRewriteAppendOnlyFile: return ResultProcessor.DemandOK;
+                case SaveType.BackgroundRewriteAppendOnlyFile: return ResultProcessor.BackgroundAofRewritingStarted;
                 case SaveType.BackgroundSave: return ResultProcessor.BackgroundSaveStarted;
 #pragma warning disable 0618
                 case SaveType.ForegroundSave: return ResultProcessor.DemandOK;

@@ -21,7 +21,8 @@ namespace StackExchange.Redis
             TrackSubscriptions = new TrackSubscriptionsProcessor(),
             Tracer = new TracerProcessor(false),
             EstablishConnection = new TracerProcessor(true),
-            BackgroundSaveStarted = new ExpectBasicStringProcessor(RedisLiterals.BytesBackgroundSavingStarted);
+            BackgroundSaveStarted = new ExpectBasicStringProcessor(RedisLiterals.BytesBackgroundSavingStarted),
+            BackgroundAofRewritingStarted = new ExpectBasicStringProcessor(RedisLiterals.BytesBackgroundAofRewritingStarted);
 
         public static readonly ResultProcessor<byte[]>
             ByteArray = new ByteArrayProcessor(),
