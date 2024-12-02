@@ -46,7 +46,8 @@ namespace StackExchange.Redis.Tests
 #endif
         static TestBase()
         {
-            TaskScheduler.UnobservedTaskException += (sender,args)=>
+            // TODO: Uncomment once https://github.com/dotnet/runtime/issues/80116 is fixed
+            /*TaskScheduler.UnobservedTaskException += (sender,args)=>
             {
                 Console.WriteLine("Unobserved: " + args.Exception);
                 args.SetObserved();
@@ -58,7 +59,7 @@ namespace StackExchange.Redis.Tests
                 {
                     exceptions.Add(args.Exception);
                 }
-            };
+            };*/
         }
 
 #if CORE_CLR
