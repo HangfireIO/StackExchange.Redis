@@ -1,0 +1,15 @@
+redis-server.exe --service-install --service-name "redis-6379" "..\Basic\master-6379.conf"
+redis-server.exe --service-install --service-name "redis-6380" "..\Basic\slave-6380.conf"
+redis-server.exe --service-install --service-name "redis-6381" "..\Basic\secure-6381.conf"
+redis-server.exe --service-install --service-name "redis-6382" "..\Failover\master-6382.conf"
+redis-server.exe --service-install --service-name "redis-6383" "..\Failover\slave-6383.conf"
+redis-server.exe --service-install --service-name "redis-7000" "..\Cluster\cluster-7000.conf" --dir "..\Cluster"
+redis-server.exe --service-install --service-name "redis-7001" "..\Cluster\cluster-7001.conf" --dir "..\Cluster"
+redis-server.exe --service-install --service-name "redis-7002" "..\Cluster\cluster-7002.conf" --dir "..\Cluster"
+redis-server.exe --service-install --service-name "redis-7003" "..\Cluster\cluster-7003.conf" --dir "..\Cluster"
+redis-server.exe --service-install --service-name "redis-7004" "..\Cluster\cluster-7004.conf" --dir "..\Cluster"
+redis-server.exe --service-install --service-name "redis-7005" "..\Cluster\cluster-7005.conf" --dir "..\Cluster"
+redis-server.exe --service-install --service-name "redis-7010" "..\Sentinel\redis-7010.conf"
+redis-server.exe --service-install --service-name "redis-7011" "..\Sentinel\redis-7011.conf"
+redis-server.exe --service-install --service-name "redis-26379" "..\Sentinel\sentinel-26379.conf" --sentinel
+redis-server.exe --service-install --service-name "redis-26380" "..\Sentinel\sentinel-26380.conf" --sentinel
