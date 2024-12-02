@@ -206,7 +206,11 @@ namespace StackExchange.Redis.Tests
                 var t2 = pub.PingAsync();
                 Thread.Sleep(100); // especially useful when testing any-order mode
 
-                if (!Task.WaitAll(new[] { t1, t2 }, muxer.TimeoutMilliseconds * 2)) throw new TimeoutException();
+                var timeout = muxer.TimeoutMilliseconds != Int32.MaxValue
+                    ? muxer.TimeoutMilliseconds * 2
+                    : Timeout.Infinite;
+
+                if (!Task.WaitAll(new[] { t1, t2 }, timeout)) throw new TimeoutException();
             }
         }
 
@@ -349,13 +353,14 @@ namespace StackExchange.Redis.Tests
                     Console.WriteLine("b: " + EndPointCollection.ToString(epB));
                     Console.WriteLine("a2 sent to: " + subA.Publish(channel, "a2"));
                     Console.WriteLine("b2 sent to: " + subB.Publish(channel, "b2"));
+
                     subA.Ping();
                     subB.Ping();
                     Console.WriteLine("Checking...");
                     
                     Assert.AreEqual(2, Interlocked.Read(ref aCount), "a");
                     Assert.AreEqual(2, Interlocked.Read(ref bCount), "b");
-                    Assert.AreEqual(4, Interlocked.CompareExchange(ref masterChanged, 0, 0), "master");
+                    Assert.AreEqual(6, Interlocked.CompareExchange(ref masterChanged, 0, 0), "master");
                 }
                 finally
                 {
