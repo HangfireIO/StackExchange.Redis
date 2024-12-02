@@ -19,8 +19,9 @@ namespace StackExchange.Redis.Tests
             options.Password = password;
             options.CertificateValidation += (sender, cert, chain, errors) => { return isCertValidationSucceeded; };
             options.AbortOnConnectFail = false;
+            options.ConnectRetry = 1;
 
-            using (var connection = ConnectionMultiplexer.Connect(options))
+            using (var connection = ConnectionMultiplexer.Connect(options, log: System.Console.WriteLine))
             {
                 connection.ConnectionFailed += (object sender, ConnectionFailedEventArgs e) =>
                 {
@@ -56,7 +57,8 @@ namespace StackExchange.Redis.Tests
             options.Ssl = true;
             options.Password = "";
             options.AbortOnConnectFail = false;
-            using (var muxer = ConnectionMultiplexer.Connect(options))
+            options.ConnectRetry = 1;
+            using (var muxer = ConnectionMultiplexer.Connect(options, log: System.Console.WriteLine))
             {
                 muxer.ConnectionFailed += (object sender, ConnectionFailedEventArgs e) =>
                 {
@@ -80,7 +82,8 @@ namespace StackExchange.Redis.Tests
             options.Ssl = true;
             options.Password = "";
             options.AbortOnConnectFail = false;
-            using (var muxer = ConnectionMultiplexer.Connect(options))
+            options.ConnectRetry = 1;
+            using (var muxer = ConnectionMultiplexer.Connect(options, log: System.Console.WriteLine))
             {
                 var ex = Assert.Throws<RedisConnectionException>(() => muxer.GetDatabase().Ping());
                 var rde = (RedisConnectionException)ex.InnerException;
