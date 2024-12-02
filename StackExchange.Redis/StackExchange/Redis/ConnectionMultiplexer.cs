@@ -1688,7 +1688,8 @@ namespace StackExchange.Redis
             try
             {
                 var clusterConfig = ExecuteSyncImpl(message, ResultProcessor.ClusterNodes, server);
-                server.SetClusterConfiguration(clusterConfig, log);
+                LogLocked(log, "Updating cluster ranges...");
+                UpdateClusterRange(clusterConfig);
 
                 LogLocked(log, "Resolving cluster genealogy...");
 
@@ -1697,7 +1698,7 @@ namespace StackExchange.Redis
                 foreach (var endpoint in clusterEndpoints)
                 {
                     var serverEndpoint = GetServerEndPoint(endpoint);
-                    serverEndpoint?.UpdateNodeRelations(clusterConfig);
+                    serverEndpoint?.SetClusterConfiguration(clusterConfig);
                 }
                 LogLocked(log, "Cluster configured");
 

@@ -121,7 +121,6 @@ namespace StackExchange.Redis.Tests
                 RedisKey key = Guid.NewGuid().ToByteArray();
                 var ep = conn.GetDatabase().IdentifyEndpoint(key);
                 var server = conn.GetServer(ep);
-                Thread.Sleep(5000);
                 Assert.AreEqual(ep, server.ClusterConfiguration.GetBySlot(key).EndPoint);
             }
         }

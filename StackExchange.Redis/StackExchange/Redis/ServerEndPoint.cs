@@ -204,20 +204,10 @@ namespace StackExchange.Redis
             return new RedisFeatures(version);
         }
 
-        public void SetClusterConfiguration(ClusterConfiguration configuration, Action<string> log)
+        public void SetClusterConfiguration(ClusterConfiguration configuration)
         {
-
             ClusterConfiguration = configuration;
 
-            if (configuration != null)
-            {
-                multiplexer.LogLocked(log, "Updating cluster ranges...");
-                multiplexer.UpdateClusterRange(configuration);
-            }
-        }
-
-        public void UpdateNodeRelations(ClusterConfiguration configuration)
-        {
             var thisNode = configuration.Nodes.FirstOrDefault(x => x.EndPoint.Equals(this.EndPoint));
             if (thisNode != null)
             {
