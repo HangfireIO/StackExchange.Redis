@@ -2,7 +2,7 @@
 
 namespace StackExchange.Redis.Tests
 {
-    [TestFixture]
+    [TestFixture, Ignore("No such machine available")]
     public class SSDB : TestBase
     {
         [Test]
