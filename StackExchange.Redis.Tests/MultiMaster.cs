@@ -20,7 +20,7 @@ namespace StackExchange.Redis.Tests
         {
             Assert.Throws<RedisCommandException>(() => {
                 ConfigurationOptions config = GetMasterSlaveConfig();
-                using (var conn = ConnectionMultiplexer.Connect(config))
+                using (var conn = ConnectionMultiplexer.Connect(config, log: Console.WriteLine))
                 {
                     var servers = conn.GetEndPoints().Select(e => conn.GetServer(e));
                     var slave = servers.First(x => x.IsSlave);
