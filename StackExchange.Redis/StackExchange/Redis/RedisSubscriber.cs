@@ -242,7 +242,12 @@ namespace StackExchange.Redis
 
             public bool Remove(Action<RedisChannel, RedisValue> value)
             {
-                if (value != null)
+                if (value == null)
+                {
+                    _asyncHandler = null;
+                    _syncHandler = null;
+                }
+                else
                 {
                     _asyncHandler -= value;
                     _syncHandler -= value;
