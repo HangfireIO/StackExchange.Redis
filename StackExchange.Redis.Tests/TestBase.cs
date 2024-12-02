@@ -56,7 +56,7 @@ namespace StackExchange.Redis.Tests
                 Interlocked.Increment(ref failCount);
                 lock (exceptions)
                 {
-                    exceptions.Add(args.Exception.Message);
+                    exceptions.Add(args.Exception);
                 }
             };
         }
@@ -74,7 +74,7 @@ namespace StackExchange.Redis.Tests
             Interlocked.Increment(ref failCount);
             lock(exceptions)
             {
-                exceptions.Add("Connection failed: " + EndPointCollection.ToString(e.EndPoint) + "/" + e.ConnectionType);
+                exceptions.Add(e.Exception);
             }
         }
 
@@ -83,7 +83,7 @@ namespace StackExchange.Redis.Tests
             Interlocked.Increment(ref failCount);
             lock (exceptions)
             {
-                exceptions.Add("Internal error: " + e.Origin + ", " + EndPointCollection.ToString(e.EndPoint) + "/" + e.ConnectionType);
+                exceptions.Add(e.Exception);
             }
         }
 
@@ -104,7 +104,7 @@ namespace StackExchange.Redis.Tests
                 exceptions.Clear();
             }
         }
-        private static readonly List<string> exceptions = new List<string>();
+        private static readonly List<Exception> exceptions = new List<Exception>();
         public void SetExpectedAmbientFailureCount(int count)
         {
             expectedFailCount = count;
