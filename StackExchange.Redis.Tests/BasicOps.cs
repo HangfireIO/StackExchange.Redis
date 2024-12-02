@@ -45,6 +45,7 @@ namespace StackExchange.Redis.Tests
                     using (var secondary = Create(fail: true))
                     {
                         secondary.GetDatabase().StringIncrement(key, flags: CommandFlags.FireAndForget);
+                        secondary.Close(allowCommandsToComplete: true);
                     }
                 }
 
