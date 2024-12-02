@@ -32,8 +32,8 @@ namespace StackExchange.Redis.Tests
                     //validate that in this case it throws an certificatevalidation exception
                     var ex = Assert.Throws<RedisConnectionException>(() => connection.GetDatabase().Ping());
                     var rde = (RedisConnectionException)ex.InnerException;
-                    Assert.That(rde.FailureType, Is.EqualTo(ConnectionFailureType.AuthenticationFailure));
-                    Assert.That(rde.InnerException.Message, Is.EqualTo("The remote certificate is invalid according to the validation procedure."));
+                    Assert.That(rde?.FailureType, Is.EqualTo(ConnectionFailureType.AuthenticationFailure));
+                    Assert.That(rde.InnerException?.Message, Is.EqualTo("The remote certificate is invalid according to the validation procedure."));
                 }
                 else
                 {
