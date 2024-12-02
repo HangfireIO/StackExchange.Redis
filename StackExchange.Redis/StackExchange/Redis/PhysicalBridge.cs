@@ -448,6 +448,7 @@ namespace StackExchange.Redis
                                     bool ignore;
                                     State oldState;
                                     OnDisconnected(ConnectionFailureType.SocketFailure, tmp, null, out ignore, out oldState);
+                                    tmp.Dispose();
                                 }
                             }
                             else if (!queue.Any() && tmp.GetSentAwaitingResponseCount() != 0)
