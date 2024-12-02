@@ -115,7 +115,7 @@ namespace StackExchange.Redis
             get
             {
                 var tmp = interactive;
-                return tmp.ConnectionState;
+                return tmp?.ConnectionState ?? PhysicalBridge.State.Disconnected;
             }
         }
 
