@@ -314,7 +314,7 @@ return timeTaken
                     Assert.AreEqual(1, b.Exception.InnerExceptions.Count);
                     var ex = b.Exception.InnerExceptions.Single();
                     Assert.IsInstanceOf<RedisException>(ex);
-                    Assert.AreEqual("oops", ex.Message);
+                    Assert.AreEqual("oops for EVAL", ex.Message);
 
                 }
                 var afterTran = conn.StringGetAsync(key);
