@@ -228,7 +228,7 @@ namespace StackExchange.Redis.Tests
 #if DEBUG
             var oldAsyncCompletionCount = ConnectionMultiplexer.GetAsyncCompletionWorkerCount();
 #endif
-            using (var muxer = Create())
+            using (var muxer = Create(allowAdmin: true))
             {
                 muxer.PreserveAsyncOrder = preserveOrder;
                 RedisKey key = "MBOA";
@@ -264,6 +264,7 @@ namespace StackExchange.Redis.Tests
 #if DEBUG
                 Console.WriteLine("Async completion workers: " + (ConnectionMultiplexer.GetAsyncCompletionWorkerCount() - oldAsyncCompletionCount));
 #endif
+                muxer.GetServer(PrimaryServer, PrimaryPort).FlushAllDatabases();
             }
         }
 
@@ -414,7 +415,7 @@ namespace StackExchange.Redis.Tests
         public void MassiveBulkOpsSync(bool preserveOrder, int threads)
         {
             int workPerThread = SyncOpsQty / threads;
-            using (var muxer = Create())
+            using (var muxer = Create(allowAdmin: true))
             {
                 muxer.PreserveAsyncOrder = preserveOrder;
                 RedisKey key = "MBOS";
@@ -440,6 +441,8 @@ namespace StackExchange.Redis.Tests
                 long newWorkerCount = ConnectionMultiplexer.GetAsyncCompletionWorkerCount();
                 Console.WriteLine("Workers {0}", newWorkerCount - oldWorkerCount);
 #endif
+
+                muxer.GetServer(PrimaryServer, PrimaryPort).FlushAllDatabases();
             }
         }
 
@@ -492,7 +495,7 @@ namespace StackExchange.Redis.Tests
         [TestCase(false, 5)]
         public void MassiveBulkOpsFireAndForget(bool preserveOrder, int threads)
         {
-            using (var muxer = Create())
+            using (var muxer = Create(allowAdmin: true))
             {
                 muxer.PreserveAsyncOrder = preserveOrder;
                 RedisKey key = "MBOF";
@@ -516,6 +519,8 @@ namespace StackExchange.Redis.Tests
                     val, elapsed.TotalMilliseconds, Me(),
                     preserveOrder ? "preserve order" : "any order",
                     val / elapsed.TotalSeconds, threads);
+
+                muxer.GetServer(PrimaryServer, PrimaryPort).FlushAllDatabases();
             }
         }
 
