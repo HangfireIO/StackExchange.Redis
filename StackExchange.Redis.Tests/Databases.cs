@@ -14,6 +14,7 @@ namespace StackExchange.Redis.Tests
                 var server = GetServer(muxer);
                 server.FlushDatabase(0, CommandFlags.FireAndForget);
                 server.FlushDatabase(1, CommandFlags.FireAndForget);
+                muxer.Close(allowCommandsToComplete: true);
             }
             using (var muxer = Create())
             {
