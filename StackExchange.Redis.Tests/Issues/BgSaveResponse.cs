@@ -1,5 +1,4 @@
-﻿using System.Threading;
-using NUnit.Framework;
+﻿using NUnit.Framework;
 
 namespace StackExchange.Redis.Tests.Issues
 {
@@ -18,7 +17,6 @@ namespace StackExchange.Redis.Tests.Issues
             {
                 var Server = GetServer(conn);
                 Server.FlushAllDatabases();
-                Thread.Sleep(5000); // Waiting for pending save/bgsave calls
                 Server.Save(saveType);
             }
         }
