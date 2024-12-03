@@ -82,11 +82,10 @@ namespace StackExchange.Redis.Tests
                     Assert.True(ex.Message.Contains("No connection is available to service this operation: EXISTS DeslaveGoesToPrimary"));
                 }
 
-                primary.MakeMaster(ReplicationChangeOptions.Broadcast | ReplicationChangeOptions.EnslaveSubordinates | ReplicationChangeOptions.SetTiebreaker);
+                primary.MakeMaster(ReplicationChangeOptions.Broadcast | ReplicationChangeOptions.EnslaveSubordinates | ReplicationChangeOptions.SetTiebreaker, Console.WriteLine);
 
                 primary.Ping();
                 secondary.Ping();
-                Thread.Sleep(2000);
 
                 preferMaster = db.IdentifyEndpoint(key, CommandFlags.PreferMaster);
                 demandMaster = db.IdentifyEndpoint(key, CommandFlags.DemandMaster);
