@@ -14,15 +14,15 @@ namespace StackExchange.Redis
     {
         public static readonly ResultProcessor<bool>
             Boolean = new BooleanProcessor(),
-            DemandOK = new ExpectBasicStringProcessor(RedisLiterals.BytesOK),
-            DemandPONG = new ExpectBasicStringProcessor(RedisLiterals.BytesPONG),
+            DemandOK = new ExpectBasicStringProcessor(new [] { RedisLiterals.BytesOK }),
+            DemandPONG = new ExpectBasicStringProcessor(new [] { RedisLiterals.BytesPONG }),
             DemandZeroOrOne = new DemandZeroOrOneProcessor(),
             AutoConfigure = new AutoConfigureProcessor(null),
             TrackSubscriptions = new TrackSubscriptionsProcessor(),
             Tracer = new TracerProcessor(false),
             EstablishConnection = new TracerProcessor(true),
-            BackgroundSaveStarted = new ExpectBasicStringProcessor(RedisLiterals.BytesBackgroundSavingStarted),
-            BackgroundAofRewritingStarted = new ExpectBasicStringProcessor(RedisLiterals.BytesBackgroundAofRewritingStarted);
+            BackgroundSaveStarted = new ExpectBasicStringProcessor(new [] { RedisLiterals.BytesBackgroundSavingStarted }),
+            BackgroundAofRewritingStarted = new ExpectBasicStringProcessor(new [] { RedisLiterals.BytesBackgroundAofRewritingStarted, RedisLiterals.BytesBackgroundAofRewritingScheduled });
 
         public static readonly ResultProcessor<byte[]>
             ByteArray = new ByteArrayProcessor(),
@@ -885,22 +885,30 @@ namespace StackExchange.Redis
         }
         sealed class ExpectBasicStringProcessor : ResultProcessor<bool>
         {
-            private readonly byte[] expected;
-            public ExpectBasicStringProcessor(string value)
+            private readonly byte[][] expected;
+            public ExpectBasicStringProcessor(string[] values)
             {
-                expected = Encoding.UTF8.GetBytes(value);
+                expected = new byte[values.Length][];
+                for (var i = 0; i < values.Length; i++)
+                {
+                    expected[i] = Encoding.UTF8.GetBytes(values[i]);
+                }
             }
-            public ExpectBasicStringProcessor(byte[] value)
+            public ExpectBasicStringProcessor(byte[][] values)
             {
-                expected = value;
+                expected = values;
             }
             protected override bool SetResultCore(PhysicalConnection connection, Message message, RawResult result)
             {
-                if (result.IsEqual(expected))
+                for (var i = 0; i < expected.Length; i++)
                 {
-                    SetResult(message, true);
-                    return true;
+                    if (result.IsEqual(expected[i]))
+                    {
+                        SetResult(message, true);
+                        return true;
+                    }
                 }
+
                 return false;
             }
         }

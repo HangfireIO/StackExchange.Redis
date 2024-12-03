@@ -107,6 +107,7 @@ namespace StackExchange.Redis
         public static readonly byte[] BytesPONG = Encoding.UTF8.GetBytes("PONG");
         public static readonly byte[] BytesBackgroundSavingStarted = Encoding.UTF8.GetBytes("Background saving started");
         public static readonly byte[] BytesBackgroundAofRewritingStarted = Encoding.UTF8.GetBytes("Background append only file rewriting started");
+        public static readonly byte[] BytesBackgroundAofRewritingScheduled = Encoding.UTF8.GetBytes("Background append only file rewriting scheduled");
         public static readonly byte[] ByteWildcard = { (byte)'*' };
         internal static RedisValue Get(Bitwise operation)
         {
