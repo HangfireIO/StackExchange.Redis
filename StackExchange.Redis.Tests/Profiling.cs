@@ -374,6 +374,7 @@ namespace StackExchange.Redis.Tests
                                     }
 
                                     Task.WaitAll(allTasks.ToArray());
+                                    Thread.Sleep(500);
 
                                     results[ix].Add(conn.FinishProfiling(ctx));
                                 }
