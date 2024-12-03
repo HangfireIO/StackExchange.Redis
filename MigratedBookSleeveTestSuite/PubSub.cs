@@ -31,7 +31,7 @@ namespace Tests
                 TestMassivePublish(conn, "local");
             }
         }
-        [Test]
+        [Test, Ignore("No remote endpoint configured")]
         public void TestMassivePublishWithWithoutFlush_Remote()
         {
             using (var muxer = Config.GetRemoteConnection(waitForOpen: true))
@@ -71,7 +71,7 @@ namespace Tests
         }
 
 
-        [Test]
+        [Test, Ignore("No remote endpoint configured")]
         public void PubSubOrder()
         {
             using (var muxer = Config.GetRemoteConnection(waitForOpen: true))
