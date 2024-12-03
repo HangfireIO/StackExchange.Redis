@@ -58,7 +58,7 @@ namespace Tests.Issues
         [Test]
         public void ExecuteWithNonHashStartingPoint()
         {
-            Assert.Throws<RedisConnectionException>(() =>
+            Assert.Throws<RedisServerException>(() =>
             {
                 using (var muxer = Config.GetUnsecuredConnection())
                 {
