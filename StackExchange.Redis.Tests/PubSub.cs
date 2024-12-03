@@ -333,7 +333,7 @@ namespace StackExchange.Redis.Tests
                     subA.Ping();
                     subB.Ping();
                     Console.WriteLine("Pausing...");
-                    Thread.Sleep(2000);
+                    Thread.Sleep(5000);
 
                     Assert.IsTrue(a.GetServer(PrimaryServer, PrimaryPort).IsSlave, PrimaryPortString + " is slave via a");
                     Assert.IsFalse(a.GetServer(PrimaryServer, SlavePort).IsSlave, SlavePortString + " is master via a");
@@ -357,7 +357,7 @@ namespace StackExchange.Redis.Tests
                     subA.Ping();
                     subB.Ping();
                     Console.WriteLine("Checking...");
-                    Thread.Sleep(5000);
+
                     Assert.AreEqual(2, Interlocked.Read(ref aCount), "a");
                     Assert.AreEqual(2, Interlocked.Read(ref bCount), "b");
                     Assert.AreEqual(6, Interlocked.CompareExchange(ref masterChanged, 0, 0), "master");
