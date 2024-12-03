@@ -53,7 +53,7 @@ namespace StackExchange.Redis.Tests
                 var sb = new StringBuilder();
                 void AppendLog(string msg) => sb.AppendLine(msg);
 
-                conn.Configure(AppendLog);
+                conn.Configure(msg => { AppendLog(msg); Console.WriteLine("Configure: " + msg); });
                 string log = sb.ToString();
 
                 Assert.IsTrue(log.Contains("tie-break is unanimous at " + PrimaryServer + ":" + PrimaryPort),
@@ -82,7 +82,7 @@ namespace StackExchange.Redis.Tests
                     Assert.True(ex.Message.Contains("No connection is available to service this operation: EXISTS DeslaveGoesToPrimary"));
                 }
 
-                primary.MakeMaster(ReplicationChangeOptions.Broadcast | ReplicationChangeOptions.EnslaveSubordinates | ReplicationChangeOptions.SetTiebreaker, Console.WriteLine);
+                primary.MakeMaster(ReplicationChangeOptions.Broadcast | ReplicationChangeOptions.EnslaveSubordinates | ReplicationChangeOptions.SetTiebreaker, msg => Console.WriteLine("MakeMaster: " + msg));
 
                 primary.Ping();
                 secondary.Ping();

@@ -1360,7 +1360,7 @@ namespace StackExchange.Redis
 
                 if (!ranThisCall)
                 {
-                    LogLocked(log, "Reconfigure: Reconfiguration was already in progress");
+                    LogLocked(log, $"Reconfigure: Reconfiguration was already in progress with cause '{activeConfigCause}'");
                     return false;
                 }
                 Trace("Starting reconfiguration...");
