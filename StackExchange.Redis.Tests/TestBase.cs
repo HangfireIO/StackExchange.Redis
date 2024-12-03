@@ -187,7 +187,7 @@ namespace StackExchange.Redis.Tests
             string clientName = null, int? syncTimeout = null, bool? allowAdmin = null, int? keepAlive = null,
             int? connectTimeout = null, string password = null, string tieBreaker = null, Action<string> log = null,
             bool fail = true, string[] disabledCommands = null, string[] enabledCommands = null,
-            bool checkConnect = true, bool pause = true, string failMessage = null,
+            bool checkConnect = true, bool pause = false, string failMessage = null,
             string channelPrefix = null, bool useSharedSocketManager = true, Proxy? proxy = null)
         {
             if(pause) Thread.Sleep(250); // get a lot of glitches when hammering new socket creations etc; pace it out a bit
