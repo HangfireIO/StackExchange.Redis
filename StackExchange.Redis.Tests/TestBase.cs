@@ -137,7 +137,7 @@ namespace StackExchange.Redis.Tests
             try
             {
                 Console.WriteLine("Cleaning up the databases after test...");
-                using (var multiplexer = Create(allowAdmin: true, pause: false, log: null))
+                using (var multiplexer = Create(allowAdmin: true, pause: false, log: _ => {}))
                 {
                     var endpoints = multiplexer.GetEndPoints();
 
