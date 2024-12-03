@@ -137,14 +137,18 @@ namespace StackExchange.Redis.Tests
             try
             {
                 Console.WriteLine("Cleaning up the databases after test...");
-                using (var multiplexer = Create(allowAdmin: true, pause: false))
+                using (var multiplexer = Create(allowAdmin: true, pause: false, log: null))
                 {
                     var endpoints = multiplexer.GetEndPoints();
 
                     foreach (var endpoint in endpoints)
                     {
                         var server = multiplexer.GetServer(endpoint);
-                        if (!server.IsSlave) server.FlushAllDatabases(CommandFlags.FireAndForget);
+                        if (!server.IsSlave)
+                        {
+                            Console.WriteLine("Flushing " + server.EndPoint + "...");
+                            server.FlushAllDatabases(CommandFlags.FireAndForget);
+                        }
                     }
 
                     multiplexer.Close(allowCommandsToComplete: true);
