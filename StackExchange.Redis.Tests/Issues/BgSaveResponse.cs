@@ -16,7 +16,6 @@ namespace StackExchange.Redis.Tests.Issues
             using (var conn = Create(null, null, true))
             {
                 var Server = GetServer(conn);
-                Server.FlushAllDatabases();
                 Server.Save(saveType);
             }
         }
