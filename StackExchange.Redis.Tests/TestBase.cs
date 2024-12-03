@@ -132,20 +132,7 @@ namespace StackExchange.Redis.Tests
                     }
                 }
                 Assert.Fail(sb.ToString());
-            }
-
-            try
-            {
-                using (var multiplexer = Create(allowAdmin: true))
-                {
-                    multiplexer.GetServer(PrimaryServer, PrimaryPort).FlushAllDatabases(CommandFlags.FireAndForget);
-                    multiplexer.Close(allowCommandsToComplete: true);
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("An exception occurred while trying to clean up the database: " + ex);
-            }
+            }            
         }
 
         protected const int PrimaryPort = 6379, SlavePort = 6380, SecurePort = 6381;
