@@ -1,4 +1,6 @@
-﻿using NUnit.Framework;
+﻿using System;
+using System.Threading;
+using NUnit.Framework;
 
 namespace StackExchange.Redis.Tests.Issues
 {
@@ -16,7 +18,24 @@ namespace StackExchange.Redis.Tests.Issues
             using (var conn = Create(null, null, true))
             {
                 var Server = GetServer(conn);
-                Server.Save(saveType);
+
+                for (var i = 0; i < 5; i++)
+                {
+                    try
+                    {
+                        Server.Save(saveType);
+                        return;
+                    }
+                    catch (RedisServerException ex)
+                    {
+                        if (!ex.Message.Contains("already in progress"))
+                        {
+                            throw;
+                        }
+                    }
+
+                    Thread.Sleep(1000);
+                }
             }
         }
     }
