@@ -405,22 +405,26 @@ namespace StackExchange.Redis
                 server.QueueDirectFireAndForget(msg, ResultProcessor.DemandOK);
             }
 
-
-
             // try and broadcast this everywhere, to catch the maximum audience
-            if ((options & ReplicationChangeOptions.Broadcast) != 0 && ConfigurationChangedChannel != null
-                && CommandMap.IsAvailable(RedisCommand.PUBLISH))
+            void Broadcast(ServerEndPoint[] broadcastNodes)
             {
-                RedisValue channel = ConfigurationChangedChannel;
-                foreach (var node in nodes)
+                if ((options & ReplicationChangeOptions.Broadcast) != 0 && ConfigurationChangedChannel != null
+                    && CommandMap.IsAvailable(RedisCommand.PUBLISH))
                 {
-                    if (!node.IsConnected) continue;
-                    LogLocked(log, "Broadcasting via {0}...", Format.ToString(node.EndPoint));
-                    msg = Message.Create(-1, flags, RedisCommand.PUBLISH, channel, newMaster);
-                    node.QueueDirectFireAndForget(msg, ResultProcessor.Int64);
+                    RedisValue channel = ConfigurationChangedChannel;
+                    foreach (var node in broadcastNodes)
+                    {
+                        if (!node.IsConnected) continue;
+                        LogLocked(log, "Broadcasting via {0}...", Format.ToString(node.EndPoint));
+                        msg = Message.Create(-1, flags, RedisCommand.PUBLISH, channel, newMaster);
+                        node.QueueDirectFireAndForget(msg, ResultProcessor.Int64);
+                    }
                 }
             }
 
+            var blockingReconfig = Interlocked.CompareExchange(ref activeConfigCause, "Block: Pending Primary Reconfig", null) == null;
+
+            Broadcast(nodes);
 
             if ((options & ReplicationChangeOptions.EnslaveSubordinates) != 0)
             {
@@ -434,8 +438,14 @@ namespace StackExchange.Redis
                 }
             }
 
+            Broadcast(nodes);
+
             // and reconfigure the muxer
             LogLocked(log, "Reconfiguring all endpoints...");
+            if (blockingReconfig)
+            {
+                Interlocked.Exchange(ref activeConfigCause, null);
+            }
             if (!Reconfigure(false, true, log, srv.EndPoint, "make master"))
             {
                 LogLocked(log, "Verifying the configuration was incomplete; please verify");
