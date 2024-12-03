@@ -52,7 +52,9 @@ $projectsToBuild =
     'NRediSearch'
 
 $testsToRun =
-    'StackExchange.Redis.Tests'
+    'StackExchange.Redis.Tests',
+    'MigratedBookSleeveTestSuite'
+
 if (!$Version -and !$BuildNumber) {
     Write-Host "ERROR: You must supply either a -Version or -BuildNumber argument. `
   Use -Version `"4.0.0`" for explicit version specification, or `
