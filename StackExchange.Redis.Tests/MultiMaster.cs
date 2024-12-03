@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading;
 using NUnit.Framework;
 
 namespace StackExchange.Redis.Tests
@@ -85,6 +86,7 @@ namespace StackExchange.Redis.Tests
 
                 primary.Ping();
                 secondary.Ping();
+                Thread.Sleep(2000);
 
                 preferMaster = db.IdentifyEndpoint(key, CommandFlags.PreferMaster);
                 demandMaster = db.IdentifyEndpoint(key, CommandFlags.DemandMaster);
