@@ -29,6 +29,8 @@ namespace StackExchange.Redis.Tests
                 };
                 if (!isCertValidationSucceeded)
                 {
+                    Thread.Sleep(1000);
+
                     //validate that in this case it throws an certificatevalidation exception
                     var ex = Assert.Throws<RedisConnectionException>(() => connection.GetDatabase().Ping());
                     Assert.That(ex.Message.StartsWith("No connection is available to service this operation: PING; The remote certificate is invalid according to the validation procedure."), "Actual: " + ex.Message);
