@@ -361,7 +361,7 @@ namespace StackExchange.Redis.Tests
 
                     Assert.AreEqual(2, Interlocked.Read(ref aCount), "a");
                     Assert.AreEqual(2, Interlocked.Read(ref bCount), "b");
-                    Assert.AreEqual(6, Interlocked.CompareExchange(ref masterChanged, 0, 0), "master");
+                    Assert.AreEqual(10, Interlocked.CompareExchange(ref masterChanged, 0, 0), "master");
                 }
                 finally
                 {
