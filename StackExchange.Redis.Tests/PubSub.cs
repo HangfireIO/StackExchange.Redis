@@ -356,6 +356,7 @@ namespace StackExchange.Redis.Tests
 
                     subA.Ping();
                     subB.Ping();
+                    Thread.Sleep(2000);
                     Console.WriteLine("Checking...");
 
                     Assert.AreEqual(2, Interlocked.Read(ref aCount), "a");
