@@ -90,6 +90,7 @@ namespace StackExchange.Redis.Tests
             options.ConnectRetry = 1;
             using (var muxer = ConnectionMultiplexer.Connect(options, log: System.Console.WriteLine))
             {
+                Thread.Sleep(1000);
                 var ex = Assert.Throws<RedisConnectionException>(() => muxer.GetDatabase().Ping());
                 Assert.That(ex.Message.StartsWith("No connection is available to service this operation: PING; No such host is known"), "Actual: " + ex.Message);
                 var rde = (RedisConnectionException)ex.InnerException;
