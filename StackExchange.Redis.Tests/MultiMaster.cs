@@ -82,8 +82,7 @@ namespace StackExchange.Redis.Tests
                     Assert.True(ex.Message.Contains("No connection is available to service this operation: EXISTS DeslaveGoesToPrimary"));
                 }
 
-                Thread.Sleep(1000); // Awaiting reconfigure from broadcast
-                primary.MakeMaster(ReplicationChangeOptions.Broadcast | ReplicationChangeOptions.EnslaveSubordinates | ReplicationChangeOptions.SetTiebreaker, msg => Console.WriteLine("MakeMaster: " + msg));
+                primary.MakeMaster(ReplicationChangeOptions.EnslaveSubordinates | ReplicationChangeOptions.SetTiebreaker, msg => Console.WriteLine("MakeMaster: " + msg));
 
                 primary.Ping();
                 secondary.Ping();
