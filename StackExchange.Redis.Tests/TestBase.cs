@@ -136,10 +136,17 @@ namespace StackExchange.Redis.Tests
 
             try
             {
-                using (var multiplexer = Create(allowAdmin: true))
+                Console.WriteLine("Cleaning up the databases after test...");
+                using (var multiplexer = Create(allowAdmin: true, pause: false))
                 {
-                    multiplexer.GetServer(PrimaryServer, PrimaryPort).FlushAllDatabases(CommandFlags.FireAndForget);
-                    multiplexer.GetServer(PrimaryServer, SlavePort).FlushAllDatabases(CommandFlags.FireAndForget);
+                    var endpoints = multiplexer.GetEndPoints();
+
+                    foreach (var endpoint in endpoints)
+                    {
+                        var server = multiplexer.GetServer(endpoint);
+                        if (!server.IsSlave) server.FlushAllDatabases(CommandFlags.FireAndForget);
+                    }
+
                     multiplexer.Close(allowCommandsToComplete: true);
                 }
             }
