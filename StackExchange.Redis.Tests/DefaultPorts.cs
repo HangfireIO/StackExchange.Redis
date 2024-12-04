@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using System.Net;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace StackExchange.Redis.Tests
 {
@@ -23,10 +24,10 @@ namespace StackExchange.Redis.Tests
         {
             var options = ConfigurationOptions.Parse(config);
             string backAgain = options.ToString();
-            Assert.AreEqual(config, backAgain.Replace("=True","=true").Replace("=False", "=false"));
+            ClassicAssert.AreEqual(config, backAgain.Replace("=True","=true").Replace("=False", "=false"));
 
             options.SetDefaultPorts(); // normally it is the multiplexer that calls this, not us
-            Assert.AreEqual(expectedPort, ((DnsEndPoint)options.EndPoints.Single()).Port);
+            ClassicAssert.AreEqual(expectedPort, ((DnsEndPoint)options.EndPoints.Single()).Port);
         }
 
         [Test]
@@ -52,7 +53,7 @@ namespace StackExchange.Redis.Tests
             if (useSsl) options.Ssl = true;
 
             options.SetDefaultPorts(); // normally it is the multiplexer that calls this, not us
-            Assert.AreEqual(expectedPort, ((DnsEndPoint)options.EndPoints.Single()).Port);
+            ClassicAssert.AreEqual(expectedPort, ((DnsEndPoint)options.EndPoints.Single()).Port);
         }
     }
 }

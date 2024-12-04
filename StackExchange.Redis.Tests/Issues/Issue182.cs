@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace StackExchange.Redis.Tests.Issues
 {
@@ -31,11 +32,11 @@ namespace StackExchange.Redis.Tests.Issues
                 foreach (var _ in Enumerable.Range(0, count))
                     db.SetAdd(key, Guid.NewGuid().ToByteArray(), CommandFlags.FireAndForget);
 
-                Assert.AreEqual(count, db.SetLengthAsync(key).Result, "SCARD for set");
+                ClassicAssert.AreEqual(count, db.SetLengthAsync(key).Result, "SCARD for set");
 
                 var task = db.SetMembersAsync(key);
                 task.Wait();
-                Assert.AreEqual(count, task.Result.Length, "SMEMBERS result length");
+                ClassicAssert.AreEqual(count, task.Result.Length, "SMEMBERS result length");
             }
         }
 
@@ -60,12 +61,12 @@ namespace StackExchange.Redis.Tests.Issues
                     db.SetAdd(key1, Guid.NewGuid().ToByteArray(), CommandFlags.FireAndForget);
                     db.SetAdd(key2, Guid.NewGuid().ToByteArray(), CommandFlags.FireAndForget);
                 }
-                Assert.AreEqual(count, db.SetLengthAsync(key1).Result, "SCARD for set 1");
-                Assert.AreEqual(count, db.SetLengthAsync(key2).Result, "SCARD for set 2");
+                ClassicAssert.AreEqual(count, db.SetLengthAsync(key1).Result, "SCARD for set 1");
+                ClassicAssert.AreEqual(count, db.SetLengthAsync(key2).Result, "SCARD for set 2");
 
                 db.SetCombineAndStoreAsync(SetOperation.Union, dstkey, key1, key2).Wait();
                 var dstLen = db.SetLength(dstkey);
-                Assert.AreEqual(count * 2, dstLen, "SCARD for destination set");
+                ClassicAssert.AreEqual(count * 2, dstLen, "SCARD for destination set");
             }
         }
     }

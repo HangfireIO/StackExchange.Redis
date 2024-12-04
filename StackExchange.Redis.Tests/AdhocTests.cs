@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using NUnit.Framework.Legacy;
 
 namespace StackExchange.Redis.Tests
 {
@@ -27,7 +28,7 @@ namespace StackExchange.Redis.Tests
                 db.Execute("incrby", key, 4);
                 int i = (int) db.Execute("get", key);
 
-                Assert.AreEqual(16, i);
+                ClassicAssert.AreEqual(16, i);
 
             }
         }

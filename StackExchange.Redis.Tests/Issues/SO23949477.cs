@@ -1,4 +1,5 @@
 ﻿using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace StackExchange.Redis.Tests.Issues
 {
@@ -25,13 +26,13 @@ namespace StackExchange.Redis.Tests.Issues
                     CommandFlags.FireAndForget);
                 var pairs = db.SortedSetRangeByScoreWithScores(
                     key, order: Order.Descending, take: 3);
-                Assert.AreEqual(3, pairs.Length);
-                Assert.AreEqual(5, pairs[0].Score);
-                Assert.AreEqual("e", (string)pairs[0].Element);
-                Assert.AreEqual(4, pairs[1].Score);
-                Assert.AreEqual("d", (string)pairs[1].Element);
-                Assert.AreEqual(3, pairs[2].Score);
-                Assert.AreEqual("c", (string)pairs[2].Element);
+                ClassicAssert.AreEqual(3, pairs.Length);
+                ClassicAssert.AreEqual(5, pairs[0].Score);
+                ClassicAssert.AreEqual("e", (string)pairs[0].Element);
+                ClassicAssert.AreEqual(4, pairs[1].Score);
+                ClassicAssert.AreEqual("d", (string)pairs[1].Element);
+                ClassicAssert.AreEqual(3, pairs[2].Score);
+                ClassicAssert.AreEqual("c", (string)pairs[2].Element);
             }
         }
     }

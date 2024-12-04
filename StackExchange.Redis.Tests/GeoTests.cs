@@ -2,6 +2,7 @@ using NUnit.Framework;
 using System;
 using System.IO;
 using System.Linq;
+using NUnit.Framework.Legacy;
 
 namespace StackExchange.Redis.Tests
 {
@@ -43,14 +44,14 @@ namespace StackExchange.Redis.Tests
                 db.KeyDelete(key);
                 
                 // add while not there
-                Assert.IsTrue(db.GeoAdd(key, cefalù.Longitude, cefalù.Latitude, cefalù.Member));
-                Assert.AreEqual(2, db.GeoAdd(key, new GeoEntry[] { palermo, catania }));                
-                Assert.IsTrue(db.GeoAdd(key, agrigento));
+                ClassicAssert.IsTrue(db.GeoAdd(key, cefalù.Longitude, cefalù.Latitude, cefalù.Member));
+                ClassicAssert.AreEqual(2, db.GeoAdd(key, new GeoEntry[] { palermo, catania }));                
+                ClassicAssert.IsTrue(db.GeoAdd(key, agrigento));
 
                 // now add again
-                Assert.IsFalse(db.GeoAdd(key, cefalù.Longitude, cefalù.Latitude, cefalù.Member));
-                Assert.AreEqual(0, db.GeoAdd(key, new GeoEntry[] { palermo, catania }));
-                Assert.IsFalse(db.GeoAdd(key, agrigento));
+                ClassicAssert.IsFalse(db.GeoAdd(key, cefalù.Longitude, cefalù.Latitude, cefalù.Member));
+                ClassicAssert.AreEqual(0, db.GeoAdd(key, new GeoEntry[] { palermo, catania }));
+                ClassicAssert.IsFalse(db.GeoAdd(key, agrigento));
 
 
             }
@@ -66,13 +67,13 @@ namespace StackExchange.Redis.Tests
                 db.KeyDelete(key);
                 db.GeoAdd(key, all);
                 var val = db.GeoDistance(key, "Palermo", "Catania", GeoUnit.Meters);
-                Assert.IsTrue(val.HasValue);
+                ClassicAssert.IsTrue(val.HasValue);
                 var rounded = Math.Round(val.Value, 10);
-                Assert.AreEqual(166274.1516, val);
+                ClassicAssert.AreEqual(166274.1516, val);
 
 
                 val = db.GeoDistance(key, "Palermo", "Nowhere", GeoUnit.Meters);
-                Assert.IsFalse(val.HasValue);
+                ClassicAssert.IsFalse(val.HasValue);
             }
         }
 
@@ -87,16 +88,16 @@ namespace StackExchange.Redis.Tests
                 db.GeoAdd(key, all);
 
                 var hashes = db.GeoHash(key, new RedisValue[] { palermo.Member, "Nowhere", agrigento.Member });
-                Assert.AreEqual(3, hashes.Length);
-                Assert.AreEqual("sqc8b49rny0", hashes[0]);
-                Assert.IsNull(hashes[1]);
-                Assert.AreEqual("sq9skbq0760", hashes[2]);
+                ClassicAssert.AreEqual(3, hashes.Length);
+                ClassicAssert.AreEqual("sqc8b49rny0", hashes[0]);
+                ClassicAssert.IsNull(hashes[1]);
+                ClassicAssert.AreEqual("sq9skbq0760", hashes[2]);
 
                 var hash = db.GeoHash(key, "Palermo");
-                Assert.AreEqual("sqc8b49rny0", hash);
+                ClassicAssert.AreEqual("sqc8b49rny0", hash);
 
                 hash = db.GeoHash(key, "Nowhere");
-                Assert.IsNull(hash);
+                ClassicAssert.IsNull(hash);
             }
         }
 
@@ -111,12 +112,12 @@ namespace StackExchange.Redis.Tests
                 db.GeoAdd(key, all);
 
                 var pos = db.GeoPosition(key, palermo.Member);
-                Assert.IsTrue(pos.HasValue);
-                Assert.AreEqual(Math.Round(palermo.Longitude, 6), Math.Round(pos.Value.Longitude, 6));
-                Assert.AreEqual(Math.Round(palermo.Latitude, 6), Math.Round(pos.Value.Latitude, 6));
+                ClassicAssert.IsTrue(pos.HasValue);
+                ClassicAssert.AreEqual(Math.Round(palermo.Longitude, 6), Math.Round(pos.Value.Longitude, 6));
+                ClassicAssert.AreEqual(Math.Round(palermo.Latitude, 6), Math.Round(pos.Value.Latitude, 6));
 
                 pos = db.GeoPosition(key, "Nowhere");
-                Assert.IsFalse(pos.HasValue);
+                ClassicAssert.IsFalse(pos.HasValue);
             }
         }
 
@@ -131,14 +132,14 @@ namespace StackExchange.Redis.Tests
                 db.GeoAdd(key, all);
 
                 var pos = db.GeoPosition(key, "Palermo");
-                Assert.IsTrue(pos.HasValue);
+                ClassicAssert.IsTrue(pos.HasValue);
 
-                Assert.IsFalse(db.GeoRemove(key, "Nowhere"));
-                Assert.IsTrue(db.GeoRemove(key, "Palermo"));
-                Assert.IsFalse(db.GeoRemove(key, "Palermo"));
+                ClassicAssert.IsFalse(db.GeoRemove(key, "Nowhere"));
+                ClassicAssert.IsTrue(db.GeoRemove(key, "Palermo"));
+                ClassicAssert.IsFalse(db.GeoRemove(key, "Palermo"));
 
                 pos = db.GeoPosition(key, "Palermo");
-                Assert.IsFalse(pos.HasValue);
+                ClassicAssert.IsFalse(pos.HasValue);
             }
         }
 
@@ -153,31 +154,31 @@ namespace StackExchange.Redis.Tests
                 db.GeoAdd(key, all);
 
                 var results = db.GeoRadius(key, cefalù.Member, 60, GeoUnit.Miles, 2, Order.Ascending);
-                Assert.AreEqual(2, results.Length);
+                ClassicAssert.AreEqual(2, results.Length);
 
-                Assert.AreEqual(results[0].Member, cefalù.Member);
-                Assert.AreEqual(0, results[0].Distance.Value);
-                Assert.AreEqual(Math.Round(results[0].Position.Value.Longitude, 5), Math.Round(cefalù.Position.Longitude, 5));
-                Assert.AreEqual(Math.Round(results[0].Position.Value.Latitude, 5), Math.Round(cefalù.Position.Latitude, 5));
-                Assert.IsFalse(results[0].Hash.HasValue);
+                ClassicAssert.AreEqual(results[0].Member, cefalù.Member);
+                ClassicAssert.AreEqual(0, results[0].Distance.Value);
+                ClassicAssert.AreEqual(Math.Round(results[0].Position.Value.Longitude, 5), Math.Round(cefalù.Position.Longitude, 5));
+                ClassicAssert.AreEqual(Math.Round(results[0].Position.Value.Latitude, 5), Math.Round(cefalù.Position.Latitude, 5));
+                ClassicAssert.IsFalse(results[0].Hash.HasValue);
 
-                Assert.AreEqual(results[1].Member, palermo.Member);
-                Assert.AreEqual(Math.Round(36.5319, 6), Math.Round(results[1].Distance.Value, 6));
-                Assert.AreEqual(Math.Round(results[1].Position.Value.Longitude, 5), Math.Round(palermo.Position.Longitude, 5));
-                Assert.AreEqual(Math.Round(results[1].Position.Value.Latitude, 5), Math.Round(palermo.Position.Latitude, 5));
-                Assert.IsFalse(results[1].Hash.HasValue);
+                ClassicAssert.AreEqual(results[1].Member, palermo.Member);
+                ClassicAssert.AreEqual(Math.Round(36.5319, 6), Math.Round(results[1].Distance.Value, 6));
+                ClassicAssert.AreEqual(Math.Round(results[1].Position.Value.Longitude, 5), Math.Round(palermo.Position.Longitude, 5));
+                ClassicAssert.AreEqual(Math.Round(results[1].Position.Value.Latitude, 5), Math.Round(palermo.Position.Latitude, 5));
+                ClassicAssert.IsFalse(results[1].Hash.HasValue);
 
                 results = db.GeoRadius(key, cefalù.Member, 60, GeoUnit.Miles, 2, Order.Ascending, GeoRadiusOptions.None);
-                Assert.AreEqual(2, results.Length);
-                Assert.AreEqual(results[0].Member, cefalù.Member);
-                Assert.IsFalse(results[0].Position.HasValue);
-                Assert.IsFalse(results[0].Distance.HasValue);
-                Assert.IsFalse(results[0].Hash.HasValue);
+                ClassicAssert.AreEqual(2, results.Length);
+                ClassicAssert.AreEqual(results[0].Member, cefalù.Member);
+                ClassicAssert.IsFalse(results[0].Position.HasValue);
+                ClassicAssert.IsFalse(results[0].Distance.HasValue);
+                ClassicAssert.IsFalse(results[0].Hash.HasValue);
 
-                Assert.AreEqual(results[1].Member, palermo.Member);
-                Assert.IsFalse(results[1].Position.HasValue);
-                Assert.IsFalse(results[1].Distance.HasValue);
-                Assert.IsFalse(results[1].Hash.HasValue);
+                ClassicAssert.AreEqual(results[1].Member, palermo.Member);
+                ClassicAssert.IsFalse(results[1].Position.HasValue);
+                ClassicAssert.IsFalse(results[1].Distance.HasValue);
+                ClassicAssert.IsFalse(results[1].Hash.HasValue);
             }
         }
     }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace StackExchange.Redis.Tests.Issues
 {
@@ -29,10 +30,10 @@ namespace StackExchange.Redis.Tests.Issues
                 var ttl = cache.KeyTimeToLive(key);
 
                 // Then
-                Assert.IsTrue(firstResult, "first"); // could set the first time, but this nukes the key
-                Assert.IsFalse(secondResult, "second"); // can't set, since nuked
-                Assert.IsFalse(exists, "exists"); // does not exist since nuked
-                Assert.IsNull(ttl, "ttl"); // no expiry since nuked
+                ClassicAssert.IsTrue(firstResult, "first"); // could set the first time, but this nukes the key
+                ClassicAssert.IsFalse(secondResult, "second"); // can't set, since nuked
+                ClassicAssert.IsFalse(exists, "exists"); // does not exist since nuked
+                ClassicAssert.IsNull(ttl, "ttl"); // no expiry since nuked
             }
         }
     }

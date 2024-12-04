@@ -309,7 +309,7 @@ namespace StackExchange.Redis.Tests
             }
             if (!allDone.WaitOne(timeout))
             {
-#if !CORE_CLR
+#if !NETCOREAPP1_0_OR_GREATER
                 for (int i = 0; i < threads; i++)
                 {
                     var thd = threadArr[i];

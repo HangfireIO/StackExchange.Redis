@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace StackExchange.Redis.Tests
 {
@@ -30,11 +31,11 @@ namespace StackExchange.Redis.Tests
         public void ShowReadOnlyOperations()
         {
             var msg = typeof(ConnectionMultiplexer).GetTypeInfo().Assembly.GetType("StackExchange.Redis.Message");
-            Assert.IsNotNull(msg, "Message");
+            ClassicAssert.IsNotNull(msg, "Message");
             var cmd = typeof(ConnectionMultiplexer).GetTypeInfo().Assembly.GetType("StackExchange.Redis.RedisCommand");
-            Assert.IsNotNull(cmd, "RedisCommand");
+            ClassicAssert.IsNotNull(cmd, "RedisCommand");
             var method = msg.GetMethod("IsMasterOnly", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
-            Assert.IsNotNull(method, "IsMasterOnly");
+            ClassicAssert.IsNotNull(method, "IsMasterOnly");
             object[] args = new object[1];
 
             List<object> masterSlave = new List<object>();
@@ -82,7 +83,7 @@ namespace StackExchange.Redis.Tests
                 }
 
                 bool usesKey = method.GetParameters().Any(p => UsesKey(p.ParameterType));
-                Assert.IsTrue(usesKey, type.Name + ":" + method.Name);
+                ClassicAssert.IsTrue(usesKey, type.Name + ":" + method.Name);
             }
         }
         static bool UsesKey(Type type)
@@ -155,20 +156,20 @@ namespace StackExchange.Redis.Tests
                 }
                 var pFrom = method.GetParameters();
                 Type[] args = pFrom.Select(x => x.ParameterType).ToArray();
-                Assert.AreEqual(typeof(CommandFlags), args.Last(), method.DeclaringType.Name + "." + method.Name);
+                ClassicAssert.AreEqual(typeof(CommandFlags), args.Last(), method.DeclaringType.Name + "." + method.Name);
 #if !CORE_CLR
                 var found = to.GetMethod(huntName, flags, null, method.CallingConvention, args, null);
 #else
                 var found = to.GetMethods(flags)
                     .SingleOrDefault(m => m.Name == huntName && m.HasMatchingParameterTypes(args));
 #endif
-                Assert.IsNotNull(found, "Found " + name + ", no " + huntName);
+                ClassicAssert.IsNotNull(found, "Found " + name + ", no " + huntName);
                 var pTo = found.GetParameters();
 
                 for(int i = 0; i < pFrom.Length;i++)
                 {
-                    Assert.AreEqual(pFrom[i].Name, pTo[i].Name, method.Name + ":" + pFrom[i].Name);
-                    Assert.AreEqual(pFrom[i].ParameterType, pTo[i].ParameterType, method.Name + ":" + pFrom[i].Name);
+                    ClassicAssert.AreEqual(pFrom[i].Name, pTo[i].Name, method.Name + ":" + pFrom[i].Name);
+                    ClassicAssert.AreEqual(pFrom[i].ParameterType, pTo[i].ParameterType, method.Name + ":" + pFrom[i].Name);
                 }
 
                 
@@ -203,7 +204,7 @@ namespace StackExchange.Redis.Tests
             CheckName(method, isAsync);
             if (!ignorePrefix)
             {   
-                Assert.IsTrue(shortName.StartsWith("Hash") || shortName.StartsWith("Key")
+                ClassicAssert.IsTrue(shortName.StartsWith("Hash") || shortName.StartsWith("Key")
                     || shortName.StartsWith("String") || shortName.StartsWith("List")
                     || shortName.StartsWith("SortedSet") || shortName.StartsWith("Set")
                     || shortName.StartsWith("Debug") || shortName.StartsWith("Lock")
@@ -211,24 +212,24 @@ namespace StackExchange.Redis.Tests
                     , fullName + ":Prefix");
             }
 
-            Assert.IsFalse(shortName.Contains("If"), fullName + ":If"); // should probably be a When option
+            ClassicAssert.IsFalse(shortName.Contains("If"), fullName + ":If"); // should probably be a When option
 
             var returnType = method.ReturnType ?? typeof(void);
             if (isAsync)
             {
-                Assert.IsTrue(typeof(Task).IsAssignableFrom(returnType), fullName + ":Task");
+                ClassicAssert.IsTrue(typeof(Task).IsAssignableFrom(returnType), fullName + ":Task");
             }
             else
             {
-                Assert.IsFalse(typeof(Task).IsAssignableFrom(returnType), fullName + ":Task");
+                ClassicAssert.IsFalse(typeof(Task).IsAssignableFrom(returnType), fullName + ":Task");
             }
 #endif
         }
 
         void CheckName(MemberInfo member, bool isAsync)
         {
-            if (isAsync) Assert.IsTrue(member.Name.EndsWith("Async"), member.Name + ":Name - end *Async");
-            else Assert.IsFalse(member.Name.EndsWith("Async"), member.Name + ":Name - don't end *Async");
+            if (isAsync) ClassicAssert.IsTrue(member.Name.EndsWith("Async"), member.Name + ":Name - end *Async");
+            else ClassicAssert.IsFalse(member.Name.EndsWith("Async"), member.Name + ":Name - don't end *Async");
         }
     }
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace StackExchange.Redis.Tests
 {
@@ -44,7 +45,7 @@ namespace StackExchange.Redis.Tests
                 }
                 var val = (double)db.StringGet(key);
 
-                Assert.IsTrue(Within(sum, val, 0.0001));
+                ClassicAssert.IsTrue(Within(sum, val, 0.0001));
             }
         }
 
@@ -81,7 +82,7 @@ namespace StackExchange.Redis.Tests
                 }
                 var val = (double)await db.StringGetAsync(key).ConfigureAwait(false);
 
-                Assert.IsTrue(Within(sum, val, 0.0001));
+                ClassicAssert.IsTrue(Within(sum, val, 0.0001));
             }
         }
 
@@ -119,7 +120,7 @@ namespace StackExchange.Redis.Tests
                 }
                 var val = (double)db.HashGet(key, field);
 
-                Assert.IsTrue(Within(sum, val, 0.0001));
+                ClassicAssert.IsTrue(Within(sum, val, 0.0001));
             }
         }
 
@@ -157,7 +158,7 @@ namespace StackExchange.Redis.Tests
                 }
                 var val = (double)await db.HashGetAsync(key, field).ConfigureAwait(false);
 
-                Assert.IsTrue(Within(sum, val, 0.0001));
+                ClassicAssert.IsTrue(Within(sum, val, 0.0001));
             }
         }
     }

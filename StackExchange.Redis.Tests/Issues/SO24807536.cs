@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace StackExchange.Redis.Tests.Issues
 {
@@ -23,9 +24,9 @@ namespace StackExchange.Redis.Tests.Issues
                 var exists = cache.KeyExists(key);
                 var ttl = cache.KeyTimeToLive(key);
                 var fullWait = cache.HashGetAsync(key, "full", flags: CommandFlags.None);
-                Assert.IsTrue(exists, "key exists");
-                Assert.IsNotNull(ttl, "ttl");
-                Assert.AreEqual("some value", (string)fullWait.Result);
+                ClassicAssert.IsTrue(exists, "key exists");
+                ClassicAssert.IsNotNull(ttl, "ttl");
+                ClassicAssert.AreEqual("some value", (string)fullWait.Result);
 
                 // wait for expiry
                 Thread.Sleep(TimeSpan.FromSeconds(4));
@@ -34,9 +35,9 @@ namespace StackExchange.Redis.Tests.Issues
                 exists = cache.KeyExists(key);
                 ttl = cache.KeyTimeToLive(key);
                 fullWait = cache.HashGetAsync(key, "full", flags: CommandFlags.None);                
-                Assert.IsFalse(exists, "key exists");
-                Assert.IsNull(ttl, "ttl");
-                Assert.IsNull((string)fullWait.Result);
+                ClassicAssert.IsFalse(exists, "key exists");
+                ClassicAssert.IsNull(ttl, "ttl");
+                ClassicAssert.IsNull((string)fullWait.Result);
             }
         }
     }

@@ -3,6 +3,7 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace StackExchange.Redis.Tests
 {
@@ -32,7 +33,7 @@ namespace StackExchange.Redis.Tests
             };
             var connection = ConnectionMultiplexer.Connect(options, Console.WriteLine);
             Thread.Sleep(3000);
-            Assert.IsTrue(connection.IsConnected);
+            ClassicAssert.IsTrue(connection.IsConnected);
             return connection;
         }
 
@@ -47,9 +48,9 @@ namespace StackExchange.Redis.Tests
         public void SentinelGetMasterAddressByNameTest()
         {
             var endpoint = GetServer().SentinelGetMasterAddressByName(ServiceName);
-            Assert.IsNotNull(endpoint);
+            ClassicAssert.IsNotNull(endpoint);
             var ipEndPoint = endpoint as IPEndPoint;
-            Assert.IsNotNull(ipEndPoint);
+            ClassicAssert.IsNotNull(ipEndPoint);
             Console.WriteLine("{0}:{1}", ipEndPoint.Address, ipEndPoint.Port);
         }
 
@@ -57,14 +58,14 @@ namespace StackExchange.Redis.Tests
         public void SentinelGetMasterAddressByNameNegativeTest() 
         {
             var endpoint = GetServer().SentinelGetMasterAddressByName("FakeServiceName");
-            Assert.IsNull(endpoint);
+            ClassicAssert.IsNull(endpoint);
         }
 
         [Test]
         public void SentinelMasterTest()
         {
             var dict = GetServer().SentinelMaster(ServiceName).ToDictionary();
-            Assert.AreEqual(ServiceName, dict["name"]);
+            ClassicAssert.AreEqual(ServiceName, dict["name"]);
             foreach (var kvp in dict)
             {
                 Console.WriteLine("{0}:{1}", kvp.Key, kvp.Value);
@@ -75,7 +76,7 @@ namespace StackExchange.Redis.Tests
         public void SentinelMastersTest()
         {
             var masterConfigs = GetServer().SentinelMasters();
-            Assert.IsTrue(masterConfigs.First().ToDictionary().ContainsKey("name"));
+            ClassicAssert.IsTrue(masterConfigs.First().ToDictionary().ContainsKey("name"));
             foreach (var config in masterConfigs)
             {
                 foreach (var kvp in config)
@@ -91,7 +92,7 @@ namespace StackExchange.Redis.Tests
             var slaveConfigs = GetServer().SentinelSlaves(ServiceName);
             if (slaveConfigs.Any()) 
             {
-                Assert.IsTrue(slaveConfigs.First().ToDictionary().ContainsKey("name"));
+                ClassicAssert.IsTrue(slaveConfigs.First().ToDictionary().ContainsKey("name"));
             }
             foreach (var config in slaveConfigs) 
             {

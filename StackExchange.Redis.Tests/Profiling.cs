@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using NUnit.Framework;
 using System.Threading;
 using System.Collections.Concurrent;
+using NUnit.Framework.Legacy;
 
 namespace StackExchange.Redis.Tests
 {
@@ -36,39 +37,39 @@ namespace StackExchange.Redis.Tests
                 var db = conn.GetDatabase(4);
                 db.StringSet("hello", "world");
                 var val = db.StringGet("hello");
-                Assert.AreEqual("world", (string)val);
+                ClassicAssert.AreEqual("world", (string)val);
 
                 var cmds = conn.FinishProfiling(profiler.MyContext);
-                Assert.AreEqual(2, cmds.Count());
+                ClassicAssert.AreEqual(2, cmds.Count());
 
                 var set = cmds.SingleOrDefault(cmd => cmd.Command == "SET");
-                Assert.IsNotNull(set);
+                ClassicAssert.IsNotNull(set);
                 var get = cmds.SingleOrDefault(cmd => cmd.Command == "GET");
-                Assert.IsNotNull(get);
+                ClassicAssert.IsNotNull(get);
 
-                Assert.IsTrue(set.CommandCreated <= get.CommandCreated);
+                ClassicAssert.IsTrue(set.CommandCreated <= get.CommandCreated);
 
-                Assert.AreEqual(4, set.Db);
-                Assert.AreEqual(conn.GetEndPoints()[0], set.EndPoint);
-                Assert.IsTrue(set.CreationToEnqueued > TimeSpan.Zero);
-                Assert.IsTrue(set.EnqueuedToSending > TimeSpan.Zero);
-                Assert.IsTrue(set.SentToResponse > TimeSpan.Zero);
-                Assert.IsTrue(set.ResponseToCompletion > TimeSpan.Zero);
-                Assert.IsTrue(set.ElapsedTime > TimeSpan.Zero);
-                Assert.IsTrue(set.ElapsedTime > set.CreationToEnqueued && set.ElapsedTime > set.EnqueuedToSending && set.ElapsedTime > set.SentToResponse);
-                Assert.IsTrue(set.RetransmissionOf == null);
-                Assert.IsTrue(set.RetransmissionReason == null);
+                ClassicAssert.AreEqual(4, set.Db);
+                ClassicAssert.AreEqual(conn.GetEndPoints()[0], set.EndPoint);
+                ClassicAssert.IsTrue(set.CreationToEnqueued > TimeSpan.Zero);
+                ClassicAssert.IsTrue(set.EnqueuedToSending > TimeSpan.Zero);
+                ClassicAssert.IsTrue(set.SentToResponse > TimeSpan.Zero);
+                ClassicAssert.IsTrue(set.ResponseToCompletion > TimeSpan.Zero);
+                ClassicAssert.IsTrue(set.ElapsedTime > TimeSpan.Zero);
+                ClassicAssert.IsTrue(set.ElapsedTime > set.CreationToEnqueued && set.ElapsedTime > set.EnqueuedToSending && set.ElapsedTime > set.SentToResponse);
+                ClassicAssert.IsTrue(set.RetransmissionOf == null);
+                ClassicAssert.IsTrue(set.RetransmissionReason == null);
 
-                Assert.AreEqual(4, get.Db);
-                Assert.AreEqual(conn.GetEndPoints()[0], get.EndPoint);
-                Assert.IsTrue(get.CreationToEnqueued > TimeSpan.Zero);
-                Assert.IsTrue(get.EnqueuedToSending > TimeSpan.Zero);
-                Assert.IsTrue(get.SentToResponse > TimeSpan.Zero);
-                Assert.IsTrue(get.ResponseToCompletion > TimeSpan.Zero);
-                Assert.IsTrue(get.ElapsedTime > TimeSpan.Zero);
-                Assert.IsTrue(get.ElapsedTime > get.CreationToEnqueued && get.ElapsedTime > get.EnqueuedToSending && get.ElapsedTime > get.SentToResponse);
-                Assert.IsTrue(get.RetransmissionOf == null);
-                Assert.IsTrue(get.RetransmissionReason == null);
+                ClassicAssert.AreEqual(4, get.Db);
+                ClassicAssert.AreEqual(conn.GetEndPoints()[0], get.EndPoint);
+                ClassicAssert.IsTrue(get.CreationToEnqueued > TimeSpan.Zero);
+                ClassicAssert.IsTrue(get.EnqueuedToSending > TimeSpan.Zero);
+                ClassicAssert.IsTrue(get.SentToResponse > TimeSpan.Zero);
+                ClassicAssert.IsTrue(get.ResponseToCompletion > TimeSpan.Zero);
+                ClassicAssert.IsTrue(get.ElapsedTime > TimeSpan.Zero);
+                ClassicAssert.IsTrue(get.ElapsedTime > get.CreationToEnqueued && get.ElapsedTime > get.EnqueuedToSending && get.ElapsedTime > get.SentToResponse);
+                ClassicAssert.IsTrue(get.RetransmissionOf == null);
+                ClassicAssert.IsTrue(get.RetransmissionReason == null);
             }
         }
 
@@ -112,20 +113,20 @@ namespace StackExchange.Redis.Tests
                 var allVals = conn.FinishProfiling(profiler.MyContext);
 
                 var kinds = allVals.Select(cmd => cmd.Command).Distinct().ToList();
-                Assert.IsTrue(kinds.Count <= 2);
-                Assert.IsTrue(kinds.Contains("SET"));
+                ClassicAssert.IsTrue(kinds.Count <= 2);
+                ClassicAssert.IsTrue(kinds.Contains("SET"));
                 if (kinds.Count == 2 && !kinds.Contains("SELECT"))
                 {
-                    Assert.Fail("Non-SET, Non-SELECT command seen");
+                    ClassicAssert.Fail("Non-SET, Non-SELECT command seen");
                 }
 
-                Assert.AreEqual(16 * 1000, allVals.Count());
-                Assert.AreEqual(16, allVals.Select(cmd => cmd.Db).Distinct().Count());
+                ClassicAssert.AreEqual(16 * 1000, allVals.Count());
+                ClassicAssert.AreEqual(16, allVals.Select(cmd => cmd.Db).Distinct().Count());
 
                 for (var i = 0; i < 16; i++)
                 {
                     var setsInDb = allVals.Where(cmd => cmd.Db == i && cmd.Command == "SET").Count();
-                    Assert.AreEqual(1000, setsInDb);
+                    ClassicAssert.AreEqual(1000, setsInDb);
                 }
             }
         }
@@ -202,14 +203,14 @@ namespace StackExchange.Redis.Tests
                 for (var i = 0; i < results.Length; i++)
                 {
                     var res = results[i];
-                    Assert.IsNotNull(res);
+                    ClassicAssert.IsNotNull(res);
 
                     var numGets = res.Count(r => r.Command == "GET");
                     var numSets = res.Count(r => r.Command == "SET");
 
-                    Assert.AreEqual(1000, numGets);
-                    Assert.AreEqual(1000, numSets);
-                    Assert.IsTrue(res.All(cmd => cmd.Db == i));
+                    ClassicAssert.AreEqual(1000, numGets);
+                    ClassicAssert.AreEqual(1000, numSets);
+                    ClassicAssert.IsTrue(res.All(cmd => cmd.Db == i));
                 }
             }
         }
@@ -317,9 +318,9 @@ namespace StackExchange.Redis.Tests
                 conn.FinishProfiling(anyContext);
 
                 // make sure we haven't left anything in the active contexts dictionary
-                Assert.AreEqual(0, conn.profiledCommands.ContextCount);
-                Assert.AreEqual(ThreadCount, ConcurrentProfileStorageCollection.AllocationCount);
-                Assert.AreEqual(ThreadCount, ConcurrentProfileStorageCollection.CountInPool());
+                ClassicAssert.AreEqual(0, conn.profiledCommands.ContextCount);
+                ClassicAssert.AreEqual(ThreadCount, ConcurrentProfileStorageCollection.AllocationCount);
+                ClassicAssert.AreEqual(ThreadCount, ConcurrentProfileStorageCollection.CountInPool());
             }
         }
 
@@ -389,7 +390,7 @@ namespace StackExchange.Redis.Tests
 
                 // only 16 allocations can ever be in flight at once
                 var allocCount = ConcurrentProfileStorageCollection.AllocationCount;
-                Assert.IsTrue(allocCount <= ThreadCount, allocCount.ToString());
+                ClassicAssert.IsTrue(allocCount <= ThreadCount, allocCount.ToString());
 
                 // correctness check for all allocations
                 for (var i = 0; i < results.Length; i++)
@@ -397,14 +398,14 @@ namespace StackExchange.Redis.Tests
                     var resList = results[i];
                     foreach (var res in resList)
                     {
-                        Assert.IsNotNull(res);
+                        ClassicAssert.IsNotNull(res);
 
                         var numGets = res.Count(r => r.Command == "GET");
                         var numSets = res.Count(r => r.Command == "SET");
 
-                        Assert.AreEqual(1000, numGets);
-                        Assert.AreEqual(1000, numSets);
-                        Assert.IsTrue(res.All(cmd => cmd.Db == i));
+                        ClassicAssert.AreEqual(1000, numGets);
+                        ClassicAssert.AreEqual(1000, numSets);
+                        ClassicAssert.IsTrue(res.All(cmd => cmd.Db == i));
                     }
                 }
 
@@ -418,7 +419,7 @@ namespace StackExchange.Redis.Tests
 
                         if (object.ReferenceEquals(everything[i], everything[j]))
                         {
-                            Assert.Fail("Profilings were jumbled");
+                            ClassicAssert.Fail("Profilings were jumbled");
                         }
                     }
                 }
@@ -459,25 +460,25 @@ namespace StackExchange.Redis.Tests
                 conn.WaitAll(allTasks.ToArray());
 
                 var res = conn.FinishProfiling(profiler.MyContext);
-                Assert.IsTrue(res.GetType().GetTypeInfo().IsValueType);
+                ClassicAssert.IsTrue(res.GetType().GetTypeInfo().IsValueType);
 
                 using(var e = res.GetEnumerator())
                 {
-                    Assert.IsTrue(e.GetType().GetTypeInfo().IsValueType);
+                    ClassicAssert.IsTrue(e.GetType().GetTypeInfo().IsValueType);
 
-                    Assert.IsTrue(e.MoveNext());
+                    ClassicAssert.IsTrue(e.MoveNext());
                     var i = e.Current;
 
                     e.Reset();
-                    Assert.IsTrue(e.MoveNext());
+                    ClassicAssert.IsTrue(e.MoveNext());
                     var j = e.Current;
 
-                    Assert.IsTrue(object.ReferenceEquals(i, j));
+                    ClassicAssert.IsTrue(object.ReferenceEquals(i, j));
                 }
 
-                Assert.AreEqual(OuterLoop * 2, res.Count());
-                Assert.AreEqual(OuterLoop, res.Count(r => r.Command == "GET"));
-                Assert.AreEqual(OuterLoop, res.Count(r => r.Command == "SET"));
+                ClassicAssert.AreEqual(OuterLoop * 2, res.Count());
+                ClassicAssert.AreEqual(OuterLoop, res.Count(r => r.Command == "GET"));
+                ClassicAssert.AreEqual(OuterLoop, res.Count(r => r.Command == "SET"));
             }
         }
 
@@ -539,7 +540,7 @@ namespace StackExchange.Redis.Tests
 
                 IEnumerable<IProfiledCommand> timings = conn.FinishProfiling(thisGroupContext);
 
-                Assert.AreEqual(16000, timings.Count());
+                ClassicAssert.AreEqual(16000, timings.Count());
             }
         }
 
@@ -589,8 +590,8 @@ namespace StackExchange.Redis.Tests
                 threads.ForEach(thread => thread.Start());
                 threads.ForEach(thread => thread.Join());
 
-                Assert.AreEqual(16, perThreadTimings.Count);
-                Assert.IsTrue(perThreadTimings.All(kv => kv.Value.Count == 1000));
+                ClassicAssert.AreEqual(16, perThreadTimings.Count);
+                ClassicAssert.IsTrue(perThreadTimings.All(kv => kv.Value.Count == 1000));
             }
         }
     }

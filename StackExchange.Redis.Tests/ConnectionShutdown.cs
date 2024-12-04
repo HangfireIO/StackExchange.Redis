@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Threading;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace StackExchange.Redis.Tests
 {
@@ -32,8 +33,8 @@ namespace StackExchange.Redis.Tests
                 };
                 var db = conn.GetDatabase();
                 db.Ping();
-                Assert.AreEqual(0, Interlocked.CompareExchange(ref failed, 0, 0));
-                Assert.AreEqual(0, Interlocked.CompareExchange(ref restored, 0, 0));
+                ClassicAssert.AreEqual(0, Interlocked.CompareExchange(ref failed, 0, 0));
+                ClassicAssert.AreEqual(0, Interlocked.CompareExchange(ref restored, 0, 0));
 
 #if DEBUG
                 conn.AllowConnect = false;
@@ -44,13 +45,13 @@ namespace StackExchange.Redis.Tests
 
                 db.Ping(CommandFlags.FireAndForget);
                 Thread.Sleep(250);
-                Assert.AreEqual(2, Interlocked.CompareExchange(ref failed, 0, 0), "failed");
-                Assert.AreEqual(0, Interlocked.CompareExchange(ref restored, 0, 0), "restored");
+                ClassicAssert.AreEqual(2, Interlocked.CompareExchange(ref failed, 0, 0), "failed");
+                ClassicAssert.AreEqual(0, Interlocked.CompareExchange(ref restored, 0, 0), "restored");
                 conn.AllowConnect = true;
                 db.Ping(CommandFlags.FireAndForget);
                 Thread.Sleep(1500);
-                Assert.AreEqual(2, Interlocked.CompareExchange(ref failed, 0, 0), "failed");
-                Assert.AreEqual(2, Interlocked.CompareExchange(ref restored, 0, 0), "restored");
+                ClassicAssert.AreEqual(2, Interlocked.CompareExchange(ref failed, 0, 0), "failed");
+                ClassicAssert.AreEqual(2, Interlocked.CompareExchange(ref restored, 0, 0), "restored");
 #endif
                 watch.Stop();
             }

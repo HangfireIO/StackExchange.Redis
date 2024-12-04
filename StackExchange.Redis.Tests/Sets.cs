@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace StackExchange.Redis.Tests
 {
@@ -26,11 +27,11 @@ namespace StackExchange.Redis.Tests
                     if (i.ToString().Contains("3")) totalFiltered += i;
                 }
                 var unfilteredActual = db.SetScan(key).Select(x => (int)x).Sum();
-                Assert.AreEqual(totalUnfiltered, unfilteredActual);
+                ClassicAssert.AreEqual(totalUnfiltered, unfilteredActual);
                 if (server.Features.Scan)
                 {
                     var filteredActual = db.SetScan(key, "*3*").Select(x => (int)x).Sum();
-                    Assert.AreEqual(totalFiltered, filteredActual);
+                    ClassicAssert.AreEqual(totalFiltered, filteredActual);
                 }               
                 
             }

@@ -4,6 +4,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace StackExchange.Redis.Tests
 {
@@ -38,17 +39,17 @@ namespace StackExchange.Redis.Tests
                 Thread.Sleep(1000);
                 pub.Publish("abcd", "efg");
                 Thread.Sleep(500);
-                Assert.AreEqual(0, VolatileWrapper.Read(ref a), "a1");
-                Assert.AreEqual(1, VolatileWrapper.Read(ref b), "b1");
-                Assert.AreEqual(1, VolatileWrapper.Read(ref c), "c1");
-                Assert.AreEqual(1, VolatileWrapper.Read(ref d), "d1");
+                ClassicAssert.AreEqual(0, VolatileWrapper.Read(ref a), "a1");
+                ClassicAssert.AreEqual(1, VolatileWrapper.Read(ref b), "b1");
+                ClassicAssert.AreEqual(1, VolatileWrapper.Read(ref c), "c1");
+                ClassicAssert.AreEqual(1, VolatileWrapper.Read(ref d), "d1");
 
                 pub.Publish("*bcd", "efg");
                 Thread.Sleep(500);
-                Assert.AreEqual(1, VolatileWrapper.Read(ref a), "a2");
-                //Assert.AreEqual(1, VolatileWrapper.Read(ref b), "b2");
-                //Assert.AreEqual(1, VolatileWrapper.Read(ref c), "c2");
-                //Assert.AreEqual(1, VolatileWrapper.Read(ref d), "d2");
+                ClassicAssert.AreEqual(1, VolatileWrapper.Read(ref a), "a2");
+                //ClassicAssert.AreEqual(1, VolatileWrapper.Read(ref b), "b2");
+                //ClassicAssert.AreEqual(1, VolatileWrapper.Read(ref c), "c2");
+                //ClassicAssert.AreEqual(1, VolatileWrapper.Read(ref d), "d2");
 
             }
         }
@@ -99,18 +100,18 @@ namespace StackExchange.Redis.Tests
 
                 lock (received)
                 {
-                    Assert.AreEqual(0, received.Count);
+                    ClassicAssert.AreEqual(0, received.Count);
                 }
-                Assert.AreEqual(0, VolatileWrapper.Read(ref secondHandler));
+                ClassicAssert.AreEqual(0, VolatileWrapper.Read(ref secondHandler));
                 var count = sub.Publish(pubChannel, "def");
 
                 Ping(muxer, pub, sub, 3);
 
                 lock (received)
                 {
-                    Assert.AreEqual(1, received.Count);
+                    ClassicAssert.AreEqual(1, received.Count);
                 }
-                Assert.AreEqual(1, VolatileWrapper.Read(ref secondHandler));
+                ClassicAssert.AreEqual(1, VolatileWrapper.Read(ref secondHandler));
 
                 // unsubscribe from first; should still see second
                 sub.Unsubscribe(subChannel, handler1);
@@ -118,10 +119,10 @@ namespace StackExchange.Redis.Tests
                 Ping(muxer, pub, sub);
                 lock(received)
                 {
-                    Assert.AreEqual(1, received.Count);
+                    ClassicAssert.AreEqual(1, received.Count);
                 }
-                Assert.AreEqual(2, VolatileWrapper.Read(ref secondHandler));
-                Assert.AreEqual(1, count);
+                ClassicAssert.AreEqual(2, VolatileWrapper.Read(ref secondHandler));
+                ClassicAssert.AreEqual(1, count);
 
                 // unsubscribe from second; should see nothing this time
                 sub.Unsubscribe(subChannel, handler2);
@@ -129,10 +130,10 @@ namespace StackExchange.Redis.Tests
                 Ping(muxer, pub, sub);
                 lock (received)
                 {
-                    Assert.AreEqual(1, received.Count);
+                    ClassicAssert.AreEqual(1, received.Count);
                 }
-                Assert.AreEqual(2, VolatileWrapper.Read(ref secondHandler));
-                Assert.AreEqual(0, count);
+                ClassicAssert.AreEqual(2, VolatileWrapper.Read(ref secondHandler));
+                ClassicAssert.AreEqual(0, count);
             }
         }
 
@@ -170,18 +171,18 @@ namespace StackExchange.Redis.Tests
 
                 lock (received)
                 {
-                    Assert.AreEqual(0, received.Count);
+                    ClassicAssert.AreEqual(0, received.Count);
                 }
-                Assert.AreEqual(0, VolatileWrapper.Read(ref secondHandler));
+                ClassicAssert.AreEqual(0, VolatileWrapper.Read(ref secondHandler));
                 Ping(muxer, pub, sub);
                 var count = sub.Publish(key, "def", CommandFlags.FireAndForget);
                 Ping(muxer, pub, sub);
 
                 lock (received)
                 {
-                    Assert.AreEqual(1, received.Count);
+                    ClassicAssert.AreEqual(1, received.Count);
                 }
-                Assert.AreEqual(1, VolatileWrapper.Read(ref secondHandler));
+                ClassicAssert.AreEqual(1, VolatileWrapper.Read(ref secondHandler));
 
                 sub.Unsubscribe(key);
                 count = sub.Publish(key, "ghi", CommandFlags.FireAndForget);
@@ -190,9 +191,9 @@ namespace StackExchange.Redis.Tests
 
                 lock (received)
                 {
-                    Assert.AreEqual(1, received.Count);
+                    ClassicAssert.AreEqual(1, received.Count);
                 }
-                Assert.AreEqual(0, count);
+                ClassicAssert.AreEqual(0, count);
             }
         }
 
@@ -249,18 +250,18 @@ namespace StackExchange.Redis.Tests
                 });
                 lock (received)
                 {
-                    Assert.AreEqual(0, received.Count);
+                    ClassicAssert.AreEqual(0, received.Count);
                 }
-                Assert.AreEqual(0, VolatileWrapper.Read(ref secondHandler));
+                ClassicAssert.AreEqual(0, VolatileWrapper.Read(ref secondHandler));
                 var count = sub.Publish("abc", "def");
 
                 Ping(muxer, pub, sub);
 
                 lock(received)
                 {
-                    Assert.AreEqual(1, received.Count);
+                    ClassicAssert.AreEqual(1, received.Count);
                 }
-                Assert.AreEqual(1, VolatileWrapper.Read(ref secondHandler));
+                ClassicAssert.AreEqual(1, VolatileWrapper.Read(ref secondHandler));
 
                 sub.Unsubscribe("a*c");
                 count = sub.Publish("abc", "ghi");
@@ -269,9 +270,9 @@ namespace StackExchange.Redis.Tests
 
                 lock(received)
                 {
-                    Assert.AreEqual(1, received.Count);
+                    ClassicAssert.AreEqual(1, received.Count);
                 }
-                Assert.AreEqual(0, count);
+                ClassicAssert.AreEqual(0, count);
             }
         }
 
@@ -304,10 +305,10 @@ namespace StackExchange.Redis.Tests
                 });
 
 
-                Assert.IsFalse(a.GetServer(PrimaryServer, PrimaryPort).IsSlave, PrimaryPortString + " is master via a");
-                Assert.IsTrue(a.GetServer(PrimaryServer, SlavePort).IsSlave, SlavePortString + " is slave via a");
-                Assert.IsFalse(b.GetServer(PrimaryServer, PrimaryPort).IsSlave, PrimaryPortString + " is master via b");
-                Assert.IsTrue(b.GetServer(PrimaryServer, SlavePort).IsSlave, SlavePortString + " is slave via b");
+                ClassicAssert.IsFalse(a.GetServer(PrimaryServer, PrimaryPort).IsSlave, PrimaryPortString + " is master via a");
+                ClassicAssert.IsTrue(a.GetServer(PrimaryServer, SlavePort).IsSlave, SlavePortString + " is slave via a");
+                ClassicAssert.IsFalse(b.GetServer(PrimaryServer, PrimaryPort).IsSlave, PrimaryPortString + " is master via b");
+                ClassicAssert.IsTrue(b.GetServer(PrimaryServer, SlavePort).IsSlave, SlavePortString + " is slave via b");
 
 
                 var epA = subA.SubscribedEndpoint(channel);
@@ -319,9 +320,9 @@ namespace StackExchange.Redis.Tests
                 subA.Ping();
                 subB.Ping();
                 
-                Assert.AreEqual(2, Interlocked.Read(ref aCount), "a");
-                Assert.AreEqual(2, Interlocked.Read(ref bCount), "b");
-                Assert.AreEqual(0, Interlocked.Read(ref masterChanged), "master");
+                ClassicAssert.AreEqual(2, Interlocked.Read(ref aCount), "a");
+                ClassicAssert.AreEqual(2, Interlocked.Read(ref bCount), "b");
+                ClassicAssert.AreEqual(0, Interlocked.Read(ref masterChanged), "master");
 
                 try
                 {
@@ -335,10 +336,10 @@ namespace StackExchange.Redis.Tests
                     Console.WriteLine("Pausing...");
                     Thread.Sleep(5000);
 
-                    Assert.IsTrue(a.GetServer(PrimaryServer, PrimaryPort).IsSlave, PrimaryPortString + " is slave via a");
-                    Assert.IsFalse(a.GetServer(PrimaryServer, SlavePort).IsSlave, SlavePortString + " is master via a");
-                    Assert.IsTrue(b.GetServer(PrimaryServer, PrimaryPort).IsSlave, PrimaryPortString + " is slave via b");
-                    Assert.IsFalse(b.GetServer(PrimaryServer, SlavePort).IsSlave, SlavePortString + " is master via b");
+                    ClassicAssert.IsTrue(a.GetServer(PrimaryServer, PrimaryPort).IsSlave, PrimaryPortString + " is slave via a");
+                    ClassicAssert.IsFalse(a.GetServer(PrimaryServer, SlavePort).IsSlave, SlavePortString + " is master via a");
+                    ClassicAssert.IsTrue(b.GetServer(PrimaryServer, PrimaryPort).IsSlave, PrimaryPortString + " is slave via b");
+                    ClassicAssert.IsFalse(b.GetServer(PrimaryServer, SlavePort).IsSlave, SlavePortString + " is master via b");
 
                     Console.WriteLine("Pause complete");
                     var counters = a.GetCounters();
@@ -359,9 +360,9 @@ namespace StackExchange.Redis.Tests
                     Thread.Sleep(2000);
                     Console.WriteLine("Checking...");
 
-                    Assert.AreEqual(2, Interlocked.Read(ref aCount), "a");
-                    Assert.AreEqual(2, Interlocked.Read(ref bCount), "b");
-                    Assert.AreEqual(10, Interlocked.CompareExchange(ref masterChanged, 0, 0), "master");
+                    ClassicAssert.AreEqual(2, Interlocked.Read(ref aCount), "a");
+                    ClassicAssert.AreEqual(2, Interlocked.Read(ref bCount), "b");
+                    ClassicAssert.AreEqual(10, Interlocked.CompareExchange(ref masterChanged, 0, 0), "master");
                 }
                 finally
                 {
@@ -381,7 +382,7 @@ namespace StackExchange.Redis.Tests
         {
 
 #if !DEBUG
-            Assert.Inconclusive("Needs #DEBUG");
+            ClassicAssert.Inconclusive("Needs #DEBUG");
 #endif
             using(var muxer = Create( allowAdmin: true))
             {
@@ -394,9 +395,9 @@ namespace StackExchange.Redis.Tests
                 });
                 sub.Publish(channel, "abc");
                 sub.Ping();
-                Assert.AreEqual(1, VolatileWrapper.Read(ref counter), "counter");
+                ClassicAssert.AreEqual(1, VolatileWrapper.Read(ref counter), "counter");
                 var server = GetServer(muxer);
-                Assert.AreEqual(1, server.GetCounters().Subscription.SocketCount, "sockets");
+                ClassicAssert.AreEqual(1, server.GetCounters().Subscription.SocketCount, "sockets");
 
 #if DEBUG
                 server.SimulateConnectionFailure();
@@ -406,11 +407,11 @@ namespace StackExchange.Redis.Tests
                 Thread.Sleep(100);
                 sub.Ping();
 #if DEBUG
-                Assert.AreEqual(2, server.GetCounters().Subscription.SocketCount, "sockets");
+                ClassicAssert.AreEqual(2, server.GetCounters().Subscription.SocketCount, "sockets");
 #endif
                 sub.Publish(channel, "abc");
                 sub.Ping();
-                Assert.AreEqual(2, VolatileWrapper.Read(ref counter), "counter");
+                ClassicAssert.AreEqual(2, VolatileWrapper.Read(ref counter), "counter");
             }
         }
     }

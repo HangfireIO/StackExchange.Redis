@@ -1,5 +1,6 @@
 ﻿using System;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace StackExchange.Redis.Tests
 {
@@ -12,9 +13,9 @@ namespace StackExchange.Redis.Tests
             using (var muxer = Create(keepAlive: 1, connectTimeout: 10000, allowAdmin: true))
             {
                 var conn = muxer.GetDatabase();
-                Assert.Null(muxer.GetServerSnapshot()[0].LastException);
+                ClassicAssert.Null(muxer.GetServerSnapshot()[0].LastException);
                 var ex = ExceptionFactory.NoConnectionAvailable(true, true, new RedisCommand(), null, null, muxer.GetServerSnapshot());
-                Assert.Null(ex.InnerException);
+                ClassicAssert.Null(ex.InnerException);
             }
 
         }
@@ -23,7 +24,7 @@ namespace StackExchange.Redis.Tests
         public void NullSnapshot()
         {
             var ex = ExceptionFactory.NoConnectionAvailable(true, true, new RedisCommand(), null, null, null);
-            Assert.Null(ex.InnerException);
+            ClassicAssert.Null(ex.InnerException);
         }
 #if DEBUG // needs debug connection features
         [Test]
@@ -43,13 +44,13 @@ namespace StackExchange.Redis.Tests
                     }
 
                     var ex = ExceptionFactory.NoConnectionAvailable(true, true, new RedisCommand(), null, null, muxer.GetServerSnapshot());
-                    Assert.IsInstanceOf<RedisConnectionException>(ex);
-                    Assert.IsInstanceOf<AggregateException>(ex.InnerException);
+                    ClassicAssert.IsInstanceOf<RedisConnectionException>(ex);
+                    ClassicAssert.IsInstanceOf<AggregateException>(ex.InnerException);
                     var aggException = (AggregateException)ex.InnerException;
-                    Assert.That(aggException.InnerExceptions.Count, Is.EqualTo(2));
+                    ClassicAssert.That(aggException.InnerExceptions.Count, Is.EqualTo(2));
                     for (int i = 0; i < aggException.InnerExceptions.Count; i++)
                     {
-                        Assert.That(((RedisConnectionException)aggException.InnerExceptions[i]).FailureType, Is.EqualTo(ConnectionFailureType.SocketFailure));
+                        ClassicAssert.That(((RedisConnectionException)aggException.InnerExceptions[i]).FailureType, Is.EqualTo(ConnectionFailureType.SocketFailure));
                     }
                 }
             }
@@ -71,8 +72,8 @@ namespace StackExchange.Redis.Tests
                     muxer.AllowConnect = false;
                     SocketManager.ConnectCompletionType = CompletionType.Async;
                     var ex = ExceptionFactory.NoConnectionAvailable(true, true, new RedisCommand(), null, null, muxer.GetServerSnapshot());
-                    Assert.IsInstanceOf<RedisConnectionException>(ex);
-                    Assert.Null(ex.InnerException);
+                    ClassicAssert.IsInstanceOf<RedisConnectionException>(ex);
+                    ClassicAssert.Null(ex.InnerException);
                  }
             }
             finally
@@ -96,9 +97,9 @@ namespace StackExchange.Redis.Tests
                     muxer.GetServer(muxer.GetEndPoints()[0]).SimulateConnectionFailure();
 
                     var ex = ExceptionFactory.NoConnectionAvailable(true, true, new RedisCommand(), null,muxer.GetServerSnapshot()[0], muxer.GetServerSnapshot());
-                    Assert.IsInstanceOf<RedisConnectionException>(ex);
-                    Assert.IsInstanceOf<Exception>(ex.InnerException);
-                    Assert.That(muxer.GetServerSnapshot()[0].LastException, Is.EqualTo(ex.InnerException));
+                    ClassicAssert.IsInstanceOf<RedisConnectionException>(ex);
+                    ClassicAssert.IsInstanceOf<Exception>(ex.InnerException);
+                    ClassicAssert.That(muxer.GetServerSnapshot()[0].LastException, Is.EqualTo(ex.InnerException));
                 }
             }
             finally

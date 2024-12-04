@@ -1,5 +1,6 @@
 ﻿using NUnit.Framework;
 using System.IO;
+using NUnit.Framework.Legacy;
 
 namespace StackExchange.Redis.Tests
 {
@@ -18,7 +19,7 @@ namespace StackExchange.Redis.Tests
                 db.HyperLogLogAdd(key, "b");
                 db.HyperLogLogAdd(key, "c");
 
-                Assert.IsTrue(db.HyperLogLogLength(key) > 0);
+                ClassicAssert.IsTrue(db.HyperLogLogLength(key) > 0);
             }
         }
 
@@ -34,7 +35,7 @@ namespace StackExchange.Redis.Tests
                 db.HyperLogLogAdd(keys[1], "b");
                 db.HyperLogLogAdd(keys[2], "c");
 
-                Assert.IsTrue(db.HyperLogLogLength(keys) > 0);
+                ClassicAssert.IsTrue(db.HyperLogLogLength(keys) > 0);
             }
         }
     }

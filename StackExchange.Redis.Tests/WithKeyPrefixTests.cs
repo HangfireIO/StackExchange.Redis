@@ -1,5 +1,6 @@
 ﻿using System;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using StackExchange.Redis.KeyspaceIsolation;
 
 namespace StackExchange.Redis.Tests
@@ -15,7 +16,7 @@ namespace StackExchange.Redis.Tests
             {
                 var raw = conn.GetDatabase(1);
                 var prefixed = raw.WithKeyPrefix(new byte[0]);
-                Assert.AreSame(raw, prefixed);
+                ClassicAssert.AreSame(raw, prefixed);
             }
         }
         [Test]
@@ -25,13 +26,13 @@ namespace StackExchange.Redis.Tests
             {
                 var raw = conn.GetDatabase(1);
                 var prefixed = raw.WithKeyPrefix("");
-                Assert.AreSame(raw, prefixed);
+                ClassicAssert.AreSame(raw, prefixed);
             }
         }
         [Test]
         public void NullPrefixIsError_Bytes()
         {
-            Assert.Throws<ArgumentNullException>(() => {
+            ClassicAssert.Throws<ArgumentNullException>(() => {
                 using (var conn = Create())
                 {
                     var raw = conn.GetDatabase(1);
@@ -42,7 +43,7 @@ namespace StackExchange.Redis.Tests
         [Test]
         public void NullPrefixIsError_String()
         {
-            Assert.Throws<ArgumentNullException>(() => {
+            ClassicAssert.Throws<ArgumentNullException>(() => {
                 using (var conn = Create())
                 {
                     var raw = conn.GetDatabase(1);
@@ -57,7 +58,7 @@ namespace StackExchange.Redis.Tests
         [TestCase(null)]
         public void NullDatabaseIsError(string prefix)
         {
-            Assert.Throws<ArgumentNullException>(() => {
+            ClassicAssert.Throws<ArgumentNullException>(() => {
                 IDatabase raw = null;
                 var prefixed = raw.WithKeyPrefix(prefix);
             });
@@ -78,20 +79,20 @@ namespace StackExchange.Redis.Tests
 
                 foo.StringSet(key, s);
                 var val = (string)foo.StringGet(key);
-                Assert.AreEqual(s, val); // fooBasicSmokeTest
+                ClassicAssert.AreEqual(s, val); // fooBasicSmokeTest
 
                 foobar.StringSet(key, t);
                 val = (string)foobar.StringGet(key);
-                Assert.AreEqual(t, val); // foobarBasicSmokeTest
+                ClassicAssert.AreEqual(t, val); // foobarBasicSmokeTest
 
                 val = (string)foo.StringGet("bar" + key);
-                Assert.AreEqual(t, val); // foobarBasicSmokeTest
+                ClassicAssert.AreEqual(t, val); // foobarBasicSmokeTest
 
                 val = (string)raw.StringGet("foo" + key);
-                Assert.AreEqual(s, val); // fooBasicSmokeTest
+                ClassicAssert.AreEqual(s, val); // fooBasicSmokeTest
 
                 val = (string)raw.StringGet("foobar" + key);
-                Assert.AreEqual(t, val); // foobarBasicSmokeTest
+                ClassicAssert.AreEqual(t, val); // foobarBasicSmokeTest
             }
         }
         [Test]
@@ -114,7 +115,7 @@ namespace StackExchange.Redis.Tests
                 tran.Execute();
 
                 int i = (int)raw.StringGet("tran:i");
-                Assert.AreEqual(1, i);
+                ClassicAssert.AreEqual(1, i);
 
                 // repeat without key
                 raw.KeyDelete("tran:abc");
@@ -124,7 +125,7 @@ namespace StackExchange.Redis.Tests
                 tran.Execute();
 
                 i = (int)raw.StringGet("tran:i");
-                Assert.AreEqual(1, i);
+                ClassicAssert.AreEqual(1, i);
             }
         }
     }

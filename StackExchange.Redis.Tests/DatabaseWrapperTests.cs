@@ -5,6 +5,7 @@ using System.Net;
 using System.Text;
 using Moq;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using StackExchange.Redis.KeyspaceIsolation;
 
 namespace StackExchange.Redis.Tests
@@ -31,8 +32,8 @@ namespace StackExchange.Redis.Tests
             mock.Setup(_ => _.CreateBatch(asyncState)).Returns(innerBatch);
             IBatch wrappedBatch = wrapper.CreateBatch(asyncState);
             mock.Verify(_ => _.CreateBatch(asyncState));
-            Assert.IsInstanceOf<BatchWrapper>(wrappedBatch);
-            Assert.AreSame(innerBatch, ((BatchWrapper)wrappedBatch).Inner);
+            ClassicAssert.IsInstanceOf<BatchWrapper>(wrappedBatch);
+            ClassicAssert.AreSame(innerBatch, ((BatchWrapper)wrappedBatch).Inner);
         }
 
         [Test]
@@ -43,8 +44,8 @@ namespace StackExchange.Redis.Tests
             mock.Setup(_ => _.CreateTransaction(asyncState)).Returns(innerTransaction);
             ITransaction wrappedTransaction = wrapper.CreateTransaction(asyncState);
             mock.Verify(_ => _.CreateTransaction(asyncState));
-            Assert.IsInstanceOf<TransactionWrapper>(wrappedTransaction);
-            Assert.AreSame(innerTransaction, ((TransactionWrapper)wrappedTransaction).Inner);
+            ClassicAssert.IsInstanceOf<TransactionWrapper>(wrappedTransaction);
+            ClassicAssert.AreSame(innerTransaction, ((TransactionWrapper)wrappedTransaction).Inner);
         }
 
         [Test]
@@ -58,7 +59,7 @@ namespace StackExchange.Redis.Tests
         public void get_Database()
         {
             mock.SetupGet(_ => _.Database).Returns(123);
-            Assert.AreEqual(123, wrapper.Database);
+            ClassicAssert.AreEqual(123, wrapper.Database);
         }
 
         [Test]
@@ -292,7 +293,7 @@ namespace StackExchange.Redis.Tests
         [Test]
         public void KeyRandom()
         {
-            Assert.Throws<NotSupportedException>(() => wrapper.KeyRandom());
+            ClassicAssert.Throws<NotSupportedException>(() => wrapper.KeyRandom());
         }
 
         [Test]

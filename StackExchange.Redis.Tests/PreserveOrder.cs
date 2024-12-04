@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace StackExchange.Redis.Tests
 {
@@ -63,8 +64,8 @@ namespace StackExchange.Redis.Tests
                             if (received[i] != i) wrongOrder++;
                         }
                         Console.WriteLine("Out of order: " + wrongOrder);
-                        if (preserveAsyncOrder) Assert.AreEqual(0, wrongOrder);
-                        else Assert.AreNotEqual(0, wrongOrder);
+                        if (preserveAsyncOrder) ClassicAssert.AreEqual(0, wrongOrder);
+                        else ClassicAssert.AreNotEqual(0, wrongOrder);
                     }
                 }
             }

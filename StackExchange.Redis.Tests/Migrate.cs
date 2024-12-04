@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace StackExchange.Redis.Tests
 {
@@ -20,10 +21,10 @@ namespace StackExchange.Redis.Tests
                 fromDb.StringSet(key, "foo");
                 var dest = to.GetEndPoints(true).Single();
                 fromDb.KeyMigrate(key, dest);
-                Assert.IsFalse(fromDb.KeyExists(key));
-                Assert.IsTrue(toDb.KeyExists(key));
+                ClassicAssert.IsFalse(fromDb.KeyExists(key));
+                ClassicAssert.IsTrue(toDb.KeyExists(key));
                 string s = toDb.StringGet(key);
-                Assert.AreEqual("foo", s);
+                ClassicAssert.AreEqual("foo", s);
             }
         }
     }

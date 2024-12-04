@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace StackExchange.Redis.Tests.Issues
 {
@@ -18,7 +19,7 @@ namespace StackExchange.Redis.Tests.Issues
             {
                 for(int i = 0; i < 100; i++)
                 {
-                    Assert.AreEqual("ok", await DoStuff(conn).ConfigureAwait(false));
+                    ClassicAssert.AreEqual("ok", await DoStuff(conn).ConfigureAwait(false));
 
                 }
             }

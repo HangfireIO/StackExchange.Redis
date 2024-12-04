@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace StackExchange.Redis.Tests
 {
@@ -32,19 +33,19 @@ namespace StackExchange.Redis.Tests
                 Thread.Sleep(100);
                 GetServer(receiver).Ping();
                 GetServer(receiver).Ping();
-                Assert.IsTrue(count == -1 || count >= 2, "subscribers");
-                Assert.IsTrue(Interlocked.CompareExchange(ref total, 0, 0) >= 1, "total (1st)");
+                ClassicAssert.IsTrue(count == -1 || count >= 2, "subscribers");
+                ClassicAssert.IsTrue(Interlocked.CompareExchange(ref total, 0, 0) >= 1, "total (1st)");
 
                 Interlocked.Exchange(ref total, 0);
 
                 // and send a second time via a re-master operation
                 var server = GetServer(sender);
-                if (server.IsSlave) Assert.Inconclusive("didn't expect a slave");
+                if (server.IsSlave) ClassicAssert.Inconclusive("didn't expect a slave");
                 server.MakeMaster(ReplicationChangeOptions.Broadcast);
                 Thread.Sleep(100);
                 GetServer(receiver).Ping();
                 GetServer(receiver).Ping();
-                Assert.IsTrue(Interlocked.CompareExchange(ref total, 0, 0) >= 1, "total (2nd)");
+                ClassicAssert.IsTrue(Interlocked.CompareExchange(ref total, 0, 0) >= 1, "total (2nd)");
             }
         }
 
@@ -63,7 +64,7 @@ namespace StackExchange.Redis.Tests
 
             using (var conn = ConnectionMultiplexer.Connect(config, msg => Console.WriteLine(msg)))
             {
-                Assert.IsFalse(conn.IsConnected);
+                ClassicAssert.IsFalse(conn.IsConnected);
             }
         }
 
@@ -82,7 +83,7 @@ namespace StackExchange.Redis.Tests
 
                 var after = muxer.OperationCount;
 
-                Assert.IsTrue(after >= before + 4);
+                ClassicAssert.IsTrue(after >= before + 4);
 
             }
         }
@@ -97,7 +98,7 @@ namespace StackExchange.Redis.Tests
             using(var muxer = Create(allowAdmin: true))
             {
                 var rows = GetServer(muxer).SlowlogGet(count);
-                Assert.IsNotNull(rows);
+                ClassicAssert.IsNotNull(rows);
             }
         }
         [Test]
@@ -114,13 +115,13 @@ namespace StackExchange.Redis.Tests
         {
             using (var muxer = Create(clientName: "Test Rig", allowAdmin: true))
             {
-                Assert.AreEqual("Test Rig", muxer.ClientName);
+                ClassicAssert.AreEqual("Test Rig", muxer.ClientName);
 
                 var conn = muxer.GetDatabase();
                 conn.Ping();
 #if DEBUG
                 var name = GetServer(muxer).ClientGetName();
-                Assert.AreEqual("TestRig", name);
+                ClassicAssert.AreEqual("TestRig", name);
 #endif
             }
         }
@@ -130,12 +131,12 @@ namespace StackExchange.Redis.Tests
         {
             using (var muxer = Create(allowAdmin: true))
             {
-                Assert.AreEqual(Environment.MachineName, muxer.ClientName);
+                ClassicAssert.AreEqual(Environment.MachineName, muxer.ClientName);
                 var conn = muxer.GetDatabase();
                 conn.Ping();
 #if DEBUG
                 var name = GetServer(muxer).ClientGetName();
-                Assert.AreEqual(Environment.MachineName, name);
+                ClassicAssert.AreEqual(Environment.MachineName, name);
 #endif
             }
         }
@@ -146,7 +147,7 @@ namespace StackExchange.Redis.Tests
             using (var muxer = Create(allowAdmin: true, disabledCommands: new[] { "config", "info" }))
             {
                 var conn = GetServer(muxer);
-                Assert.Throws<RedisCommandException>(() =>
+                ClassicAssert.Throws<RedisCommandException>(() =>
                 {
                     var all = conn.ConfigGet();
                 },
@@ -161,7 +162,7 @@ namespace StackExchange.Redis.Tests
                 Console.WriteLine("about to get config");
                 var conn = GetServer(muxer);
                 var all = conn.ConfigGet();
-                Assert.IsTrue(all.Length > 0, "any");
+                ClassicAssert.IsTrue(all.Length > 0, "any");
 
 #if !CORE_CLR
                 var pairs = all.ToDictionary(x => (string)x.Key, x => (string)x.Value, StringComparer.InvariantCultureIgnoreCase);
@@ -169,13 +170,13 @@ namespace StackExchange.Redis.Tests
                 var pairs = all.ToDictionary(x => (string)x.Key, x => (string)x.Value, StringComparer.OrdinalIgnoreCase);
 #endif
 
-                Assert.AreEqual(all.Length, pairs.Count);
-                Assert.IsTrue(pairs.ContainsKey("timeout"), "timeout");
+                ClassicAssert.AreEqual(all.Length, pairs.Count);
+                ClassicAssert.IsTrue(pairs.ContainsKey("timeout"), "timeout");
                 var val = int.Parse(pairs["timeout"]);
 
-                Assert.IsTrue(pairs.ContainsKey("port"), "port");
+                ClassicAssert.IsTrue(pairs.ContainsKey("port"), "port");
                 val = int.Parse(pairs["port"]);
-                Assert.AreEqual(PrimaryPort, val);
+                ClassicAssert.AreEqual(PrimaryPort, val);
             }
         }
 
@@ -201,7 +202,7 @@ namespace StackExchange.Redis.Tests
                 Console.WriteLine(serverTime);
                 var delta = Math.Abs((DateTime.UtcNow - serverTime).TotalSeconds);
 
-                Assert.IsTrue(delta < 5);
+                ClassicAssert.IsTrue(delta < 5);
             }
         }
 
@@ -215,8 +216,8 @@ namespace StackExchange.Redis.Tests
                 db.KeyDelete(key, CommandFlags.FireAndForget);
                 db.StringIncrement(key, flags: CommandFlags.FireAndForget);
                 var debug = (string)db.DebugObject(key);
-                Assert.IsNotNull(debug);
-                Assert.IsTrue(debug.Contains("encoding:int serializedlength:2"));
+                ClassicAssert.IsNotNull(debug);
+                ClassicAssert.IsTrue(debug.Contains("encoding:int serializedlength:2"));
             }
         }
 
@@ -227,7 +228,7 @@ namespace StackExchange.Redis.Tests
             {
                 var server = GetServer(muxer);
                 var info1 = server.Info();
-                Assert.IsTrue(info1.Length > 5);
+                ClassicAssert.IsTrue(info1.Length > 5);
                 Console.WriteLine("All sections");
                 foreach(var group in info1)
                 {
@@ -241,12 +242,12 @@ namespace StackExchange.Redis.Tests
                 }
 
                 var info2 = server.Info("cpu");
-                Assert.AreEqual(1, info2.Length);
+                ClassicAssert.AreEqual(1, info2.Length);
                 var cpu = info2.Single();
-                Assert.IsTrue(cpu.Count() > 2);
-                Assert.AreEqual("CPU", cpu.Key);
-                Assert.IsTrue(cpu.Any(x => x.Key == "used_cpu_sys"));
-                Assert.IsTrue(cpu.Any(x => x.Key == "used_cpu_user"));
+                ClassicAssert.IsTrue(cpu.Count() > 2);
+                ClassicAssert.AreEqual("CPU", cpu.Key);
+                ClassicAssert.IsTrue(cpu.Any(x => x.Key == "used_cpu_sys"));
+                ClassicAssert.IsTrue(cpu.Any(x => x.Key == "used_cpu_user"));
             }
         }
 
@@ -257,8 +258,8 @@ namespace StackExchange.Redis.Tests
             {
                 var server = GetServer(muxer);
                 var info = server.InfoRaw();
-                Assert.IsTrue(info.Contains("used_cpu_sys"));
-                Assert.IsTrue(info.Contains("used_cpu_user"));
+                ClassicAssert.IsTrue(info.Contains("used_cpu_sys"));
+                ClassicAssert.IsTrue(info.Contains("used_cpu_user"));
             }
         }
 
@@ -270,8 +271,8 @@ namespace StackExchange.Redis.Tests
             {
                 var server = GetServer(muxer);
                 var clients = server.ClientList();
-                Assert.IsTrue(clients.Length > 0, "no clients"); // ourselves!
-                Assert.IsTrue(clients.Any(x => x.Name == name), "expected: " + name);
+                ClassicAssert.IsTrue(clients.Length > 0, "no clients"); // ourselves!
+                ClassicAssert.IsTrue(clients.Any(x => x.Name == name), "expected: " + name);
             }
         }
 
@@ -310,7 +311,7 @@ namespace StackExchange.Redis.Tests
                         Thread.Sleep(TimeSpan.FromSeconds(8));
 
                         var after = innerMuxer.OperationCount;
-                        Assert.IsTrue(after >= before + 4);
+                        ClassicAssert.IsTrue(after >= before + 4);
 
                     }
                 }

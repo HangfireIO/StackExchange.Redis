@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Linq;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace StackExchange.Redis.Tests
 {
@@ -22,11 +23,11 @@ namespace StackExchange.Redis.Tests
                 var wasSet = (bool) db.ScriptEvaluate(@"if redis.call('hexists', KEYS[1], 'UniqueId') then return redis.call('hset', KEYS[1], 'UniqueId', ARGV[1]) else return 0 end",
                     new RedisKey[] { custKey }, new RedisValue[] { newId });
 
-                Assert.IsTrue(wasSet);
+                ClassicAssert.IsTrue(wasSet);
 
                 wasSet = (bool)db.ScriptEvaluate(@"if redis.call('hexists', KEYS[1], 'UniqueId') then return redis.call('hset', KEYS[1], 'UniqueId', ARGV[1]) else return 0 end",
                     new RedisKey[] { custKey }, new RedisValue[] { newId });
-                Assert.IsFalse(wasSet);
+                ClassicAssert.IsFalse(wasSet);
             }
         }
 
@@ -46,19 +47,19 @@ namespace StackExchange.Redis.Tests
 
                 // start empty
                 server.ScriptFlush();
-                Assert.IsFalse(server.ScriptExists(script));
+                ClassicAssert.IsFalse(server.ScriptExists(script));
 
                 // run once, causes to be cached
-                Assert.IsTrue((bool)db.ScriptEvaluate(script));
-                Assert.IsTrue(server.ScriptExists(script));
+                ClassicAssert.IsTrue((bool)db.ScriptEvaluate(script));
+                ClassicAssert.IsTrue(server.ScriptExists(script));
 
                 // can run again
-                Assert.IsTrue((bool)db.ScriptEvaluate(script));
+                ClassicAssert.IsTrue((bool)db.ScriptEvaluate(script));
 
                 // ditch the scripts; should no longer exist
                 db.Ping();
                 server.ScriptFlush();
-                Assert.IsFalse(server.ScriptExists(script));
+                ClassicAssert.IsFalse(server.ScriptExists(script));
                 db.Ping();
 
                 if (async)
@@ -67,25 +68,25 @@ namespace StackExchange.Redis.Tests
                     try
                     {
                         db.Wait(db.ScriptEvaluateAsync(script));
-                        Assert.Fail();
+                        ClassicAssert.Fail();
                     }
                     catch(AggregateException ex)
                     {
-                        Assert.AreEqual(1, ex.InnerExceptions.Count);
-                        Assert.IsInstanceOf<RedisServerException>(ex.InnerExceptions[0]);
-                        Assert.AreEqual("NOSCRIPT No matching script. Please use EVAL. for EVAL", ex.InnerExceptions[0].Message);
+                        ClassicAssert.AreEqual(1, ex.InnerExceptions.Count);
+                        ClassicAssert.IsInstanceOf<RedisServerException>(ex.InnerExceptions[0]);
+                        ClassicAssert.AreEqual("NOSCRIPT No matching script. Please use EVAL. for EVAL", ex.InnerExceptions[0].Message);
                     }
                 } else
                 {
                     // just works; magic
-                    Assert.IsTrue((bool)db.ScriptEvaluate(script));
+                    ClassicAssert.IsTrue((bool)db.ScriptEvaluate(script));
                 }
 
                 // but gets marked as unloaded, so we can use it again...
-                Assert.IsTrue((bool)db.ScriptEvaluate(script));
+                ClassicAssert.IsTrue((bool)db.ScriptEvaluate(script));
 
                 // which will cause it to be cached
-                Assert.IsTrue(server.ScriptExists(script));
+                ClassicAssert.IsTrue(server.ScriptExists(script));
             }
         }
 
@@ -133,8 +134,8 @@ namespace StackExchange.Redis.Tests
                 watch.Stop();
                 TimeSpan directTime = watch.Elapsed;
 
-                Assert.AreEqual(LOOP, (long)scriptResult, "script result");
-                Assert.AreEqual(LOOP, (long)directResult, "direct result");
+                ClassicAssert.AreEqual(LOOP, (long)scriptResult, "script result");
+                ClassicAssert.AreEqual(LOOP, (long)directResult, "direct result");
 
                 Console.WriteLine("script: {0}ms; direct: {1}ms",
                     scriptTime.TotalMilliseconds,
@@ -159,13 +160,13 @@ namespace StackExchange.Redis.Tests
                 RedisKey[] keys = { Me() };
 
                 string hexHash = string.Concat(hash.Select(x => x.ToString("X2")));
-                Assert.AreEqual("2BAB3B661081DB58BD2341920E0BA7CF5DC77B25", hexHash);
+                ClassicAssert.AreEqual("2BAB3B661081DB58BD2341920E0BA7CF5DC77B25", hexHash);
 
                 db.ScriptEvaluate(hexHash, keys);
                 db.ScriptEvaluate(hash, keys);               
 
                 var count = (int)db.StringGet(keys)[0];
-                Assert.AreEqual(2, count);
+                ClassicAssert.AreEqual(2, count);
 
             }
         }
@@ -187,32 +188,32 @@ namespace StackExchange.Redis.Tests
 
                 {
                     var val = prepared.Evaluate(db, new { ident = "hello" });
-                    Assert.AreEqual("hello", (string)val);
+                    ClassicAssert.AreEqual("hello", (string)val);
                 }
 
                 {
                     var val = prepared.Evaluate(db, new { ident = 123 });
-                    Assert.AreEqual(123, (int)val);
+                    ClassicAssert.AreEqual(123, (int)val);
                 }
 
                 {
                     var val = prepared.Evaluate(db, new { ident = 123L });
-                    Assert.AreEqual(123L, (long)val);
+                    ClassicAssert.AreEqual(123L, (long)val);
                 }
 
                 {
                     var val = prepared.Evaluate(db, new { ident = 1.1 });
-                    Assert.AreEqual(1.1, (double)val);
+                    ClassicAssert.AreEqual(1.1, (double)val);
                 }
 
                 {
                     var val = prepared.Evaluate(db, new { ident = true });
-                    Assert.AreEqual(true, (bool)val);
+                    ClassicAssert.AreEqual(true, (bool)val);
                 }
 
                 {
                     var val = prepared.Evaluate(db, new { ident = new byte[] { 4, 5, 6 } });
-                    Assert.IsTrue(new byte [] { 4, 5, 6}.SequenceEqual((byte[])val));
+                    ClassicAssert.IsTrue(new byte [] { 4, 5, 6}.SequenceEqual((byte[])val));
                 }
             }
         }
@@ -236,15 +237,15 @@ namespace StackExchange.Redis.Tests
 
                 script.Evaluate(db, p);
                 var val = db.StringGet("testkey");
-                Assert.AreEqual(123, (int)val);
+                ClassicAssert.AreEqual(123, (int)val);
 
                 // no super clean way to extract this; so just abuse InternalsVisibleTo
                 RedisKey[] keys;
                 RedisValue[] args;
                 script.ExtractParameters(p, null, out keys, out args);
-                Assert.IsNotNull(keys);
-                Assert.AreEqual(1, keys.Length);
-                Assert.AreEqual("testkey", (string)keys[0]);
+                ClassicAssert.IsNotNull(keys);
+                ClassicAssert.AreEqual(1, keys.Length);
+                ClassicAssert.AreEqual("testkey", (string)keys[0]);
             }
         }
 
@@ -260,7 +261,7 @@ namespace StackExchange.Redis.Tests
 
                 var script = LuaScript.Prepare(Script);
 
-                Assert.AreEqual("redis.call('set', ARGV[1], 'hello@example')", script.ExecutableScript);
+                ClassicAssert.AreEqual("redis.call('set', ARGV[1], 'hello@example')", script.ExecutableScript);
 
                 var db = conn.GetDatabase();
 
@@ -268,7 +269,7 @@ namespace StackExchange.Redis.Tests
 
                 script.Evaluate(db, p);
                 var val = db.StringGet("key");
-                Assert.AreEqual("hello@example", (string)val);
+                ClassicAssert.AreEqual("hello@example", (string)val);
             }
         }
 
@@ -278,7 +279,7 @@ namespace StackExchange.Redis.Tests
             const string Script = "redis.call('set', @key, @@escapeMe)";
             var script = LuaScript.Prepare(Script);
 
-            Assert.AreEqual("redis.call('set', ARGV[1], @escapeMe)", script.ExecutableScript);
+            ClassicAssert.AreEqual("redis.call('set', ARGV[1], @escapeMe)", script.ExecutableScript);
         }
 
         [Test]
@@ -299,32 +300,32 @@ namespace StackExchange.Redis.Tests
 
                 {
                     var val = loaded.Evaluate(db, new { ident = "hello" });
-                    Assert.AreEqual("hello", (string)val);
+                    ClassicAssert.AreEqual("hello", (string)val);
                 }
 
                 {
                     var val = loaded.Evaluate(db, new { ident = 123 });
-                    Assert.AreEqual(123, (int)val);
+                    ClassicAssert.AreEqual(123, (int)val);
                 }
 
                 {
                     var val = loaded.Evaluate(db, new { ident = 123L });
-                    Assert.AreEqual(123L, (long)val);
+                    ClassicAssert.AreEqual(123L, (long)val);
                 }
 
                 {
                     var val = loaded.Evaluate(db, new { ident = 1.1 });
-                    Assert.AreEqual(1.1, (double)val);
+                    ClassicAssert.AreEqual(1.1, (double)val);
                 }
 
                 {
                     var val = loaded.Evaluate(db, new { ident = true });
-                    Assert.AreEqual(true, (bool)val);
+                    ClassicAssert.AreEqual(true, (bool)val);
                 }
 
                 {
                     var val = loaded.Evaluate(db, new { ident = new byte[] { 4, 5, 6 } });
-                    Assert.IsTrue(new byte[] { 4, 5, 6 }.SequenceEqual((byte[])val));
+                    ClassicAssert.IsTrue(new byte[] { 4, 5, 6 }.SequenceEqual((byte[])val));
                 }
             }
         }
@@ -349,15 +350,15 @@ namespace StackExchange.Redis.Tests
 
                 prepared.Evaluate(db, p);
                 var val = db.StringGet("testkey");
-                Assert.AreEqual(123, (int)val);
+                ClassicAssert.AreEqual(123, (int)val);
 
                 // no super clean way to extract this; so just abuse InternalsVisibleTo
                 RedisKey[] keys;
                 RedisValue[] args;
                 prepared.Original.ExtractParameters(p, null, out keys, out args);
-                Assert.IsNotNull(keys);
-                Assert.AreEqual(1, keys.Length);
-                Assert.AreEqual("testkey", (string)keys[0]);
+                ClassicAssert.IsNotNull(keys);
+                ClassicAssert.AreEqual(1, keys.Length);
+                ClassicAssert.AreEqual("testkey", (string)keys[0]);
             }
         }
 
@@ -368,20 +369,20 @@ namespace StackExchange.Redis.Tests
             var first = LuaScript.Prepare(Script);
             var fromCache = LuaScript.Prepare(Script);
 
-            Assert.IsTrue(object.ReferenceEquals(first, fromCache));
+            ClassicAssert.IsTrue(object.ReferenceEquals(first, fromCache));
             
             LuaScript.PurgeCache();
             var shouldBeNew = LuaScript.Prepare(Script);
 
-            Assert.IsFalse(object.ReferenceEquals(first, shouldBeNew));
+            ClassicAssert.IsFalse(object.ReferenceEquals(first, shouldBeNew));
         }
 
         static void _PurgeLuaScriptOnFinalize(string script)
         {
             var first = LuaScript.Prepare(script);
             var fromCache = LuaScript.Prepare(script);
-            Assert.IsTrue(object.ReferenceEquals(first, fromCache));
-            Assert.AreEqual(1, LuaScript.GetCachedScriptCount());
+            ClassicAssert.IsTrue(object.ReferenceEquals(first, fromCache));
+            ClassicAssert.AreEqual(1, LuaScript.GetCachedScriptCount());
         }
 
         [Test]
@@ -389,7 +390,7 @@ namespace StackExchange.Redis.Tests
         {
             const string Script = "redis.call('set', @PurgeLuaScriptOnFinalizeKey, @PurgeLuaScriptOnFinalizeValue)";
             LuaScript.PurgeCache();
-            Assert.AreEqual(0, LuaScript.GetCachedScriptCount());
+            ClassicAssert.AreEqual(0, LuaScript.GetCachedScriptCount());
 
             // This has to be a separate method to guarantee that the created LuaScript objects go out of scope,
             //   and are thus available to be GC'd
@@ -398,10 +399,10 @@ namespace StackExchange.Redis.Tests
             GC.Collect(2, GCCollectionMode.Forced, blocking: true);
             GC.WaitForPendingFinalizers();
 
-            Assert.AreEqual(0, LuaScript.GetCachedScriptCount());
+            ClassicAssert.AreEqual(0, LuaScript.GetCachedScriptCount());
 
             var shouldBeNew = LuaScript.Prepare(Script);
-            Assert.AreEqual(1, LuaScript.GetCachedScriptCount());
+            ClassicAssert.AreEqual(1, LuaScript.GetCachedScriptCount());
         }
 
         [Test]
@@ -415,13 +416,13 @@ namespace StackExchange.Redis.Tests
                 var db = conn.GetDatabase();
                 db.ScriptEvaluate(script, new { key = (RedisKey)"key", value = "value" });
                 var val = db.StringGet("key");
-                Assert.AreEqual("value", (string)val);
+                ClassicAssert.AreEqual("value", (string)val);
 
                 var prepared = script.Load(conn.GetServer(conn.GetEndPoints()[0]));
 
                 db.ScriptEvaluate(prepared, new { key = (RedisKey)"key2", value = "value2" });
                 var val2 = db.StringGet("key2");
-                Assert.AreEqual("value2", (string)val2);
+                ClassicAssert.AreEqual("value2", (string)val2);
             }
         }
 
@@ -440,7 +441,7 @@ namespace StackExchange.Redis.Tests
 
                 db.ScriptEvaluate(prepared, new { key = (RedisKey)"key3", value = "value3" });
                 var val = db.StringGet("key3");
-                Assert.AreEqual("value3", (string)val);
+                ClassicAssert.AreEqual("value3", (string)val);
             }
         }
 
@@ -455,12 +456,12 @@ namespace StackExchange.Redis.Tests
             RedisKey[] keys;
             RedisValue[] args;
             prepared.ExtractParameters(p, "prefix-", out keys, out args);
-            Assert.IsNotNull(keys);
-            Assert.AreEqual(1, keys.Length);
-            Assert.AreEqual("prefix-key", (string)keys[0]);
-            Assert.AreEqual(2, args.Length);
-            Assert.AreEqual("prefix-key", (string)args[0]);
-            Assert.AreEqual("hello", (string)args[1]);
+            ClassicAssert.IsNotNull(keys);
+            ClassicAssert.AreEqual(1, keys.Length);
+            ClassicAssert.AreEqual("prefix-key", (string)keys[0]);
+            ClassicAssert.AreEqual(2, args.Length);
+            ClassicAssert.AreEqual("prefix-key", (string)args[0]);
+            ClassicAssert.AreEqual("hello", (string)args[1]);
         }
 
         [Test]
@@ -476,13 +477,13 @@ namespace StackExchange.Redis.Tests
                 var prepared = LuaScript.Prepare(Script);
                 wrappedDb.ScriptEvaluate(prepared, new { key = (RedisKey)"mykey", value = 123 });
                 var val1 = wrappedDb.StringGet("mykey");
-                Assert.AreEqual(123, (int)val1);
+                ClassicAssert.AreEqual(123, (int)val1);
 
                 var val2 = db.StringGet("prefix-mykey");
-                Assert.AreEqual(123, (int)val2);
+                ClassicAssert.AreEqual(123, (int)val2);
 
                 var val3 = db.StringGet("mykey");
-                Assert.IsTrue(val3.IsNull);
+                ClassicAssert.IsTrue(val3.IsNull);
             }
         }
 
@@ -500,13 +501,13 @@ namespace StackExchange.Redis.Tests
                 var prepared = LuaScript.Prepare(Script).Load(server);
                 wrappedDb.ScriptEvaluate(prepared, new { key = (RedisKey)"mykey", value = 123 });
                 var val1 = wrappedDb.StringGet("mykey");
-                Assert.AreEqual(123, (int)val1);
+                ClassicAssert.AreEqual(123, (int)val1);
 
                 var val2 = db.StringGet("prefix2-mykey");
-                Assert.AreEqual(123, (int)val2);
+                ClassicAssert.AreEqual(123, (int)val2);
 
                 var val3 = db.StringGet("mykey");
-                Assert.IsTrue(val3.IsNull);
+                ClassicAssert.IsTrue(val3.IsNull);
             }
         }
     }

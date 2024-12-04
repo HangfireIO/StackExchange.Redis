@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using System.Text;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace StackExchange.Redis.Tests
 {
@@ -21,7 +22,7 @@ namespace StackExchange.Redis.Tests
                     db.StringSet("x" + i, "y" + i, flags: CommandFlags.FireAndForget);
 
                 var count = GetServer(muxer).Keys(Database).Count();
-                Assert.AreEqual(Count, count);
+                ClassicAssert.AreEqual(Count, count);
             }
         }
 
@@ -34,11 +35,11 @@ namespace StackExchange.Redis.Tests
                 conn.GetServer(PrimaryServer, PrimaryPort).FlushDatabase();
                 string anyKey = db.KeyRandom();
 
-                Assert.IsNull(anyKey);
+                ClassicAssert.IsNull(anyKey);
                 db.StringSet("abc", "def");
                 byte[] keyBytes = db.KeyRandom();
 
-                Assert.AreEqual("abc", Encoding.UTF8.GetString(keyBytes));
+                ClassicAssert.AreEqual("abc", Encoding.UTF8.GetString(keyBytes));
             }
         }
 
@@ -51,15 +52,15 @@ namespace StackExchange.Redis.Tests
                 db.KeyDelete("abc");
                 db.StringSet("abc", 123);
                 int k = (int)db.StringGet("abc");
-                Assert.AreEqual(123, k);
+                ClassicAssert.AreEqual(123, k);
 
                 db.KeyDelete("abc");
                 int i = (int)db.StringGet("abc");
-                Assert.AreEqual(0, i);
+                ClassicAssert.AreEqual(0, i);
 
-                Assert.IsTrue(db.StringGet("abc").IsNull);
+                ClassicAssert.IsTrue(db.StringGet("abc").IsNull);
                 int? value = (int?)db.StringGet("abc");
-                Assert.IsFalse(value.HasValue);
+                ClassicAssert.IsFalse(value.HasValue);
 
             }
         }
@@ -71,31 +72,31 @@ namespace StackExchange.Redis.Tests
                 // simple
                 RedisKey key = "world";
                 var ret = key.Prepend("hello");
-                Assert.AreEqual("helloworld", (string)ret);
+                ClassicAssert.AreEqual("helloworld", (string)ret);
             }
 
             {
                 RedisKey key1 = "world";
                 RedisKey key2 = Encoding.UTF8.GetBytes("hello");
                 var key3 = key1.Prepend(key2);
-                Assert.IsTrue(object.ReferenceEquals(key1.KeyValue, key3.KeyValue));
-                Assert.IsTrue(object.ReferenceEquals(key2.KeyValue, key3.KeyPrefix));
-                Assert.AreEqual("helloworld", (string)key3);
+                ClassicAssert.IsTrue(object.ReferenceEquals(key1.KeyValue, key3.KeyValue));
+                ClassicAssert.IsTrue(object.ReferenceEquals(key2.KeyValue, key3.KeyPrefix));
+                ClassicAssert.AreEqual("helloworld", (string)key3);
             }
 
             {
                 RedisKey key = "hello";
                 var ret = key.Append("world");
-                Assert.AreEqual("helloworld", (string)ret);
+                ClassicAssert.AreEqual("helloworld", (string)ret);
             }
 
             {
                 RedisKey key1 = Encoding.UTF8.GetBytes("hello");
                 RedisKey key2 = "world";
                 var key3 = key1.Append(key2);
-                Assert.IsTrue(object.ReferenceEquals(key2.KeyValue, key3.KeyValue));
-                Assert.IsTrue(object.ReferenceEquals(key1.KeyValue, key3.KeyPrefix));
-                Assert.AreEqual("helloworld", (string)key3);
+                ClassicAssert.IsTrue(object.ReferenceEquals(key2.KeyValue, key3.KeyValue));
+                ClassicAssert.IsTrue(object.ReferenceEquals(key1.KeyValue, key3.KeyPrefix));
+                ClassicAssert.AreEqual("helloworld", (string)key3);
             }
         }
     }

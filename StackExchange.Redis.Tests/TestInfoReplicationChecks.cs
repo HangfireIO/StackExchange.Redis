@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace StackExchange.Redis.Tests
 {
@@ -13,12 +14,12 @@ namespace StackExchange.Redis.Tests
             using(var conn = Create())
             {
                 var parsed = ConfigurationOptions.Parse(conn.Configuration);
-                Assert.AreEqual(5, parsed.ConfigCheckSeconds);
+                ClassicAssert.AreEqual(5, parsed.ConfigCheckSeconds);
                 var before = conn.GetCounters();
                 Thread.Sleep(TimeSpan.FromSeconds(13));
                 var after = conn.GetCounters();
                 int done = (int)(after.Interactive.CompletedSynchronously - before.Interactive.CompletedSynchronously);
-                Assert.IsTrue(done >= 2);
+                ClassicAssert.IsTrue(done >= 2);
             }
         }
         protected override string GetConfiguration()

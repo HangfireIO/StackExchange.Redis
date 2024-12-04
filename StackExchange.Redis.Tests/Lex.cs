@@ -1,4 +1,5 @@
 ﻿using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace StackExchange.Redis.Tests
 {
@@ -76,7 +77,7 @@ namespace StackExchange.Redis.Tests
                 Equate(set, set.Length, "ALPHA", "aaaa", "alpha", "b", "c", "d", "e", "foo", "zap", "zip");
 
                 long removed = db.SortedSetRemoveRangeByValue(key, "alpha", "omega");
-                Assert.AreEqual(6, removed);
+                ClassicAssert.AreEqual(6, removed);
 
                 set = db.SortedSetRangeByRank(key);
                 Equate(set, set.Length, "ALPHA", "aaaa", "zap", "zip");
@@ -87,11 +88,11 @@ namespace StackExchange.Redis.Tests
 
         private void Equate(RedisValue[] actual, long count, params string[] expected)
         {
-            Assert.AreEqual(count, expected.Length);
-            Assert.AreEqual(expected.Length, actual.Length);
+            ClassicAssert.AreEqual(count, expected.Length);
+            ClassicAssert.AreEqual(expected.Length, actual.Length);
             for(int i = 0; i < actual.Length; i++)
             {
-                Assert.AreEqual(expected[i], (string)actual[i]);
+                ClassicAssert.AreEqual(expected[i], (string)actual[i]);
             }
         }
     }

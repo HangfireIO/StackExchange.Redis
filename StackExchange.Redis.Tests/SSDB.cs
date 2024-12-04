@@ -1,4 +1,5 @@
 ﻿using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace StackExchange.Redis.Tests
 {
@@ -18,9 +19,9 @@ namespace StackExchange.Redis.Tests
             {
                 var db = conn.GetDatabase(0);
                 db.KeyDelete(key);
-                Assert.IsTrue(db.StringGet(key).IsNull);
+                ClassicAssert.IsTrue(db.StringGet(key).IsNull);
                 db.StringSet(key, "abc");
-                Assert.AreEqual("abc", (string)db.StringGet(key));
+                ClassicAssert.AreEqual("abc", (string)db.StringGet(key));
             }
         }
     }

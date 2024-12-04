@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Linq;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace StackExchange.Redis.Tests.Issues
 {
@@ -28,7 +29,7 @@ namespace StackExchange.Redis.Tests.Issues
                 var isOperationSuccessful = tran.Execute();
                 watch.Stop();
                 System.Console.WriteLine("{0}ms", watch.ElapsedMilliseconds);
-                Assert.IsTrue(isOperationSuccessful);                
+                ClassicAssert.IsTrue(isOperationSuccessful);                
             }
         }
     }

@@ -1,4 +1,5 @@
 ﻿using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace StackExchange.Redis.Tests
 {
@@ -15,8 +16,8 @@ namespace StackExchange.Redis.Tests
 
                 db.KeyDelete(key, CommandFlags.FireAndForget);
                 db.StringSetBit(key, 10, true);
-                Assert.True(db.StringGetBit(key, 10));
-                Assert.False(db.StringGetBit(key, 11));
+                ClassicAssert.True(db.StringGetBit(key, 10));
+                ClassicAssert.False(db.StringGetBit(key, 11));
             }
         }
     }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace StackExchange.Redis.Tests
 {
@@ -31,7 +32,7 @@ namespace StackExchange.Redis.Tests
                     conn.StringSet(key, i, flags: CommandFlags.FireAndForget);
                 }
                 int val = (int)conn.StringGet(key);
-                Assert.AreEqual(AsyncOpsQty, val);
+                ClassicAssert.AreEqual(AsyncOpsQty, val);
                 watch.Stop();
                 Console.WriteLine("{2}: Time for {0} ops: {1}ms ({3}); ops/s: {4}", AsyncOpsQty, watch.ElapsedMilliseconds, Me(),
                     preserveOrder ? "preserve order" : "any order",
@@ -45,8 +46,8 @@ namespace StackExchange.Redis.Tests
             var config = ConfigurationOptions.Parse(GetConfiguration());
             foreach(var ep in config.EndPoints)
                 Console.WriteLine(ep);
-            Assert.AreEqual(1, config.EndPoints.Count);
-            Assert.AreEqual("changeme", config.Password);
+            ClassicAssert.AreEqual(1, config.EndPoints.Count);
+            ClassicAssert.AreEqual("changeme", config.Password);
         }
         [Test]
         public void Connect()
@@ -61,7 +62,7 @@ namespace StackExchange.Redis.Tests
         [TestCase("")]
         public void ConnectWithWrongPassword(string password)
         {
-            Assert.Throws<RedisConnectionException>(() => {
+            ClassicAssert.Throws<RedisConnectionException>(() => {
                 SetExpectedAmbientFailureCount(-1);
                 using (var server = Create(password: password, checkConnect: false))
                 {

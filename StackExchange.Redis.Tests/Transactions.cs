@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace StackExchange.Redis.Tests
 {
@@ -16,12 +17,12 @@ namespace StackExchange.Redis.Tests
                 RedisKey key = Me();
                 var db = muxer.GetDatabase();
                 db.KeyDelete(key, CommandFlags.FireAndForget);
-                Assert.IsFalse(db.KeyExists(key));
+                ClassicAssert.IsFalse(db.KeyExists(key));
 
                 var tran = db.CreateTransaction();
 
                 var result = tran.Execute();
-                Assert.IsTrue(result);
+                ClassicAssert.IsTrue(result);
             }
         }
 
@@ -39,8 +40,8 @@ namespace StackExchange.Redis.Tests
                 db.KeyDelete(key, CommandFlags.FireAndForget);
                 db.KeyDelete(key2, CommandFlags.FireAndForget);
                 if (keyExists) db.StringSet(key2, "any value", flags: CommandFlags.FireAndForget);
-                Assert.IsFalse(db.KeyExists(key));
-                Assert.AreEqual(keyExists, db.KeyExists(key2));
+                ClassicAssert.IsFalse(db.KeyExists(key));
+                ClassicAssert.AreEqual(keyExists, db.KeyExists(key2));
 
                 var tran = db.CreateTransaction();
                 var cond = tran.AddCondition(demandKeyExists ? Condition.KeyExists(key2) : Condition.KeyNotExists(key2));
@@ -48,20 +49,20 @@ namespace StackExchange.Redis.Tests
                 var exec = tran.ExecuteAsync();
                 var get = db.StringGet(key);
 
-                Assert.AreEqual(expectTran, db.Wait(exec), "expected tran result");
+                ClassicAssert.AreEqual(expectTran, db.Wait(exec), "expected tran result");
                 if (demandKeyExists == keyExists)
                 {
-                    Assert.IsTrue(db.Wait(exec), "eq: exec");
-                    Assert.IsTrue(cond.WasSatisfied, "eq: was satisfied");
-                    Assert.AreEqual(1, db.Wait(incr), "eq: incr");                    
-                    Assert.AreEqual(1, (long)get, "eq: get");
+                    ClassicAssert.IsTrue(db.Wait(exec), "eq: exec");
+                    ClassicAssert.IsTrue(cond.WasSatisfied, "eq: was satisfied");
+                    ClassicAssert.AreEqual(1, db.Wait(incr), "eq: incr");                    
+                    ClassicAssert.AreEqual(1, (long)get, "eq: get");
                 }
                 else
                 {
-                    Assert.IsFalse(db.Wait(exec), "neq: exec");
-                    Assert.False(cond.WasSatisfied, "neq: was satisfied");
-                    Assert.AreEqual(TaskStatus.Canceled, incr.Status, "neq: incr");                    
-                    Assert.AreEqual(0, (long)get, "neq: get");
+                    ClassicAssert.IsFalse(db.Wait(exec), "neq: exec");
+                    ClassicAssert.False(cond.WasSatisfied, "neq: was satisfied");
+                    ClassicAssert.AreEqual(TaskStatus.Canceled, incr.Status, "neq: incr");                    
+                    ClassicAssert.AreEqual(0, (long)get, "neq: get");
                 }
             }
         }
@@ -88,8 +89,8 @@ namespace StackExchange.Redis.Tests
                 db.KeyDelete(key2, CommandFlags.FireAndForget);
 
                 if (value != null) db.StringSet(key2, value, flags: CommandFlags.FireAndForget);
-                Assert.IsFalse(db.KeyExists(key));
-                Assert.AreEqual(value, (string)db.StringGet(key2));
+                ClassicAssert.IsFalse(db.KeyExists(key));
+                ClassicAssert.AreEqual(value, (string)db.StringGet(key2));
 
                 var tran = db.CreateTransaction();
                 var cond = tran.AddCondition(expectEqual ? Condition.StringEqual(key2, expected) : Condition.StringNotEqual(key2, expected));
@@ -97,20 +98,20 @@ namespace StackExchange.Redis.Tests
                 var exec = tran.ExecuteAsync();
                 var get = db.StringGet(key);
 
-                Assert.AreEqual(expectTran, db.Wait(exec), "expected tran result");
+                ClassicAssert.AreEqual(expectTran, db.Wait(exec), "expected tran result");
                 if (expectEqual == (value == expected))
                 {
-                    Assert.IsTrue(db.Wait(exec), "eq: exec");
-                    Assert.IsTrue(cond.WasSatisfied, "eq: was satisfied");
-                    Assert.AreEqual(1, db.Wait(incr), "eq: incr");
-                    Assert.AreEqual(1, (long)get, "eq: get");
+                    ClassicAssert.IsTrue(db.Wait(exec), "eq: exec");
+                    ClassicAssert.IsTrue(cond.WasSatisfied, "eq: was satisfied");
+                    ClassicAssert.AreEqual(1, db.Wait(incr), "eq: incr");
+                    ClassicAssert.AreEqual(1, (long)get, "eq: get");
                 }
                 else
                 {
-                    Assert.IsFalse(db.Wait(exec), "neq: exec");
-                    Assert.False(cond.WasSatisfied, "neq: was satisfied");
-                    Assert.AreEqual(TaskStatus.Canceled, incr.Status, "neq: incr");
-                    Assert.AreEqual(0, (long)get, "neq: get");
+                    ClassicAssert.IsFalse(db.Wait(exec), "neq: exec");
+                    ClassicAssert.False(cond.WasSatisfied, "neq: was satisfied");
+                    ClassicAssert.AreEqual(TaskStatus.Canceled, incr.Status, "neq: incr");
+                    ClassicAssert.AreEqual(0, (long)get, "neq: get");
                 }
             }
         }
@@ -131,8 +132,8 @@ namespace StackExchange.Redis.Tests
                 db.KeyDelete(key2, CommandFlags.FireAndForget);
                 RedisValue hashField = "field";
                 if (keyExists) db.HashSet(key2, hashField, "any value", flags:  CommandFlags.FireAndForget);
-                Assert.IsFalse(db.KeyExists(key));
-                Assert.AreEqual(keyExists, db.HashExists(key2, hashField));
+                ClassicAssert.IsFalse(db.KeyExists(key));
+                ClassicAssert.AreEqual(keyExists, db.HashExists(key2, hashField));
 
                 var tran = db.CreateTransaction();
                 var cond = tran.AddCondition(demandKeyExists ? Condition.HashExists(key2, hashField) : Condition.HashNotExists(key2, hashField));
@@ -140,20 +141,20 @@ namespace StackExchange.Redis.Tests
                 var exec = tran.ExecuteAsync();
                 var get = db.StringGet(key);
 
-                Assert.AreEqual(expectTran, db.Wait(exec), "expected tran result");
+                ClassicAssert.AreEqual(expectTran, db.Wait(exec), "expected tran result");
                 if (demandKeyExists == keyExists)
                 {
-                    Assert.IsTrue(db.Wait(exec), "eq: exec");
-                    Assert.IsTrue(cond.WasSatisfied, "eq: was satisfied");
-                    Assert.AreEqual(1, db.Wait(incr), "eq: incr");
-                    Assert.AreEqual(1, (long)get, "eq: get");
+                    ClassicAssert.IsTrue(db.Wait(exec), "eq: exec");
+                    ClassicAssert.IsTrue(cond.WasSatisfied, "eq: was satisfied");
+                    ClassicAssert.AreEqual(1, db.Wait(incr), "eq: incr");
+                    ClassicAssert.AreEqual(1, (long)get, "eq: get");
                 }
                 else
                 {
-                    Assert.IsFalse(db.Wait(exec), "neq: exec");
-                    Assert.False(cond.WasSatisfied, "neq: was satisfied");
-                    Assert.AreEqual(TaskStatus.Canceled, incr.Status, "neq: incr");
-                    Assert.AreEqual(0, (long)get, "neq: get");
+                    ClassicAssert.IsFalse(db.Wait(exec), "neq: exec");
+                    ClassicAssert.False(cond.WasSatisfied, "neq: was satisfied");
+                    ClassicAssert.AreEqual(TaskStatus.Canceled, incr.Status, "neq: incr");
+                    ClassicAssert.AreEqual(0, (long)get, "neq: get");
                 }
             }
         }
@@ -181,8 +182,8 @@ namespace StackExchange.Redis.Tests
 
                 RedisValue hashField = "field";
                 if (value != null) db.HashSet(key2, hashField, value, flags:  CommandFlags.FireAndForget);
-                Assert.IsFalse(db.KeyExists(key));
-                Assert.AreEqual(value, (string)db.HashGet(key2, hashField));
+                ClassicAssert.IsFalse(db.KeyExists(key));
+                ClassicAssert.AreEqual(value, (string)db.HashGet(key2, hashField));
 
 
                 var tran = db.CreateTransaction();
@@ -191,20 +192,20 @@ namespace StackExchange.Redis.Tests
                 var exec = tran.ExecuteAsync();
                 var get = db.StringGet(key);
 
-                Assert.AreEqual(expectTran, db.Wait(exec), "expected tran result");
+                ClassicAssert.AreEqual(expectTran, db.Wait(exec), "expected tran result");
                 if (expectEqual == (value == expected))
                 {
-                    Assert.IsTrue(db.Wait(exec), "eq: exec");
-                    Assert.IsTrue(cond.WasSatisfied, "eq: was satisfied");
-                    Assert.AreEqual(1, db.Wait(incr), "eq: incr");
-                    Assert.AreEqual(1, (long)get, "eq: get");
+                    ClassicAssert.IsTrue(db.Wait(exec), "eq: exec");
+                    ClassicAssert.IsTrue(cond.WasSatisfied, "eq: was satisfied");
+                    ClassicAssert.AreEqual(1, db.Wait(incr), "eq: incr");
+                    ClassicAssert.AreEqual(1, (long)get, "eq: get");
                 }
                 else
                 {
-                    Assert.IsFalse(db.Wait(exec), "neq: exec");
-                    Assert.False(cond.WasSatisfied, "neq: was satisfied");
-                    Assert.AreEqual(TaskStatus.Canceled, incr.Status, "neq: incr");
-                    Assert.AreEqual(0, (long)get, "neq: get");
+                    ClassicAssert.IsFalse(db.Wait(exec), "neq: exec");
+                    ClassicAssert.False(cond.WasSatisfied, "neq: was satisfied");
+                    ClassicAssert.AreEqual(TaskStatus.Canceled, incr.Status, "neq: incr");
+                    ClassicAssert.AreEqual(0, (long)get, "neq: get");
                 }
             }
         }
@@ -223,8 +224,8 @@ namespace StackExchange.Redis.Tests
                 db.KeyDelete(key, CommandFlags.FireAndForget);
                 db.KeyDelete(key2, CommandFlags.FireAndForget);
                 if (keyExists) db.ListRightPush(key2, "any value", flags:  CommandFlags.FireAndForget);
-                Assert.IsFalse(db.KeyExists(key));
-                Assert.AreEqual(keyExists, db.KeyExists(key2));
+                ClassicAssert.IsFalse(db.KeyExists(key));
+                ClassicAssert.AreEqual(keyExists, db.KeyExists(key2));
 
                 var tran = db.CreateTransaction();
                 var cond = tran.AddCondition(demandKeyExists ? Condition.ListIndexExists(key2, 0) : Condition.ListIndexNotExists(key2, 0));
@@ -232,20 +233,20 @@ namespace StackExchange.Redis.Tests
                 var exec = tran.ExecuteAsync();
                 var get = db.ListGetByIndex(key, 0);
 
-                Assert.AreEqual(expectTran, db.Wait(exec), "expected tran result");
+                ClassicAssert.AreEqual(expectTran, db.Wait(exec), "expected tran result");
                 if (demandKeyExists == keyExists)
                 {
-                    Assert.IsTrue(db.Wait(exec), "eq: exec");
-                    Assert.IsTrue(cond.WasSatisfied, "eq: was satisfied");
-                    Assert.AreEqual(1, db.Wait(push), "eq: push");
-                    Assert.AreEqual("any value", (string)get, "eq: get");
+                    ClassicAssert.IsTrue(db.Wait(exec), "eq: exec");
+                    ClassicAssert.IsTrue(cond.WasSatisfied, "eq: was satisfied");
+                    ClassicAssert.AreEqual(1, db.Wait(push), "eq: push");
+                    ClassicAssert.AreEqual("any value", (string)get, "eq: get");
                 }
                 else
                 {
-                    Assert.IsFalse(db.Wait(exec), "neq: exec");
-                    Assert.False(cond.WasSatisfied, "neq: was satisfied");
-                    Assert.AreEqual(TaskStatus.Canceled, push.Status, "neq: push");
-                    Assert.AreEqual(null, (string)get, "neq: get");
+                    ClassicAssert.IsFalse(db.Wait(exec), "neq: exec");
+                    ClassicAssert.False(cond.WasSatisfied, "neq: was satisfied");
+                    ClassicAssert.AreEqual(TaskStatus.Canceled, push.Status, "neq: push");
+                    ClassicAssert.AreEqual(null, (string)get, "neq: get");
                 }
             }
         }
@@ -272,8 +273,8 @@ namespace StackExchange.Redis.Tests
                 db.KeyDelete(key2, CommandFlags.FireAndForget);
 
                 if (value != null) db.ListRightPush(key2, value, flags: CommandFlags.FireAndForget);
-                Assert.IsFalse(db.KeyExists(key));
-                Assert.AreEqual(value, (string)db.ListGetByIndex(key2, 0));
+                ClassicAssert.IsFalse(db.KeyExists(key));
+                ClassicAssert.AreEqual(value, (string)db.ListGetByIndex(key2, 0));
 
                 var tran = db.CreateTransaction();
                 var cond = tran.AddCondition(expectEqual ? Condition.ListIndexEqual(key2, 0, expected) : Condition.ListIndexNotEqual(key2, 0, expected));
@@ -281,20 +282,20 @@ namespace StackExchange.Redis.Tests
                 var exec = tran.ExecuteAsync();
                 var get = db.ListGetByIndex(key, 0);
 
-                Assert.AreEqual(expectTran, db.Wait(exec), "expected tran result");
+                ClassicAssert.AreEqual(expectTran, db.Wait(exec), "expected tran result");
                 if (expectEqual == (value == expected))
                 {
-                    Assert.IsTrue(db.Wait(exec), "eq: exec");
-                    Assert.IsTrue(cond.WasSatisfied, "eq: was satisfied");
-                    Assert.AreEqual(1, db.Wait(push), "eq: push");
-                    Assert.AreEqual("any value", (string)get, "eq: get");
+                    ClassicAssert.IsTrue(db.Wait(exec), "eq: exec");
+                    ClassicAssert.IsTrue(cond.WasSatisfied, "eq: was satisfied");
+                    ClassicAssert.AreEqual(1, db.Wait(push), "eq: push");
+                    ClassicAssert.AreEqual("any value", (string)get, "eq: get");
                 }
                 else
                 {
-                    Assert.IsFalse(db.Wait(exec), "neq: exec");
-                    Assert.False(cond.WasSatisfied, "neq: was satisfied");
-                    Assert.AreEqual(TaskStatus.Canceled, push.Status, "neq: push");
-                    Assert.AreEqual(null, (string)get, "neq: get");
+                    ClassicAssert.IsFalse(db.Wait(exec), "neq: exec");
+                    ClassicAssert.False(cond.WasSatisfied, "neq: was satisfied");
+                    ClassicAssert.AreEqual(TaskStatus.Canceled, push.Status, "neq: push");
+                    ClassicAssert.AreEqual(null, (string)get, "neq: get");
                 }
             }
         }
@@ -346,23 +347,23 @@ namespace StackExchange.Redis.Tests
                     case ComparisonType.Equal:
                         expectSuccess = valueLength == length;
                         condition = Condition.StringLengthEqual(key2, length);
-                        Assert.That(condition.ToString(), Contains.Substring("String length == " + length));
+                        ClassicAssert.That(condition.ToString(), Contains.Substring("String length == " + length));
                         break;
                     case ComparisonType.GreaterThan:
                         expectSuccess = valueLength > length;
                         condition = Condition.StringLengthGreaterThan(key2, length);
-                        Assert.That(condition.ToString(), Contains.Substring("String length > " + length));
+                        ClassicAssert.That(condition.ToString(), Contains.Substring("String length > " + length));
                         break;
                     case ComparisonType.LessThan:
                         expectSuccess = valueLength < length;
                         condition = Condition.StringLengthLessThan(key2, length);
-                        Assert.That(condition.ToString(), Contains.Substring("String length < " + length));
+                        ClassicAssert.That(condition.ToString(), Contains.Substring("String length < " + length));
                         break;
                 }
 
                 if (value != null) db.StringSet(key2, value, flags: CommandFlags.FireAndForget);
-                Assert.IsFalse(db.KeyExists(key));
-                Assert.AreEqual(value, (string)db.StringGet(key2));
+                ClassicAssert.IsFalse(db.KeyExists(key));
+                ClassicAssert.AreEqual(value, (string)db.StringGet(key2));
 
                 var tran = db.CreateTransaction();
                 var cond = tran.AddCondition(condition);
@@ -370,18 +371,18 @@ namespace StackExchange.Redis.Tests
                 var exec = tran.ExecuteAsync();
                 var get = db.StringLength(key);
 
-                Assert.AreEqual(expectTran, db.Wait(exec), "expected tran result");
+                ClassicAssert.AreEqual(expectTran, db.Wait(exec), "expected tran result");
 
                 if (expectSuccess) {
-                    Assert.IsTrue(db.Wait(exec), "eq: exec");
-                    Assert.IsTrue(cond.WasSatisfied, "eq: was satisfied");
-                    Assert.AreEqual(true, db.Wait(push), "eq: push");
-                    Assert.AreEqual("any value".Length, get, "eq: get");
+                    ClassicAssert.IsTrue(db.Wait(exec), "eq: exec");
+                    ClassicAssert.IsTrue(cond.WasSatisfied, "eq: was satisfied");
+                    ClassicAssert.AreEqual(true, db.Wait(push), "eq: push");
+                    ClassicAssert.AreEqual("any value".Length, get, "eq: get");
                 } else {
-                    Assert.IsFalse(db.Wait(exec), "neq: exec");
-                    Assert.False(cond.WasSatisfied, "neq: was satisfied");
-                    Assert.AreEqual(TaskStatus.Canceled, push.Status, "neq: push");
-                    Assert.AreEqual(0, get, "neq: get");
+                    ClassicAssert.IsFalse(db.Wait(exec), "neq: exec");
+                    ClassicAssert.False(cond.WasSatisfied, "neq: was satisfied");
+                    ClassicAssert.AreEqual(TaskStatus.Canceled, push.Status, "neq: push");
+                    ClassicAssert.AreEqual(0, get, "neq: get");
                 }
             }
         }
@@ -434,8 +435,8 @@ namespace StackExchange.Redis.Tests
                 for (var i = 0; i < valueLength; i++) {
                     db.HashSet(key2, i, value[i].ToString(), flags: CommandFlags.FireAndForget);
                 }
-                Assert.IsFalse(db.KeyExists(key));
-                Assert.AreEqual(valueLength, db.HashLength(key2));
+                ClassicAssert.IsFalse(db.KeyExists(key));
+                ClassicAssert.AreEqual(valueLength, db.HashLength(key2));
 
                 var tran = db.CreateTransaction();
                 var cond = tran.AddCondition(condition);
@@ -443,18 +444,18 @@ namespace StackExchange.Redis.Tests
                 var exec = tran.ExecuteAsync();
                 var get = db.StringLength(key);
 
-                Assert.AreEqual(expectTran, db.Wait(exec), "expected tran result");
+                ClassicAssert.AreEqual(expectTran, db.Wait(exec), "expected tran result");
 
                 if (expectSuccess) {
-                    Assert.IsTrue(db.Wait(exec), "eq: exec");
-                    Assert.IsTrue(cond.WasSatisfied, "eq: was satisfied");
-                    Assert.AreEqual(true, db.Wait(push), "eq: push");
-                    Assert.AreEqual("any value".Length, get, "eq: get");
+                    ClassicAssert.IsTrue(db.Wait(exec), "eq: exec");
+                    ClassicAssert.IsTrue(cond.WasSatisfied, "eq: was satisfied");
+                    ClassicAssert.AreEqual(true, db.Wait(push), "eq: push");
+                    ClassicAssert.AreEqual("any value".Length, get, "eq: get");
                 } else {
-                    Assert.IsFalse(db.Wait(exec), "neq: exec");
-                    Assert.False(cond.WasSatisfied, "neq: was satisfied");
-                    Assert.AreEqual(TaskStatus.Canceled, push.Status, "neq: push");
-                    Assert.AreEqual(0, get, "neq: get");
+                    ClassicAssert.IsFalse(db.Wait(exec), "neq: exec");
+                    ClassicAssert.False(cond.WasSatisfied, "neq: was satisfied");
+                    ClassicAssert.AreEqual(TaskStatus.Canceled, push.Status, "neq: push");
+                    ClassicAssert.AreEqual(0, get, "neq: get");
                 }
             }
         }
@@ -507,8 +508,8 @@ namespace StackExchange.Redis.Tests
                 for (var i = 0; i < valueLength; i++) {
                     db.SetAdd(key2, i, flags: CommandFlags.FireAndForget);
                 }
-                Assert.IsFalse(db.KeyExists(key));
-                Assert.AreEqual(valueLength, db.SetLength(key2));
+                ClassicAssert.IsFalse(db.KeyExists(key));
+                ClassicAssert.AreEqual(valueLength, db.SetLength(key2));
 
                 var tran = db.CreateTransaction();
                 var cond = tran.AddCondition(condition);
@@ -516,18 +517,18 @@ namespace StackExchange.Redis.Tests
                 var exec = tran.ExecuteAsync();
                 var get = db.StringLength(key);
 
-                Assert.AreEqual(expectTran, db.Wait(exec), "expected tran result");
+                ClassicAssert.AreEqual(expectTran, db.Wait(exec), "expected tran result");
 
                 if (expectSuccess) {
-                    Assert.IsTrue(db.Wait(exec), "eq: exec");
-                    Assert.IsTrue(cond.WasSatisfied, "eq: was satisfied");
-                    Assert.AreEqual(true, db.Wait(push), "eq: push");
-                    Assert.AreEqual("any value".Length, get, "eq: get");
+                    ClassicAssert.IsTrue(db.Wait(exec), "eq: exec");
+                    ClassicAssert.IsTrue(cond.WasSatisfied, "eq: was satisfied");
+                    ClassicAssert.AreEqual(true, db.Wait(push), "eq: push");
+                    ClassicAssert.AreEqual("any value".Length, get, "eq: get");
                 } else {
-                    Assert.IsFalse(db.Wait(exec), "neq: exec");
-                    Assert.False(cond.WasSatisfied, "neq: was satisfied");
-                    Assert.AreEqual(TaskStatus.Canceled, push.Status, "neq: push");
-                    Assert.AreEqual(0, get, "neq: get");
+                    ClassicAssert.IsFalse(db.Wait(exec), "neq: exec");
+                    ClassicAssert.False(cond.WasSatisfied, "neq: was satisfied");
+                    ClassicAssert.AreEqual(TaskStatus.Canceled, push.Status, "neq: push");
+                    ClassicAssert.AreEqual(0, get, "neq: get");
                 }
             }
         }
@@ -580,8 +581,8 @@ namespace StackExchange.Redis.Tests
                 for (var i = 0; i < valueLength; i++) {
                     db.SortedSetAdd(key2, i, i, flags: CommandFlags.FireAndForget);
                 }
-                Assert.IsFalse(db.KeyExists(key));
-                Assert.AreEqual(valueLength, db.SortedSetLength(key2));
+                ClassicAssert.IsFalse(db.KeyExists(key));
+                ClassicAssert.AreEqual(valueLength, db.SortedSetLength(key2));
 
                 var tran = db.CreateTransaction();
                 var cond = tran.AddCondition(condition);
@@ -589,18 +590,18 @@ namespace StackExchange.Redis.Tests
                 var exec = tran.ExecuteAsync();
                 var get = db.StringLength(key);
 
-                Assert.AreEqual(expectTran, db.Wait(exec), "expected tran result");
+                ClassicAssert.AreEqual(expectTran, db.Wait(exec), "expected tran result");
 
                 if (expectSuccess) {
-                    Assert.IsTrue(db.Wait(exec), "eq: exec");
-                    Assert.IsTrue(cond.WasSatisfied, "eq: was satisfied");
-                    Assert.AreEqual(true, db.Wait(push), "eq: push");
-                    Assert.AreEqual("any value".Length, get, "eq: get");
+                    ClassicAssert.IsTrue(db.Wait(exec), "eq: exec");
+                    ClassicAssert.IsTrue(cond.WasSatisfied, "eq: was satisfied");
+                    ClassicAssert.AreEqual(true, db.Wait(push), "eq: push");
+                    ClassicAssert.AreEqual("any value".Length, get, "eq: get");
                 } else {
-                    Assert.IsFalse(db.Wait(exec), "neq: exec");
-                    Assert.False(cond.WasSatisfied, "neq: was satisfied");
-                    Assert.AreEqual(TaskStatus.Canceled, push.Status, "neq: push");
-                    Assert.AreEqual(0, get, "neq: get");
+                    ClassicAssert.IsFalse(db.Wait(exec), "neq: exec");
+                    ClassicAssert.False(cond.WasSatisfied, "neq: was satisfied");
+                    ClassicAssert.AreEqual(TaskStatus.Canceled, push.Status, "neq: push");
+                    ClassicAssert.AreEqual(0, get, "neq: get");
                 }
             }
         }
@@ -653,8 +654,8 @@ namespace StackExchange.Redis.Tests
                 for (var i = 0; i < valueLength; i++) {
                     db.ListRightPush(key2, i, flags: CommandFlags.FireAndForget);
                 }
-                Assert.IsFalse(db.KeyExists(key));
-                Assert.AreEqual(valueLength, db.ListLength(key2));
+                ClassicAssert.IsFalse(db.KeyExists(key));
+                ClassicAssert.AreEqual(valueLength, db.ListLength(key2));
 
                 var tran = db.CreateTransaction();
                 var cond = tran.AddCondition(condition);
@@ -662,18 +663,18 @@ namespace StackExchange.Redis.Tests
                 var exec = tran.ExecuteAsync();
                 var get = db.StringLength(key);
 
-                Assert.AreEqual(expectTran, db.Wait(exec), "expected tran result");
+                ClassicAssert.AreEqual(expectTran, db.Wait(exec), "expected tran result");
 
                 if (expectSuccess) {
-                    Assert.IsTrue(db.Wait(exec), "eq: exec");
-                    Assert.IsTrue(cond.WasSatisfied, "eq: was satisfied");
-                    Assert.AreEqual(true, db.Wait(push), "eq: push");
-                    Assert.AreEqual("any value".Length, get, "eq: get");
+                    ClassicAssert.IsTrue(db.Wait(exec), "eq: exec");
+                    ClassicAssert.IsTrue(cond.WasSatisfied, "eq: was satisfied");
+                    ClassicAssert.AreEqual(true, db.Wait(push), "eq: push");
+                    ClassicAssert.AreEqual("any value".Length, get, "eq: get");
                 } else {
-                    Assert.IsFalse(db.Wait(exec), "neq: exec");
-                    Assert.False(cond.WasSatisfied, "neq: was satisfied");
-                    Assert.AreEqual(TaskStatus.Canceled, push.Status, "neq: push");
-                    Assert.AreEqual(0, get, "neq: get");
+                    ClassicAssert.IsFalse(db.Wait(exec), "neq: exec");
+                    ClassicAssert.False(cond.WasSatisfied, "neq: was satisfied");
+                    ClassicAssert.AreEqual(TaskStatus.Canceled, push.Status, "neq: push");
+                    ClassicAssert.AreEqual(0, get, "neq: get");
                 }
             }
         }
@@ -686,7 +687,7 @@ namespace StackExchange.Redis.Tests
                 RedisKey key = Me();
                 var db = muxer.GetDatabase();
                 db.KeyDelete(key, CommandFlags.FireAndForget);
-                Assert.IsFalse(db.KeyExists(key));
+                ClassicAssert.IsFalse(db.KeyExists(key));
 
                 var tran = db.CreateTransaction();
                 var a = tran.StringIncrementAsync(key, 10);
@@ -695,32 +696,32 @@ namespace StackExchange.Redis.Tests
                 var d = tran.KeyExistsAsync(key);
                 var e = tran.KeyDeleteAsync(key);
                 var f = tran.KeyExistsAsync(key);
-                Assert.IsFalse(a.IsCompleted);
-                Assert.IsFalse(b.IsCompleted);
-                Assert.IsFalse(c.IsCompleted);
-                Assert.IsFalse(d.IsCompleted);
-                Assert.IsFalse(e.IsCompleted);
-                Assert.IsFalse(f.IsCompleted);
+                ClassicAssert.IsFalse(a.IsCompleted);
+                ClassicAssert.IsFalse(b.IsCompleted);
+                ClassicAssert.IsFalse(c.IsCompleted);
+                ClassicAssert.IsFalse(d.IsCompleted);
+                ClassicAssert.IsFalse(e.IsCompleted);
+                ClassicAssert.IsFalse(f.IsCompleted);
                 var result = db.Wait(tran.ExecuteAsync());
-                Assert.IsTrue(result, "result");
+                ClassicAssert.IsTrue(result, "result");
                 db.WaitAll(a, b, c, d, e, f);
-                Assert.IsTrue(a.IsCompleted, "a");
-                Assert.IsTrue(b.IsCompleted, "b");
-                Assert.IsTrue(c.IsCompleted, "c");
-                Assert.IsTrue(d.IsCompleted, "d");
-                Assert.IsTrue(e.IsCompleted, "e");
-                Assert.IsTrue(f.IsCompleted, "f");
+                ClassicAssert.IsTrue(a.IsCompleted, "a");
+                ClassicAssert.IsTrue(b.IsCompleted, "b");
+                ClassicAssert.IsTrue(c.IsCompleted, "c");
+                ClassicAssert.IsTrue(d.IsCompleted, "d");
+                ClassicAssert.IsTrue(e.IsCompleted, "e");
+                ClassicAssert.IsTrue(f.IsCompleted, "f");
 
                 var g = db.KeyExists(key);
                 
 
-                Assert.AreEqual(10, await a.ConfigureAwait(false));
-                Assert.AreEqual(15, await b.ConfigureAwait(false));
-                Assert.AreEqual(15, (long)await c.ConfigureAwait(false));
-                Assert.IsTrue(await d.ConfigureAwait(false));
-                Assert.IsTrue(await e.ConfigureAwait(false));
-                Assert.IsFalse(await f.ConfigureAwait(false));
-                Assert.IsFalse(g);
+                ClassicAssert.AreEqual(10, await a.ConfigureAwait(false));
+                ClassicAssert.AreEqual(15, await b.ConfigureAwait(false));
+                ClassicAssert.AreEqual(15, (long)await c.ConfigureAwait(false));
+                ClassicAssert.IsTrue(await d.ConfigureAwait(false));
+                ClassicAssert.IsTrue(await e.ConfigureAwait(false));
+                ClassicAssert.IsFalse(await f.ConfigureAwait(false));
+                ClassicAssert.IsFalse(g);
             }
         }
 
@@ -732,22 +733,22 @@ namespace StackExchange.Redis.Tests
                 RedisKey key = Me();
                 var db = muxer.GetDatabase();
                 db.KeyDelete(key, CommandFlags.FireAndForget);
-                Assert.IsFalse(db.KeyExists(key));
+                ClassicAssert.IsFalse(db.KeyExists(key));
 
                 var tran = db.CreateTransaction("state");
                 var a = tran.StringIncrementAsync(key, 5);
                 var b = tran.StringIncrementAsync(key, 10, CommandFlags.FireAndForget);
                 var c = tran.StringIncrementAsync(key, 15);
-                Assert.IsTrue(tran.Execute());
+                ClassicAssert.IsTrue(tran.Execute());
                 var count = (long)db.StringGet(key);
 
-                Assert.AreEqual(5, db.Wait(a), "a");
-                Assert.AreEqual("state", a.AsyncState);
-                Assert.AreEqual(0, db.Wait(b), "b");
-                Assert.IsNull(b.AsyncState);
-                Assert.AreEqual(30, db.Wait(c), "c");
-                Assert.AreEqual("state", a.AsyncState);
-                Assert.AreEqual(30, count, "count");
+                ClassicAssert.AreEqual(5, db.Wait(a), "a");
+                ClassicAssert.AreEqual("state", a.AsyncState);
+                ClassicAssert.AreEqual(0, db.Wait(b), "b");
+                ClassicAssert.IsNull(b.AsyncState);
+                ClassicAssert.AreEqual(30, db.Wait(c), "c");
+                ClassicAssert.AreEqual("state", a.AsyncState);
+                ClassicAssert.AreEqual(30, count, "count");
             }
         }
     }

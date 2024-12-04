@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace StackExchange.Redis.Tests
 {
@@ -16,17 +17,17 @@ namespace StackExchange.Redis.Tests
                 var server = conn.GetServer(conn.GetEndPoints()[0]);
 
                 var channels = server.SubscriptionChannels(Me() + "*");
-                Assert.IsFalse(channels.Contains(channel));
+                ClassicAssert.IsFalse(channels.Contains(channel));
 
                 long justWork = server.SubscriptionPatternCount();
                 var count = server.SubscriptionSubscriberCount(channel);
-                Assert.AreEqual(0, count);
+                ClassicAssert.AreEqual(0, count);
                 conn.GetSubscriber().Subscribe(channel, delegate { });
                 count = server.SubscriptionSubscriberCount(channel);
-                Assert.AreEqual(1, count);
+                ClassicAssert.AreEqual(1, count);
 
                 channels = server.SubscriptionChannels(Me() + "*");
-                Assert.IsTrue(channels.Contains(channel));
+                ClassicAssert.IsTrue(channels.Contains(channel));
             }
         }
     }

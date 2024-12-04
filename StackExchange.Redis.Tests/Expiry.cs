@@ -1,5 +1,6 @@
 ﻿using System;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace StackExchange.Redis.Tests
 {
@@ -36,15 +37,15 @@ namespace StackExchange.Redis.Tests
                 conn.KeyExpire(key, TimeSpan.MaxValue, CommandFlags.FireAndForget);
                 var e = conn.KeyTimeToLiveAsync(key);
 
-                Assert.IsNull(muxer.Wait(a));
+                ClassicAssert.IsNull(muxer.Wait(a));
                 var time = muxer.Wait(b);
-                Assert.IsNotNull(time);
-                Assert.IsTrue(time > TimeSpan.FromMinutes(59.9) && time <= TimeSpan.FromMinutes(60));
-                Assert.IsNull(muxer.Wait(c));
+                ClassicAssert.IsNotNull(time);
+                ClassicAssert.IsTrue(time > TimeSpan.FromMinutes(59.9) && time <= TimeSpan.FromMinutes(60));
+                ClassicAssert.IsNull(muxer.Wait(c));
                 time = muxer.Wait(d);
-                Assert.IsNotNull(time);
-                Assert.IsTrue(time > TimeSpan.FromMinutes(89.9) && time <= TimeSpan.FromMinutes(90));
-                Assert.IsNull(muxer.Wait(e));
+                ClassicAssert.IsNotNull(time);
+                ClassicAssert.IsTrue(time > TimeSpan.FromMinutes(89.9) && time <= TimeSpan.FromMinutes(90));
+                ClassicAssert.IsNull(muxer.Wait(e));
             }
         }
 
@@ -73,16 +74,16 @@ namespace StackExchange.Redis.Tests
                 conn.KeyExpire(key, DateTime.MaxValue, CommandFlags.FireAndForget);
                 var e = conn.KeyTimeToLiveAsync(key);
 
-                Assert.IsNull(muxer.Wait(a));
+                ClassicAssert.IsNull(muxer.Wait(a));
                 var time = muxer.Wait(b);
-                Assert.IsNotNull(time);
+                ClassicAssert.IsNotNull(time);
                 Console.WriteLine(time);
-                Assert.IsTrue(time > TimeSpan.FromMinutes(59.9) && time <= TimeSpan.FromMinutes(60));
-                Assert.IsNull(muxer.Wait(c));
+                ClassicAssert.IsTrue(time > TimeSpan.FromMinutes(59.9) && time <= TimeSpan.FromMinutes(60));
+                ClassicAssert.IsNull(muxer.Wait(c));
                 time = muxer.Wait(d);
-                Assert.IsNotNull(time);
-                Assert.IsTrue(time > TimeSpan.FromMinutes(89.9) && time <= TimeSpan.FromMinutes(90));
-                Assert.IsNull(muxer.Wait(e));
+                ClassicAssert.IsNotNull(time);
+                ClassicAssert.IsTrue(time > TimeSpan.FromMinutes(89.9) && time <= TimeSpan.FromMinutes(90));
+                ClassicAssert.IsNull(muxer.Wait(e));
             }
         }
     }

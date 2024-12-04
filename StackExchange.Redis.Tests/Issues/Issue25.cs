@@ -1,5 +1,6 @@
 ﻿using System;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace StackExchange.Redis.Tests.Issues
 {
@@ -10,12 +11,12 @@ namespace StackExchange.Redis.Tests.Issues
         public void CaseInsensitive()
         {
             var options = ConfigurationOptions.Parse("ssl=true");
-            Assert.IsTrue(options.Ssl);
-            Assert.AreEqual("ssl=True", options.ToString());
+            ClassicAssert.IsTrue(options.Ssl);
+            ClassicAssert.AreEqual("ssl=True", options.ToString());
 
             options = ConfigurationOptions.Parse("SSL=TRUE");
-            Assert.IsTrue(options.Ssl);
-            Assert.AreEqual("ssl=True", options.ToString());
+            ClassicAssert.IsTrue(options.Ssl);
+            ClassicAssert.AreEqual("ssl=True", options.ToString());
         }
 
         [Test]
@@ -26,7 +27,7 @@ namespace StackExchange.Redis.Tests.Issues
         [Test] 
         public void UnkonwnKeywordHandling_ExplicitFail()
         {
-            Assert.Throws<ArgumentException>(() => {
+            ClassicAssert.Throws<ArgumentException>(() => {
                 var options = ConfigurationOptions.Parse("ssl2=true", false);
             },
             "Keyword 'ssl2' is not supported");
@@ -34,7 +35,7 @@ namespace StackExchange.Redis.Tests.Issues
         [Test]
         public void UnkonwnKeywordHandling_ImplicitFail()
         {
-            Assert.Throws<ArgumentException>(() => {
+            ClassicAssert.Throws<ArgumentException>(() => {
                 var options = ConfigurationOptions.Parse("ssl2=true");
             },
             "Keyword 'ssl2' is not supported");

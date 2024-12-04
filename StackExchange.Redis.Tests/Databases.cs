@@ -1,4 +1,5 @@
 ﻿using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace StackExchange.Redis.Tests
 {
@@ -30,8 +31,8 @@ namespace StackExchange.Redis.Tests
                 var c1 = server.DatabaseSizeAsync(1);
 
 
-                Assert.AreEqual(2, muxer.Wait(c0));
-                Assert.AreEqual(1, muxer.Wait(c1));
+                ClassicAssert.AreEqual(2, muxer.Wait(c0));
+                ClassicAssert.AreEqual(1, muxer.Wait(c1));
 
             }
         }
@@ -61,9 +62,9 @@ namespace StackExchange.Redis.Tests
                 var c = db2.StringGetAsync(key);
                 muxer.WaitAll(a, b, c);
 
-                Assert.AreEqual("a", (string)muxer.Wait(a), "db:0");
-                Assert.AreEqual("b", (string)muxer.Wait(b), "db:1");
-                Assert.AreEqual("c", (string)muxer.Wait(c), "db:2");
+                ClassicAssert.AreEqual("a", (string)muxer.Wait(a), "db:0");
+                ClassicAssert.AreEqual("b", (string)muxer.Wait(b), "db:1");
+                ClassicAssert.AreEqual("c", (string)muxer.Wait(c), "db:2");
 
             }
         }

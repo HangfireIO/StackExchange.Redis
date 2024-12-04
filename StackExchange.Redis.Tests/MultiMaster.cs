@@ -5,6 +5,7 @@ using System.Net;
 using System.Text;
 using System.Threading;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace StackExchange.Redis.Tests
 {
@@ -19,7 +20,7 @@ namespace StackExchange.Redis.Tests
         [Test]
         public void CannotFlushSlave()
         {
-            Assert.Throws<RedisCommandException>(() => {
+            ClassicAssert.Throws<RedisCommandException>(() => {
                 ConfigurationOptions config = GetMasterSlaveConfig();
                 using (var conn = ConnectionMultiplexer.Connect(config, log: Console.WriteLine))
                 {
@@ -56,7 +57,7 @@ namespace StackExchange.Redis.Tests
                 conn.Configure(msg => { AppendLog(msg); Console.WriteLine("Configure: " + msg); });
                 string log = sb.ToString();
 
-                Assert.IsTrue(log.Contains("tie-break is unanimous at " + PrimaryServer + ":" + PrimaryPort),
+                ClassicAssert.IsTrue(log.Contains("tie-break is unanimous at " + PrimaryServer + ":" + PrimaryPort),
                     "unanimous");
                 // k, so we know everyone loves 6379; is that what we get?
 
@@ -68,18 +69,18 @@ namespace StackExchange.Redis.Tests
                 demandMaster = db.IdentifyEndpoint(key, CommandFlags.DemandMaster);
                 preferSlave = db.IdentifyEndpoint(key, CommandFlags.PreferSlave);
 
-                Assert.AreEqual(primary.EndPoint, demandMaster, "demand master");
-                Assert.AreEqual(primary.EndPoint, preferMaster, "prefer master");
-                Assert.AreEqual(primary.EndPoint, preferSlave, "prefer slave");
+                ClassicAssert.AreEqual(primary.EndPoint, demandMaster, "demand master");
+                ClassicAssert.AreEqual(primary.EndPoint, preferMaster, "prefer master");
+                ClassicAssert.AreEqual(primary.EndPoint, preferSlave, "prefer slave");
 
                 try
                 {
                     demandSlave = db.IdentifyEndpoint(key, CommandFlags.DemandSlave);
-                    Assert.Fail("this should not have worked");
+                    ClassicAssert.Fail("this should not have worked");
                 }
                 catch (RedisConnectionException ex)
                 {
-                    Assert.True(ex.Message.Contains("No connection is available to service this operation: EXISTS DeslaveGoesToPrimary"));
+                    ClassicAssert.True(ex.Message.Contains("No connection is available to service this operation: EXISTS DeslaveGoesToPrimary"));
                 }
 
                 primary.MakeMaster(ReplicationChangeOptions.EnslaveSubordinates | ReplicationChangeOptions.SetTiebreaker, msg => Console.WriteLine("MakeMaster: " + msg));
@@ -92,10 +93,10 @@ namespace StackExchange.Redis.Tests
                 preferSlave = db.IdentifyEndpoint(key, CommandFlags.PreferSlave);
                 demandSlave = db.IdentifyEndpoint(key, CommandFlags.DemandSlave);
 
-                Assert.AreEqual(primary.EndPoint, demandMaster, "demand master");
-                Assert.AreEqual(primary.EndPoint, preferMaster, "prefer master");
-                Assert.AreEqual(secondary.EndPoint, preferSlave, "prefer slave");
-                Assert.AreEqual(secondary.EndPoint, preferSlave, "demand slave slave");
+                ClassicAssert.AreEqual(primary.EndPoint, demandMaster, "demand master");
+                ClassicAssert.AreEqual(primary.EndPoint, preferMaster, "prefer master");
+                ClassicAssert.AreEqual(secondary.EndPoint, preferSlave, "prefer slave");
+                ClassicAssert.AreEqual(secondary.EndPoint, preferSlave, "demand slave slave");
 
             }
         }
@@ -124,7 +125,7 @@ namespace StackExchange.Redis.Tests
             {
                 var results = sb.ToString();
                 Console.WriteLine(results);
-                Assert.IsTrue(results.Contains("Choosing master arbitrarily"));
+                ClassicAssert.IsTrue(results.Contains("Choosing master arbitrarily"));
             }
         }
 
@@ -161,21 +162,21 @@ namespace StackExchange.Redis.Tests
                 string text;
                 lock (sb) { text = sb.ToString(); }
                 Console.WriteLine(text);
-                Assert.IsFalse(text.Contains("failed to nominate"), "failed to nominate");
+                ClassicAssert.IsFalse(text.Contains("failed to nominate"), "failed to nominate");
                 if (elected != null)
                 {
-                    Assert.IsTrue(text.Contains("Elected: " + elected), "elected");
+                    ClassicAssert.IsTrue(text.Contains("Elected: " + elected), "elected");
                 }
                 int nullCount = (a == null ? 1 : 0) + (b == null ? 1 : 0);
                 if((a == b && nullCount == 0) || nullCount == 1)
                 {
-                    Assert.IsTrue(text.Contains("tie-break is unanimous"), "unanimous");
-                    Assert.IsFalse(text.Contains("Choosing master arbitrarily"), "arbitrarily");
+                    ClassicAssert.IsTrue(text.Contains("tie-break is unanimous"), "unanimous");
+                    ClassicAssert.IsFalse(text.Contains("Choosing master arbitrarily"), "arbitrarily");
                 }
                 else
                 {
-                    Assert.IsFalse(text.Contains("tie-break is unanimous"), "unanimous");
-                    Assert.IsTrue(text.Contains("Choosing master arbitrarily"), "arbitrarily");
+                    ClassicAssert.IsFalse(text.Contains("tie-break is unanimous"), "unanimous");
+                    ClassicAssert.IsTrue(text.Contains("Choosing master arbitrarily"), "arbitrarily");
                 }
             }
         }

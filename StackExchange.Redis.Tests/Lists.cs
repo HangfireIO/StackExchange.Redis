@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace StackExchange.Redis.Tests
 {
@@ -17,15 +18,15 @@ namespace StackExchange.Redis.Tests
                 db.KeyDelete(key, CommandFlags.FireAndForget);
                 db.ListRightPush(key, "abcdefghijklmnopqrstuvwxyz".Select(x => (RedisValue)x.ToString()).ToArray());
                 
-                Assert.AreEqual(26, db.ListLength(key));
-                Assert.AreEqual("abcdefghijklmnopqrstuvwxyz", string.Concat(db.ListRange(key)));
+                ClassicAssert.AreEqual(26, db.ListLength(key));
+                ClassicAssert.AreEqual("abcdefghijklmnopqrstuvwxyz", string.Concat(db.ListRange(key)));
 
                 var last10 = db.ListRange(key, -10, -1);
-                Assert.AreEqual("qrstuvwxyz", string.Concat(last10));
+                ClassicAssert.AreEqual("qrstuvwxyz", string.Concat(last10));
                 db.ListTrim(key, 0, -11);
 
-                Assert.AreEqual(16, db.ListLength(key));
-                Assert.AreEqual("abcdefghijklmnop", string.Concat(db.ListRange(key)));
+                ClassicAssert.AreEqual(16, db.ListLength(key));
+                ClassicAssert.AreEqual("abcdefghijklmnop", string.Concat(db.ListRange(key)));
 
 
 
