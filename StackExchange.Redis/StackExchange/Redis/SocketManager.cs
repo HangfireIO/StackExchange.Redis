@@ -309,6 +309,19 @@ namespace StackExchange.Redis
                 }
                 throw;
             }
+            catch (Exception ex)
+            {
+                // BeginConnect itself might fall when DNS resolution is completed synchronously.
+                multiplexer.LogLocked(log, "{0} Socket Manager: Connection Error: {1}", endpoint, ex.Message);
+                try
+                {
+                    callback.Error(ex);
+                }
+                catch (Exception inner) when (!(inner is OutOfMemoryException))
+                {
+                    ConnectionMultiplexer.TraceExceptionWithoutContext(inner);
+                }
+            }
             var token = new SocketToken(socket);
             return token;
         }
