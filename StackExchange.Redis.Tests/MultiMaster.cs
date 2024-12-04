@@ -54,6 +54,8 @@ namespace StackExchange.Redis.Tests
                 var sb = new StringBuilder();
                 void AppendLog(string msg) => sb.AppendLine(msg);
 
+                Thread.Sleep(2000); // Waiting for previous Reconfigure from MakeMaster
+
                 conn.Configure(msg => { AppendLog(msg); Console.WriteLine("Configure: " + msg); });
                 string log = sb.ToString();
 
