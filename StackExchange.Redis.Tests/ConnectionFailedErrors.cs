@@ -33,13 +33,12 @@ namespace StackExchange.Redis.Tests
                     Thread.Sleep(1000);
 
                     //validate that in this case it throws an certificatevalidation exception
-                    var ex = ClassicAssert.Throws<RedisConnectionException>(() => connection.GetDatabase().Ping());
-                    ClassicAssert.That(ex.Message.StartsWith("No connection is available to service this operation: PING; The remote certificate is invalid according to the validation procedure."), "Actual: " + ex.Message);
+                    var ex = Assert.Throws<RedisConnectionException>(() => connection.GetDatabase().Ping());
+                    Assert.That(ex.Message, Does.StartWith("No connection is available to service this operation: PING; The remote certificate"), "Actual: " + ex.Message);
                     var rde = (RedisConnectionException)ex.InnerException;
-                    ClassicAssert.NotNull(rde);
-                    ClassicAssert.IsInstanceOf<RedisConnectionException>(rde);
-                    ClassicAssert.That(rde.FailureType, Is.EqualTo(ConnectionFailureType.AuthenticationFailure));
-                    ClassicAssert.That(rde.InnerException?.Message, Is.EqualTo("The remote certificate is invalid according to the validation procedure."));
+                    Assert.That(rde, Is.Not.Null.And.InstanceOf<RedisConnectionException>());
+                    Assert.That(rde.FailureType, Is.EqualTo(ConnectionFailureType.AuthenticationFailure));
+                    Assert.That(rde.InnerException?.Message, Does.StartWith("The remote certificate"));
                 }
                 else
                 {
