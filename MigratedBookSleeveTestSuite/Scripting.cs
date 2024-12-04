@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using StackExchange.Redis;
 
 namespace Tests
@@ -17,7 +18,7 @@ namespace Tests
             var muxer = Config.GetUnsecuredConnection(waitForOpen: true, allowAdmin: allowAdmin, syncTimeout: syncTimeout);
             if (!Config.GetFeatures(muxer).Scripting)
             {
-                Assert.Inconclusive("The server does not support scripting");
+                ClassicAssert.Inconclusive("The server does not support scripting");
             }
             return muxer;
 
@@ -42,18 +43,18 @@ namespace Tests
                 var cache = conn.ScriptEvaluateAsync("return {KEYS[1],KEYS[2],ARGV[1],ARGV[2]}",
                     new RedisKey[] { "key1", "key2" }, new RedisValue[] { "first", "second" });
                 var results = (string[])conn.Wait(noCache);
-                Assert.AreEqual(4, results.Length);
-                Assert.AreEqual("key1", results[0]);
-                Assert.AreEqual("key2", results[1]);
-                Assert.AreEqual("first", results[2]);
-                Assert.AreEqual("second", results[3]);
+                ClassicAssert.AreEqual(4, results.Length);
+                ClassicAssert.AreEqual("key1", results[0]);
+                ClassicAssert.AreEqual("key2", results[1]);
+                ClassicAssert.AreEqual("first", results[2]);
+                ClassicAssert.AreEqual("second", results[3]);
 
                 results = (string[])conn.Wait(cache);
-                Assert.AreEqual(4, results.Length);
-                Assert.AreEqual("key1", results[0]);
-                Assert.AreEqual("key2", results[1]);
-                Assert.AreEqual("first", results[2]);
-                Assert.AreEqual("second", results[3]);
+                ClassicAssert.AreEqual(4, results.Length);
+                ClassicAssert.AreEqual("key1", results[0]);
+                ClassicAssert.AreEqual("key2", results[1]);
+                ClassicAssert.AreEqual("first", results[2]);
+                ClassicAssert.AreEqual("second", results[3]);
             }
         }
         [Test]
@@ -64,7 +65,7 @@ namespace Tests
                 var conn = muxer.GetDatabase();
                 conn.StringSet("foo", "bar");
                 var result = (string)conn.ScriptEvaluate("return redis.call('get', KEYS[1])", new RedisKey[] { "foo" }, null);
-                Assert.AreEqual("bar", result);
+                ClassicAssert.AreEqual("bar", result);
             }
         }
 
@@ -88,12 +89,12 @@ namespace Tests
 
                 var vals = conn.StringGetAsync(new RedisKey[] { "A", "B", "C" });
 
-                Assert.AreEqual(1, (long)conn.Wait(a)); // exit code when current val is non-positive
-                Assert.AreEqual(0, (long)conn.Wait(b)); // exit code when result would be negative
-                Assert.AreEqual(4, (long)conn.Wait(c)); // 10 - 6 = 4
-                Assert.AreEqual("0", (string)conn.Wait(vals)[0]);
-                Assert.AreEqual("5", (string)conn.Wait(vals)[1]);
-                Assert.AreEqual("4", (string)conn.Wait(vals)[2]);
+                ClassicAssert.AreEqual(1, (long)conn.Wait(a)); // exit code when current val is non-positive
+                ClassicAssert.AreEqual(0, (long)conn.Wait(b)); // exit code when result would be negative
+                ClassicAssert.AreEqual(4, (long)conn.Wait(c)); // 10 - 6 = 4
+                ClassicAssert.AreEqual("0", (string)conn.Wait(vals)[0]);
+                ClassicAssert.AreEqual("5", (string)conn.Wait(vals)[1]);
+                ClassicAssert.AreEqual("4", (string)conn.Wait(vals)[2]);
             }
         }
 
@@ -115,7 +116,7 @@ redis.call('del', KEYS[1])
 return timeTaken
 ", new RedisKey[] { key }, null);
                 Console.WriteLine(result);
-                Assert.IsTrue(result > 0);
+                ClassicAssert.IsTrue(result > 0);
             }
         }
 
@@ -144,10 +145,10 @@ return timeTaken
                 var b = conn.StringGetAsync("b");
                 var c = conn.StringGetAsync("c");
 
-                Assert.IsTrue(conn.Wait(result).IsNull, "result");
-                Assert.AreEqual(1, (long)conn.Wait(a), "a");
-                Assert.AreEqual(2, (long)conn.Wait(b), "b");
-                Assert.AreEqual(4, (long)conn.Wait(c), "c");
+                ClassicAssert.IsTrue(conn.Wait(result).IsNull, "result");
+                ClassicAssert.AreEqual(1, (long)conn.Wait(a), "a");
+                ClassicAssert.AreEqual(2, (long)conn.Wait(b), "b");
+                ClassicAssert.AreEqual(4, (long)conn.Wait(c), "c");
             }
         }
 
@@ -176,10 +177,10 @@ return timeTaken
                 var b = conn.StringGetAsync("b");
                 var c = conn.StringGetAsync("c");
 
-                Assert.IsTrue(conn.Wait(result).IsNull, "result");
-                Assert.AreEqual(1, (long)conn.Wait(a), "a");
-                Assert.AreEqual(2, (long)conn.Wait(b), "b");
-                Assert.AreEqual(4, (long)conn.Wait(c), "c");
+                ClassicAssert.IsTrue(conn.Wait(result).IsNull, "result");
+                ClassicAssert.AreEqual(1, (long)conn.Wait(a), "a");
+                ClassicAssert.AreEqual(2, (long)conn.Wait(b), "b");
+                ClassicAssert.AreEqual(4, (long)conn.Wait(c), "c");
             }
         }
 
@@ -191,7 +192,7 @@ return timeTaken
                 var conn = muxer.GetDatabase(0);
                 conn.StringSet("foo", "bar");
                 var result = (byte[])conn.ScriptEvaluate("return redis.call('get', KEYS[1])", new RedisKey[] { "foo" });
-                Assert.AreEqual("bar", Encoding.UTF8.GetString(result));
+                ClassicAssert.AreEqual("bar", Encoding.UTF8.GetString(result));
             }
         }
 
@@ -203,7 +204,7 @@ return timeTaken
                 var conn = muxer.GetDatabase(0);
                 conn.StringSet("foo", "bar");
                 var result = (string)conn.ScriptEvaluate("return redis.call('get', KEYS[1])", new RedisKey[] { "foo" }, null);
-                Assert.AreEqual("bar", result);
+                ClassicAssert.AreEqual("bar", result);
 
                 // now cause all kinds of problems
                 Config.GetServer(muxer).ScriptFlush();
@@ -212,7 +213,7 @@ return timeTaken
                 conn.ScriptEvaluate("return redis.call('get', KEYS[1])", new RedisKey[] { "foo" }, null);                
 
                 result = (string)conn.ScriptEvaluate("return redis.call('get', KEYS[1])", new RedisKey[] { "foo" }, null);
-                Assert.AreEqual("bar", result);
+                ClassicAssert.AreEqual("bar", result);
             }
         }
 
@@ -260,14 +261,14 @@ return timeTaken
                 Config.GetServer(muxer).ScriptLoad(evil);
 
                 var result = (string)conn.ScriptEvaluate(evil, null, null);
-                Assert.AreEqual("僕", result);
+                ClassicAssert.AreEqual("僕", result);
             }
         }
 
         [Test]
         public void ScriptThrowsError()
         {
-            Assert.Throws<RedisServerException>(() =>
+            ClassicAssert.Throws<RedisServerException>(() =>
             {
                 using (var muxer = GetScriptConn())
                 {
@@ -296,7 +297,7 @@ return timeTaken
                 var conn = muxer.GetDatabase(db);
                 conn.KeyDeleteAsync(key);
                 var beforeTran = (string)conn.StringGet(key);
-                Assert.IsNull(beforeTran);
+                ClassicAssert.IsNull(beforeTran);
                 var tran = conn.CreateTransaction();
                 {
                     var a = tran.StringIncrementAsync(key);
@@ -304,21 +305,21 @@ return timeTaken
                     var c = tran.StringIncrementAsync(key);
                     var complete = tran.ExecuteAsync();
 
-                    Assert.IsTrue(tran.Wait(complete));
-                    Assert.IsTrue(a.IsCompleted);
-                    Assert.IsTrue(c.IsCompleted);
-                    Assert.AreEqual(1L, a.Result);
-                    Assert.AreEqual(2L, c.Result);
+                    ClassicAssert.IsTrue(tran.Wait(complete));
+                    ClassicAssert.IsTrue(a.IsCompleted);
+                    ClassicAssert.IsTrue(c.IsCompleted);
+                    ClassicAssert.AreEqual(1L, a.Result);
+                    ClassicAssert.AreEqual(2L, c.Result);
 
-                    Assert.IsTrue(b.IsFaulted);
-                    Assert.AreEqual(1, b.Exception.InnerExceptions.Count);
+                    ClassicAssert.IsTrue(b.IsFaulted);
+                    ClassicAssert.AreEqual(1, b.Exception.InnerExceptions.Count);
                     var ex = b.Exception.InnerExceptions.Single();
-                    Assert.IsInstanceOf<RedisException>(ex);
-                    Assert.AreEqual("oops for EVAL", ex.Message);
+                    ClassicAssert.IsInstanceOf<RedisException>(ex);
+                    ClassicAssert.AreEqual("oops for EVAL", ex.Message);
 
                 }
                 var afterTran = conn.StringGetAsync(key);
-                Assert.AreEqual(2L, (long)conn.Wait(afterTran));
+                ClassicAssert.AreEqual(2L, (long)conn.Wait(afterTran));
             }
         }
 
@@ -337,9 +338,9 @@ return timeTaken
         return redis.call('get','foo')", null, null);
                 var getResult = conn.StringGetAsync("foo");
 
-                Assert.AreEqual("db 1", (string)conn.Wait(evalResult));
+                ClassicAssert.AreEqual("db 1", (string)conn.Wait(evalResult));
                 // now, our connection thought it was in db 2, but the script changed to db 1
-                Assert.AreEqual("db 2", (string)conn.Wait(getResult));
+                ClassicAssert.AreEqual("db 2", (string)conn.Wait(getResult));
 
             }
         }
@@ -357,11 +358,11 @@ return timeTaken
                 var evalResult = tran.ScriptEvaluateAsync(@"redis.call('select', 1)
         return redis.call('get','foo')", null, null);
                 var getResult = tran.StringGetAsync("foo");
-                Assert.IsTrue(tran.Execute());
+                ClassicAssert.IsTrue(tran.Execute());
 
-                Assert.AreEqual("db 1", (string)conn.Wait(evalResult));
+                ClassicAssert.AreEqual("db 1", (string)conn.Wait(evalResult));
                 // now, our connection thought it was in db 2, but the script changed to db 1
-                Assert.AreEqual("db 2", (string)conn.Wait(getResult));
+                ClassicAssert.AreEqual("db 2", (string)conn.Wait(getResult));
 
             }
         }

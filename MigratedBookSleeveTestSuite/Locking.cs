@@ -2,6 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using StackExchange.Redis;
 
 namespace Tests
@@ -36,7 +37,7 @@ namespace Tests
                 ThreadPool.QueueUserWorkItem(cb, c2);
                 evt.WaitOne(8000);
             }
-            Assert.AreEqual(0, Interlocked.CompareExchange(ref errorCount, 0, 0));
+            ClassicAssert.AreEqual(0, Interlocked.CompareExchange(ref errorCount, 0, 0));
         }
 
         [Test]
@@ -98,10 +99,10 @@ namespace Tests
             var taken = db.LockTake(Key, newVal, TimeSpan.FromSeconds(LockDuration));
             long countAfter = conn.GetCounters().Interactive.OperationCount;
             string valAfter = db.StringGet(Key);
-            Assert.AreEqual(!existFirst, taken, "lock taken");
-            Assert.AreEqual(expectedVal, valAfter, "taker");
+            ClassicAssert.AreEqual(!existFirst, taken, "lock taken");
+            ClassicAssert.AreEqual(expectedVal, valAfter, "taker");
             Console.WriteLine("{0} ops before, {1} ops after", countBefore, countAfter);
-            Assert.AreEqual(expected, (countAfter - countBefore), "expected ops (including ping)");
+            ClassicAssert.AreEqual(expected, (countAfter - countBefore), "expected ops (including ping)");
             // note we get a ping from GetCounters
         }
 
@@ -135,25 +136,25 @@ namespace Tests
                 var t12 = db.StringGetAsync(Key);
                 var t13 = db.LockTakeAsync(Key, wrong, TimeSpan.FromSeconds(10));
                 
-                Assert.IsNotNull(right);
-                Assert.IsNotNull(wrong);
-                Assert.AreNotEqual(right, (string)wrong);
-                Assert.IsTrue(conn.Wait(t1), "1");
-                Assert.IsFalse(conn.Wait(t1b), "1b");
-                Assert.AreEqual(right, (string)conn.Wait(t2), "2");
-                Assert.IsFalse(conn.Wait(t3), "3");
-                Assert.AreEqual(right, (string)conn.Wait(t4), "4");
-                Assert.IsFalse(conn.Wait(t5), "5");
-                Assert.AreEqual(right, (string)conn.Wait(t6), "6");
+                ClassicAssert.IsNotNull(right);
+                ClassicAssert.IsNotNull(wrong);
+                ClassicAssert.AreNotEqual(right, (string)wrong);
+                ClassicAssert.IsTrue(conn.Wait(t1), "1");
+                ClassicAssert.IsFalse(conn.Wait(t1b), "1b");
+                ClassicAssert.AreEqual(right, (string)conn.Wait(t2), "2");
+                ClassicAssert.IsFalse(conn.Wait(t3), "3");
+                ClassicAssert.AreEqual(right, (string)conn.Wait(t4), "4");
+                ClassicAssert.IsFalse(conn.Wait(t5), "5");
+                ClassicAssert.AreEqual(right, (string)conn.Wait(t6), "6");
                 var ttl = conn.Wait(t7).Value.TotalSeconds;
-                Assert.IsTrue(ttl > 0 && ttl <= 20, "7");
-                Assert.IsTrue(conn.Wait(t8), "8");
-                Assert.AreEqual(right, (string)conn.Wait(t9), "9");
+                ClassicAssert.IsTrue(ttl > 0 && ttl <= 20, "7");
+                ClassicAssert.IsTrue(conn.Wait(t8), "8");
+                ClassicAssert.AreEqual(right, (string)conn.Wait(t9), "9");
                 ttl = conn.Wait(t10).Value.TotalSeconds;
-                Assert.IsTrue(ttl > 50 && ttl <= 60, "10");
-                Assert.IsTrue(conn.Wait(t11), "11");
-                Assert.IsNull((string)conn.Wait(t12), "12");
-                Assert.IsTrue(conn.Wait(t13), "13");
+                ClassicAssert.IsTrue(ttl > 50 && ttl <= 60, "10");
+                ClassicAssert.IsTrue(conn.Wait(t11), "11");
+                ClassicAssert.IsNull((string)conn.Wait(t12), "12");
+                ClassicAssert.IsTrue(conn.Wait(t13), "13");
             }
         }
 
@@ -180,9 +181,9 @@ namespace Tests
 
         ////    int countAfter = conn.GetCounters().MessagesSent;
         ////    var valAfter = conn.Wait(conn.Strings.GetString(DB, Key));
-        ////    Assert.AreEqual(!existFirst, taken, "lock taken (manual)");
-        ////    Assert.AreEqual(expectedVal, valAfter, "taker (manual)");
-        ////    Assert.AreEqual(expected, (countAfter - countBefore) - 1, "expected ops (including ping) (manual)");
+        ////    ClassicAssert.AreEqual(!existFirst, taken, "lock taken (manual)");
+        ////    ClassicAssert.AreEqual(expectedVal, valAfter, "taker (manual)");
+        ////    ClassicAssert.AreEqual(expected, (countAfter - countBefore) - 1, "expected ops (including ping) (manual)");
         ////    // note we get a ping from GetCounters
         ////}
 
@@ -210,12 +211,12 @@ namespace Tests
                     newValue = db.StringGetAsync("lock-not-exists");
                     ttl = db.KeyTimeToLiveAsync("lock-not-exists");
                 }
-                Assert.IsTrue(conn.Wait(taken), "taken");
-                Assert.AreEqual("new-value", (string)conn.Wait(newValue));
+                ClassicAssert.IsTrue(conn.Wait(taken), "taken");
+                ClassicAssert.AreEqual("new-value", (string)conn.Wait(newValue));
                 var ttlValue = conn.Wait(ttl).Value.TotalSeconds;
-                Assert.IsTrue(ttlValue >= 8 && ttlValue <= 10, "ttl");
+                ClassicAssert.IsTrue(ttlValue >= 8 && ttlValue <= 10, "ttl");
 
-                Assert.AreEqual(0, errorCount);
+                ClassicAssert.AreEqual(0, errorCount);
             }
         }
 
@@ -231,10 +232,10 @@ namespace Tests
                 var newValue = db.StringGetAsync("lock-exists");
                 var ttl = db.KeyTimeToLiveAsync("lock-exists");
 
-                Assert.IsFalse(conn.Wait(taken), "taken");
-                Assert.AreEqual("old-value", (string)conn.Wait(newValue));
+                ClassicAssert.IsFalse(conn.Wait(taken), "taken");
+                ClassicAssert.AreEqual("old-value", (string)conn.Wait(newValue));
                 var ttlValue = conn.Wait(ttl).Value.TotalSeconds;
-                Assert.IsTrue(ttlValue >= 18 && ttlValue <= 20, "ttl");
+                ClassicAssert.IsTrue(ttlValue >= 18 && ttlValue <= 20, "ttl");
             }
         }
     }

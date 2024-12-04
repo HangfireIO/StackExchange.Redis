@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using StackExchange.Redis;
 
 namespace Tests
@@ -18,7 +19,7 @@ namespace Tests
             using (var muxer = Config.GetUnsecuredConnection())
             {
                 var conn = muxer.GetSubscriber();
-                Assert.AreEqual(0, conn.Publish("channel", "message"));
+                ClassicAssert.AreEqual(0, conn.Publish("channel", "message"));
             }
         }
 
@@ -64,8 +65,8 @@ namespace Tests
             conn.WaitAll(tasks);
             withAsync.Stop();
 
-            Assert.Less(1, 2, "sanity check");
-            Assert.Less(withFAF.ElapsedMilliseconds, withAsync.ElapsedMilliseconds, caption);
+            ClassicAssert.Less(1, 2, "sanity check");
+            ClassicAssert.Less(withFAF.ElapsedMilliseconds, withAsync.ElapsedMilliseconds, caption);
             Console.WriteLine("{2}: {0}ms (F+F) vs {1}ms (async)",
                 withFAF.ElapsedMilliseconds, withAsync.ElapsedMilliseconds, caption);
         }
@@ -109,7 +110,7 @@ namespace Tests
                         throw new TimeoutException("Items: " + data.Count);
                     }
                     for (int i = 0; i < count; i++)
-                        Assert.AreEqual(i, data[i]);
+                        ClassicAssert.AreEqual(i, data[i]);
                 }
             }
 
@@ -131,7 +132,7 @@ namespace Tests
                 listenB.Wait(t2);
                 
                 var pub = conn.GetSubscriber().PublishAsync("channel", "message");
-                Assert.AreEqual(2, conn.Wait(pub), "delivery count");
+                ClassicAssert.AreEqual(2, conn.Wait(pub), "delivery count");
             }
         }
 
@@ -151,18 +152,18 @@ namespace Tests
                 var tB = listenB.SubscribeAsync("channel", (s, msg) => { if (msg == "message") Interlocked.Increment(ref gotB); });
                 listenA.Wait(tA);
                 listenB.Wait(tB);
-                Assert.AreEqual(2, pub.Publish("channel", "message"));
+                ClassicAssert.AreEqual(2, pub.Publish("channel", "message"));
                 AllowReasonableTimeToPublishAndProcess();
-                Assert.AreEqual(1, Interlocked.CompareExchange(ref gotA, 0, 0));
-                Assert.AreEqual(1, Interlocked.CompareExchange(ref gotB, 0, 0));
+                ClassicAssert.AreEqual(1, Interlocked.CompareExchange(ref gotA, 0, 0));
+                ClassicAssert.AreEqual(1, Interlocked.CompareExchange(ref gotB, 0, 0));
 
                 // and unsubscibe...
                 tA = listenA.UnsubscribeAsync("channel");
                 listenA.Wait(tA);
-                Assert.AreEqual(1, pub.Publish("channel", "message"));
+                ClassicAssert.AreEqual(1, pub.Publish("channel", "message"));
                 AllowReasonableTimeToPublishAndProcess();
-                Assert.AreEqual(1, Interlocked.CompareExchange(ref gotA, 0, 0));
-                Assert.AreEqual(2, Interlocked.CompareExchange(ref gotB, 0, 0));
+                ClassicAssert.AreEqual(1, Interlocked.CompareExchange(ref gotA, 0, 0));
+                ClassicAssert.AreEqual(2, Interlocked.CompareExchange(ref gotB, 0, 0));
             }
         }
 
@@ -191,8 +192,8 @@ namespace Tests
 
                 AllowReasonableTimeToPublishAndProcess();
 
-                Assert.AreEqual(6, total, "sent");
-                Assert.AreEqual(6, Interlocked.CompareExchange(ref count, 0, 0), "received");
+                ClassicAssert.AreEqual(6, total, "sent");
+                ClassicAssert.AreEqual(6, Interlocked.CompareExchange(ref count, 0, 0), "received");
 
 
             }
@@ -218,18 +219,18 @@ namespace Tests
                 var tB = listenB.SubscribeAsync("chann*", (s, msg) => { if (s == "channel" && msg == "message") Interlocked.Increment(ref gotB); });
                 listenA.Wait(tA);
                 listenB.Wait(tB);
-                Assert.AreEqual(2, pub.Publish("channel", "message"));
+                ClassicAssert.AreEqual(2, pub.Publish("channel", "message"));
                 AllowReasonableTimeToPublishAndProcess();
-                Assert.AreEqual(1, Interlocked.CompareExchange(ref gotA, 0, 0));
-                Assert.AreEqual(1, Interlocked.CompareExchange(ref gotB, 0, 0));
+                ClassicAssert.AreEqual(1, Interlocked.CompareExchange(ref gotA, 0, 0));
+                ClassicAssert.AreEqual(1, Interlocked.CompareExchange(ref gotB, 0, 0));
 
                 // and unsubscibe...
                 tB = listenB.UnsubscribeAsync("chann*", null);
                 listenB.Wait(tB);
-                Assert.AreEqual(1, pub.Publish("channel", "message"));
+                ClassicAssert.AreEqual(1, pub.Publish("channel", "message"));
                 AllowReasonableTimeToPublishAndProcess();
-                Assert.AreEqual(2, Interlocked.CompareExchange(ref gotA, 0, 0));
-                Assert.AreEqual(1, Interlocked.CompareExchange(ref gotB, 0, 0));
+                ClassicAssert.AreEqual(2, Interlocked.CompareExchange(ref gotA, 0, 0));
+                ClassicAssert.AreEqual(1, Interlocked.CompareExchange(ref gotB, 0, 0));
             }
         }
 
@@ -247,21 +248,21 @@ namespace Tests
                 sub.WaitAll(t1, t2);
                 pub.Publish("abc", "");
                 AllowReasonableTimeToPublishAndProcess();
-                Assert.AreEqual(1, Volatile.Read(ref x));
-                Assert.AreEqual(1, Volatile.Read(ref y));
+                ClassicAssert.AreEqual(1, Volatile.Read(ref x));
+                ClassicAssert.AreEqual(1, Volatile.Read(ref y));
                 t1 = sub.UnsubscribeAsync("abc", null);
                 t2 = sub.UnsubscribeAsync("ab*", null);
                 sub.WaitAll(t1, t2);
                 pub.Publish("abc", "");
-                Assert.AreEqual(1, Volatile.Read(ref x));
-                Assert.AreEqual(1, Volatile.Read(ref y));
+                ClassicAssert.AreEqual(1, Volatile.Read(ref x));
+                ClassicAssert.AreEqual(1, Volatile.Read(ref y));
                 t1 = sub.SubscribeAsync("abc", delegate { Interlocked.Increment(ref x); });
                 t2 = sub.SubscribeAsync("ab*", delegate { Interlocked.Increment(ref y); });
                 sub.WaitAll(t1, t2);
                 pub.Publish("abc", "");
                 AllowReasonableTimeToPublishAndProcess();
-                Assert.AreEqual(2, Volatile.Read(ref x));
-                Assert.AreEqual(2, Volatile.Read(ref y));
+                ClassicAssert.AreEqual(2, Volatile.Read(ref x));
+                ClassicAssert.AreEqual(2, Volatile.Read(ref y));
 
             }
         }

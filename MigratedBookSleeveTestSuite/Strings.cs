@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using System.Text;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using StackExchange.Redis;
 
 namespace Tests
@@ -28,16 +29,16 @@ namespace Tests
                 var s3 = conn.StringGetAsync("append");
                 var l2 = server.Features.StringLength ? conn.StringLengthAsync("append") : null;
 
-                Assert.AreEqual(null, (string)conn.Wait(s0));
-                Assert.AreEqual("abc", (string)conn.Wait(s1));
-                Assert.AreEqual(8, conn.Wait(result));
-                Assert.AreEqual("abcdefgh", (string)conn.Wait(s3));
+                ClassicAssert.AreEqual(null, (string)conn.Wait(s0));
+                ClassicAssert.AreEqual("abc", (string)conn.Wait(s1));
+                ClassicAssert.AreEqual(8, conn.Wait(result));
+                ClassicAssert.AreEqual("abcdefgh", (string)conn.Wait(s3));
 
                 if (server.Features.StringLength)
                 {
-                    Assert.AreEqual(0, conn.Wait(l0));
-                    Assert.AreEqual(3, conn.Wait(l1));
-                    Assert.AreEqual(8, conn.Wait(l2));
+                    ClassicAssert.AreEqual(0, conn.Wait(l0));
+                    ClassicAssert.AreEqual(3, conn.Wait(l1));
+                    ClassicAssert.AreEqual(8, conn.Wait(l2));
                 }
             }
         }
@@ -55,8 +56,8 @@ namespace Tests
                 conn.StringSetAsync("set", Encode("def"));
                 var v2 = conn.StringGetAsync("set");
 
-                Assert.AreEqual("abc", (string)conn.Wait(v1));
-                Assert.AreEqual("def", (string)Decode(conn.Wait(v2)));
+                ClassicAssert.AreEqual("abc", (string)conn.Wait(v1));
+                ClassicAssert.AreEqual("def", (string)Decode(conn.Wait(v2)));
             }
         }
 
@@ -80,13 +81,13 @@ namespace Tests
                 var s2 = conn.StringGetAsync("set2");
                 var s3 = conn.StringGetAsync("set3");
 
-                Assert.IsFalse(conn.Wait(x0));
-                Assert.IsFalse(conn.Wait(x1));
-                Assert.IsTrue(conn.Wait(x2));
-                Assert.IsTrue(conn.Wait(x3));
-                Assert.AreEqual("abc", (string)conn.Wait(s0));
-                Assert.AreEqual("def", (string)conn.Wait(s2));
-                Assert.AreEqual("def", (string)conn.Wait(s3));
+                ClassicAssert.IsFalse(conn.Wait(x0));
+                ClassicAssert.IsFalse(conn.Wait(x1));
+                ClassicAssert.IsTrue(conn.Wait(x2));
+                ClassicAssert.IsTrue(conn.Wait(x3));
+                ClassicAssert.AreEqual("abc", (string)conn.Wait(s0));
+                ClassicAssert.AreEqual("def", (string)conn.Wait(s2));
+                ClassicAssert.AreEqual("def", (string)conn.Wait(s3));
             }
         }
 
@@ -95,7 +96,7 @@ namespace Tests
         {
             using (var muxer = Config.GetUnsecuredConnection(waitForOpen: true))
             {
-                if (!Config.GetFeatures(muxer).StringSetRange) Assert.Inconclusive();
+                if (!Config.GetFeatures(muxer).StringSetRange) ClassicAssert.Inconclusive();
                 var conn = muxer.GetDatabase(2);
 
                 conn.KeyDeleteAsync("range");
@@ -106,7 +107,7 @@ namespace Tests
 
                 var val = conn.StringGetAsync("range");
 
-                Assert.AreEqual("abxyzfghi", (string)conn.Wait(val));
+                ClassicAssert.AreEqual("abxyzfghi", (string)conn.Wait(val));
             }
         }
 
@@ -127,13 +128,13 @@ namespace Tests
                 var v6 = conn.StringDecrementAsync("incr", -2);
                 var s = conn.StringGetAsync("incr");
 
-                Assert.AreEqual(3, conn.Wait(v1));
-                Assert.AreEqual(8, conn.Wait(v2));
-                Assert.AreEqual(6, conn.Wait(v3));
-                Assert.AreEqual(5, conn.Wait(v4));
-                Assert.AreEqual(0, conn.Wait(v5));
-                Assert.AreEqual(2, conn.Wait(v6));
-                Assert.AreEqual("2", (string)conn.Wait(s));
+                ClassicAssert.AreEqual(3, conn.Wait(v1));
+                ClassicAssert.AreEqual(8, conn.Wait(v2));
+                ClassicAssert.AreEqual(6, conn.Wait(v3));
+                ClassicAssert.AreEqual(5, conn.Wait(v4));
+                ClassicAssert.AreEqual(0, conn.Wait(v5));
+                ClassicAssert.AreEqual(2, conn.Wait(v6));
+                ClassicAssert.AreEqual("2", (string)conn.Wait(s));
             }
         }
         [Test]
@@ -141,7 +142,7 @@ namespace Tests
         {
             using (var muxer = Config.GetUnsecuredConnection(waitForOpen: true))
             {
-                if (!Config.GetFeatures(muxer).IncrementFloat) Assert.Inconclusive();
+                if (!Config.GetFeatures(muxer).IncrementFloat) ClassicAssert.Inconclusive();
                 var conn = muxer.GetDatabase(2);
                 conn.KeyDelete("incr");
 
@@ -161,7 +162,7 @@ namespace Tests
                 Config.AssertNearlyEqual(5.1, conn.Wait(v4));
                 Config.AssertNearlyEqual(0.1, conn.Wait(v5));
                 Config.AssertNearlyEqual(2.1, conn.Wait(v6));
-                Assert.AreEqual("2.1", (string)conn.Wait(s));
+                ClassicAssert.AreEqual("2.1", (string)conn.Wait(s));
             }
         }
 
@@ -177,8 +178,8 @@ namespace Tests
                 var s = conn.StringGetRangeAsync("range", 2, 4);
                 var b = conn.StringGetRangeAsync("range", 2, 4);
 
-                Assert.AreEqual("cde", (string)conn.Wait(s));
-                Assert.AreEqual("cde", Decode(conn.Wait(b)));
+                ClassicAssert.AreEqual("cde", (string)conn.Wait(s));
+                ClassicAssert.AreEqual("cde", Decode(conn.Wait(b)));
             }
         }
 
@@ -187,7 +188,7 @@ namespace Tests
         {
             using (var muxer = Config.GetUnsecuredConnection(waitForOpen: true))
             {
-                if (!Config.GetFeatures(muxer).BitwiseOperations) Assert.Inconclusive();
+                if (!Config.GetFeatures(muxer).BitwiseOperations) ClassicAssert.Inconclusive();
                 
                 var conn = muxer.GetDatabase(0);
                 conn.StringSetAsync("mykey", "foobar");
@@ -195,9 +196,9 @@ namespace Tests
                 var r2 = conn.StringBitCountAsync("mykey", 0, 0);
                 var r3 = conn.StringBitCountAsync("mykey", 1, 1);
 
-                Assert.AreEqual(26, conn.Wait(r1));
-                Assert.AreEqual(4, conn.Wait(r2));
-                Assert.AreEqual(6, conn.Wait(r3));
+                ClassicAssert.AreEqual(26, conn.Wait(r1));
+                ClassicAssert.AreEqual(4, conn.Wait(r2));
+                ClassicAssert.AreEqual(6, conn.Wait(r3));
             }
         }
 
@@ -206,7 +207,7 @@ namespace Tests
         {
             using (var muxer = Config.GetUnsecuredConnection(waitForOpen: true))
             {
-                if (!Config.GetFeatures(muxer).BitwiseOperations) Assert.Inconclusive();
+                if (!Config.GetFeatures(muxer).BitwiseOperations) ClassicAssert.Inconclusive();
                 var conn = muxer.GetDatabase(0);
                 conn.StringSetAsync("key1", new byte[] { 3 });
                 conn.StringSetAsync("key2", new byte[] { 6 });
@@ -217,20 +218,20 @@ namespace Tests
                 var len_xor = conn.StringBitOperationAsync(Bitwise.Xor, "xor", new RedisKey[] { "key1", "key2", "key3" });
                 var len_not = conn.StringBitOperationAsync(Bitwise.Not, "not", "key1");
 
-                Assert.AreEqual(1, conn.Wait(len_and));
-                Assert.AreEqual(1, conn.Wait(len_or));
-                Assert.AreEqual(1, conn.Wait(len_xor));
-                Assert.AreEqual(1, conn.Wait(len_not));
+                ClassicAssert.AreEqual(1, conn.Wait(len_and));
+                ClassicAssert.AreEqual(1, conn.Wait(len_or));
+                ClassicAssert.AreEqual(1, conn.Wait(len_xor));
+                ClassicAssert.AreEqual(1, conn.Wait(len_not));
 
                 var r_and = ((byte[])conn.Wait(conn.StringGetAsync("and"))).Single();
                 var r_or = ((byte[])conn.Wait(conn.StringGetAsync("or"))).Single();
                 var r_xor = ((byte[])conn.Wait(conn.StringGetAsync("xor"))).Single();
                 var r_not = ((byte[])conn.Wait(conn.StringGetAsync("not"))).Single();
 
-                Assert.AreEqual((byte)(3 & 6 & 12), r_and);
-                Assert.AreEqual((byte)(3 | 6 | 12), r_or);
-                Assert.AreEqual((byte)(3 ^ 6 ^ 12), r_xor);
-                Assert.AreEqual(unchecked((byte)(~3)), r_not);
+                ClassicAssert.AreEqual((byte)(3 & 6 & 12), r_and);
+                ClassicAssert.AreEqual((byte)(3 | 6 | 12), r_or);
+                ClassicAssert.AreEqual((byte)(3 ^ 6 ^ 12), r_xor);
+                ClassicAssert.AreEqual(unchecked((byte)(~3)), r_not);
 
             }
 
@@ -244,7 +245,7 @@ namespace Tests
                 var conn = muxer.GetDatabase(0);
                 conn.StringSetAsync("my key", "hello world");
                 var result = conn.StringGetRangeAsync("my key", 2, 6);
-                Assert.AreEqual("llo w", (string)conn.Wait(result));
+                ClassicAssert.AreEqual("llo w", (string)conn.Wait(result));
             }
         }
         static byte[] Encode(string value) { return Encoding.UTF8.GetBytes(value); }

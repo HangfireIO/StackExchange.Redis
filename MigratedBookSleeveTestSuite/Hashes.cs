@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Linq;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using StackExchange.Redis;
 
 namespace Tests
@@ -19,10 +20,10 @@ namespace Tests
                 conn.KeyDeleteAsync("hash-test");
                 for (int i = 1; i < 1000; i++)
                 {
-                    Assert.AreEqual(i, conn.HashIncrementAsync("hash-test", "a", 1).Result);
-                    Assert.AreEqual(-i, conn.HashIncrementAsync("hash-test", "b", -1).Result);
-                    //Assert.AreEqual(i, conn.Wait(conn.Hashes.Increment(5, "hash-test", "a", 1)));
-                    //Assert.AreEqual(-i, conn.Wait(conn.Hashes.Increment(5, "hash-test", "b", -1)));
+                    ClassicAssert.AreEqual(i, conn.HashIncrementAsync("hash-test", "a", 1).Result);
+                    ClassicAssert.AreEqual(-i, conn.HashIncrementAsync("hash-test", "b", -1).Result);
+                    //ClassicAssert.AreEqual(i, conn.Wait(conn.Hashes.Increment(5, "hash-test", "a", 1)));
+                    //ClassicAssert.AreEqual(-i, conn.Wait(conn.Hashes.Increment(5, "hash-test", "b", -1)));
                 }
             }
         }
@@ -52,19 +53,19 @@ namespace Tests
                 var v3 = t3.ToArray();
                 var v4 = t4.ToArray();
 
-                Assert.AreEqual(3, v1.Length);
-                Assert.AreEqual(1, v2.Length);
-                Assert.AreEqual(3, v3.Length);
-                Assert.AreEqual(1, v4.Length);
+                ClassicAssert.AreEqual(3, v1.Length);
+                ClassicAssert.AreEqual(1, v2.Length);
+                ClassicAssert.AreEqual(3, v3.Length);
+                ClassicAssert.AreEqual(1, v4.Length);
                 Array.Sort(v1, (x, y) => string.Compare(x.Name, y.Name));
                 Array.Sort(v2, (x, y) => string.Compare(x.Name, y.Name));
                 Array.Sort(v3, (x, y) => string.Compare(x.Name, y.Name));
                 Array.Sort(v4, (x, y) => string.Compare(x.Name, y.Name));
 
-                Assert.AreEqual("abc=def,ghi=jkl,mno=pqr", string.Join(",", v1.Select(pair => pair.Name + "=" + (string)pair.Value)));
-                Assert.AreEqual("ghi=jkl", string.Join(",", v2.Select(pair => pair.Name + "=" + (string)pair.Value)));
-                Assert.AreEqual("abc=def,ghi=jkl,mno=pqr", string.Join(",", v3.Select(pair => pair.Name + "=" + pair.Value)));
-                Assert.AreEqual("ghi=jkl", string.Join(",", v4.Select(pair => pair.Name + "=" + pair.Value)));
+                ClassicAssert.AreEqual("abc=def,ghi=jkl,mno=pqr", string.Join(",", v1.Select(pair => pair.Name + "=" + (string)pair.Value)));
+                ClassicAssert.AreEqual("ghi=jkl", string.Join(",", v2.Select(pair => pair.Name + "=" + (string)pair.Value)));
+                ClassicAssert.AreEqual("abc=def,ghi=jkl,mno=pqr", string.Join(",", v3.Select(pair => pair.Name + "=" + pair.Value)));
+                ClassicAssert.AreEqual("ghi=jkl", string.Join(",", v4.Select(pair => pair.Name + "=" + pair.Value)));
             }
         }
         [Test]
@@ -76,8 +77,8 @@ namespace Tests
                 conn.KeyDeleteAsync("keynotexist");
                 var result1 = conn.Wait(conn.HashIncrementAsync("keynotexist", "fieldnotexist", 1));
                 var result2 = conn.Wait(conn.HashIncrementAsync("keynotexist", "anotherfieldnotexist", 1));
-                Assert.AreEqual(1, result1);
-                Assert.AreEqual(1, result2);
+                ClassicAssert.AreEqual(1, result1);
+                ClassicAssert.AreEqual(1, result2);
             }
         }
         [Test]
@@ -91,8 +92,8 @@ namespace Tests
                     conn.KeyDeleteAsync("hash-test");
                     for (int i = 1; i < 1000; i++)
                     {
-                        Assert.AreEqual((double)i, conn.HashIncrementAsync("hash-test", "a", 1.0).Result);
-                        Assert.AreEqual((double)(-i), conn.HashIncrementAsync("hash-test", "b", -1.0).Result);
+                        ClassicAssert.AreEqual((double)i, conn.HashIncrementAsync("hash-test", "a", 1.0).Result);
+                        ClassicAssert.AreEqual((double)(-i), conn.HashIncrementAsync("hash-test", "b", -1.0).Result);
                     }
                 }
             }
@@ -124,11 +125,11 @@ namespace Tests
                     x => Guid.Parse(x.Name), x => int.Parse(x.Value));
 #pragma warning restore 618
 
-                Assert.AreEqual(shouldMatch.Count, inRedis.Count);
+                ClassicAssert.AreEqual(shouldMatch.Count, inRedis.Count);
 
                 foreach (var k in shouldMatch.Keys)
                 {
-                    Assert.AreEqual(shouldMatch[k], inRedis[k]);
+                    ClassicAssert.AreEqual(shouldMatch[k], inRedis[k]);
                 }
             }
         }
@@ -158,7 +159,7 @@ namespace Tests
                     var inRedis = conn.HashGetAsync(key, k.ToString()).Result;
                     var num = int.Parse((string)inRedis);
 
-                    Assert.AreEqual(shouldMatch[k], num);
+                    ClassicAssert.AreEqual(shouldMatch[k], num);
                 }
             }
         }
@@ -185,19 +186,19 @@ namespace Tests
                 var set4 = conn.HashSetAsync("hashkey", "empty_type2", RedisValue.EmptyString);
                 var val5 = conn.HashGetAsync("hashkey", "empty_type2");
 
-                Assert.AreEqual(null, (string)val0.Result);
-                Assert.AreEqual(true, set0.Result);
-                Assert.AreEqual("value1", (string)val1.Result);
-                Assert.AreEqual(false, set1.Result);
-                Assert.AreEqual("value2", (string)val2.Result);
+                ClassicAssert.AreEqual(null, (string)val0.Result);
+                ClassicAssert.AreEqual(true, set0.Result);
+                ClassicAssert.AreEqual("value1", (string)val1.Result);
+                ClassicAssert.AreEqual(false, set1.Result);
+                ClassicAssert.AreEqual("value2", (string)val2.Result);
 
-                Assert.AreEqual(true, set2.Result);
-                Assert.AreEqual("value3", (string)val3.Result);
+                ClassicAssert.AreEqual(true, set2.Result);
+                ClassicAssert.AreEqual("value3", (string)val3.Result);
 
-                Assert.AreEqual(true, set3.Result);
-                Assert.AreEqual("", (string)val4.Result);
-                Assert.AreEqual(true, set4.Result);
-                Assert.AreEqual("", (string)val5.Result);
+                ClassicAssert.AreEqual(true, set3.Result);
+                ClassicAssert.AreEqual("", (string)val4.Result);
+                ClassicAssert.AreEqual(true, set4.Result);
+                ClassicAssert.AreEqual("", (string)val5.Result);
             }
         }
         [Test]
@@ -218,15 +219,15 @@ namespace Tests
                 var val3 = conn.HashGetAsync("hashkey", "field-blob");
                 var set3 = conn.HashSetAsync("hashkey", "field-blob", Encoding.UTF8.GetBytes("value3"), When.NotExists);
 
-                Assert.AreEqual(null, (string)val0.Result);
-                Assert.AreEqual(true, set0.Result);
-                Assert.AreEqual("value1", (string)val1.Result);
-                Assert.AreEqual(false, set1.Result);
-                Assert.AreEqual("value1", (string)val2.Result);
+                ClassicAssert.AreEqual(null, (string)val0.Result);
+                ClassicAssert.AreEqual(true, set0.Result);
+                ClassicAssert.AreEqual("value1", (string)val1.Result);
+                ClassicAssert.AreEqual(false, set1.Result);
+                ClassicAssert.AreEqual("value1", (string)val2.Result);
 
-                Assert.AreEqual(true, set2.Result);
-                Assert.AreEqual("value3", (string)val3.Result);
-                Assert.AreEqual(false, set3.Result);
+                ClassicAssert.AreEqual(true, set2.Result);
+                ClassicAssert.AreEqual("value3", (string)val3.Result);
+                ClassicAssert.AreEqual(false, set3.Result);
 
             }
         }
@@ -244,9 +245,9 @@ namespace Tests
                 var del1 = conn.HashDeleteAsync("hashkey", "field");
                 var del2 = conn.HashDeleteAsync("hashkey", "field");
 
-                Assert.AreEqual(false, del0.Result);
-                Assert.AreEqual(true, del1.Result);
-                Assert.AreEqual(false, del2.Result);
+                ClassicAssert.AreEqual(false, del0.Result);
+                ClassicAssert.AreEqual(true, del1.Result);
+                ClassicAssert.AreEqual(false, del2.Result);
 
             }
         }
@@ -270,20 +271,20 @@ namespace Tests
                 var d2 = conn.HashExistsAsync("TestDelMulti", "key2");
                 var d3 = conn.HashExistsAsync("TestDelMulti", "key3");
 
-                Assert.IsTrue(conn.Wait(s1));
-                Assert.IsTrue(conn.Wait(s2));
-                Assert.IsTrue(conn.Wait(s3));
+                ClassicAssert.IsTrue(conn.Wait(s1));
+                ClassicAssert.IsTrue(conn.Wait(s2));
+                ClassicAssert.IsTrue(conn.Wait(s3));
 
-                Assert.AreEqual(2, conn.Wait(removed));
+                ClassicAssert.AreEqual(2, conn.Wait(removed));
 
-                Assert.IsFalse(conn.Wait(d1));
-                Assert.IsTrue(conn.Wait(d2));
-                Assert.IsFalse(conn.Wait(d3));
+                ClassicAssert.IsFalse(conn.Wait(d1));
+                ClassicAssert.IsTrue(conn.Wait(d2));
+                ClassicAssert.IsFalse(conn.Wait(d3));
 
                 var removeFinal = conn.HashDeleteAsync("TestDelMulti", new RedisValue[] { "key2" });
 
-                Assert.AreEqual(0, conn.Wait(conn.HashLengthAsync("TestDelMulti")));
-                Assert.AreEqual(1, conn.Wait(removeFinal));
+                ClassicAssert.AreEqual(0, conn.Wait(conn.HashLengthAsync("TestDelMulti")));
+                ClassicAssert.AreEqual(1, conn.Wait(removeFinal));
             }
         }
 
@@ -311,15 +312,15 @@ namespace Tests
 
                     conn.Execute();
 
-                    Assert.IsTrue(conn.Wait(s1));
-                    Assert.IsTrue(conn.Wait(s2));
-                    Assert.IsTrue(conn.Wait(s3));
+                    ClassicAssert.IsTrue(conn.Wait(s1));
+                    ClassicAssert.IsTrue(conn.Wait(s2));
+                    ClassicAssert.IsTrue(conn.Wait(s3));
 
-                    Assert.AreEqual(2, conn.Wait(removed));
+                    ClassicAssert.AreEqual(2, conn.Wait(removed));
 
-                    Assert.IsFalse(conn.Wait(d1));
-                    Assert.IsTrue(conn.Wait(d2));
-                    Assert.IsFalse(conn.Wait(d3));
+                    ClassicAssert.IsFalse(conn.Wait(d1));
+                    ClassicAssert.IsTrue(conn.Wait(d2));
+                    ClassicAssert.IsFalse(conn.Wait(d3));
                 }
 
             }
@@ -337,9 +338,9 @@ namespace Tests
                 conn.HashDeleteAsync("hashkey", "field");
                 var ex2 = conn.HashExistsAsync("hashkey", "field");
 
-                Assert.AreEqual(false, ex0.Result);
-                Assert.AreEqual(true, ex1.Result);
-                Assert.AreEqual(false, ex0.Result);
+                ClassicAssert.AreEqual(false, ex0.Result);
+                ClassicAssert.AreEqual(true, ex1.Result);
+                ClassicAssert.AreEqual(false, ex0.Result);
 
             }
         }
@@ -359,12 +360,12 @@ namespace Tests
 
                 var keys1 = conn.HashKeysAsync("hashkey");
 
-                Assert.AreEqual(0, keys0.Result.Length);
+                ClassicAssert.AreEqual(0, keys0.Result.Length);
 
                 var arr = keys1.Result;
-                Assert.AreEqual(2, arr.Length);
-                Assert.AreEqual("foo", (string)arr[0]);
-                Assert.AreEqual("bar", (string)arr[1]);
+                ClassicAssert.AreEqual(2, arr.Length);
+                ClassicAssert.AreEqual("foo", (string)arr[0]);
+                ClassicAssert.AreEqual("bar", (string)arr[1]);
 
             }
         }
@@ -384,12 +385,12 @@ namespace Tests
 
                 var keys1 = conn.HashValuesAsync("hashkey");
 
-                Assert.AreEqual(0, keys0.Result.Length);
+                ClassicAssert.AreEqual(0, keys0.Result.Length);
 
                 var arr = keys1.Result;
-                Assert.AreEqual(2, arr.Length);
-                Assert.AreEqual("abc", Encoding.UTF8.GetString(arr[0]));
-                Assert.AreEqual("def", Encoding.UTF8.GetString(arr[1]));
+                ClassicAssert.AreEqual(2, arr.Length);
+                ClassicAssert.AreEqual("abc", Encoding.UTF8.GetString(arr[0]));
+                ClassicAssert.AreEqual("def", Encoding.UTF8.GetString(arr[1]));
 
             }
         }
@@ -409,8 +410,8 @@ namespace Tests
 
                 var len1 = conn.HashLengthAsync("hashkey");
 
-                Assert.AreEqual(0, len0.Result);
-                Assert.AreEqual(2, len1.Result);
+                ClassicAssert.AreEqual(0, len0.Result);
+                ClassicAssert.AreEqual(2, len1.Result);
 
             }
         }
@@ -437,20 +438,20 @@ namespace Tests
                 var arr1 = result1.Result;
                 var arr2 = result2.Result;
 
-                Assert.AreEqual(3, arr0.Length);
-                Assert.IsNull((string)arr0[0]);
-                Assert.IsNull((string)arr0[1]);
-                Assert.IsNull((string)arr0[2]);
+                ClassicAssert.AreEqual(3, arr0.Length);
+                ClassicAssert.IsNull((string)arr0[0]);
+                ClassicAssert.IsNull((string)arr0[1]);
+                ClassicAssert.IsNull((string)arr0[2]);
 
-                Assert.AreEqual(3, arr1.Length);
-                Assert.AreEqual("abc", (string)arr1[0]);
-                Assert.AreEqual("def", (string)arr1[1]);
-                Assert.IsNull((string)arr1[2]);
+                ClassicAssert.AreEqual(3, arr1.Length);
+                ClassicAssert.AreEqual("abc", (string)arr1[0]);
+                ClassicAssert.AreEqual("def", (string)arr1[1]);
+                ClassicAssert.IsNull((string)arr1[2]);
 
-                Assert.AreEqual(3, arr2.Length);
-                Assert.AreEqual("abc", (string)arr2[0]);
-                Assert.AreEqual("def", (string)arr2[1]);
-                Assert.IsNull((string)arr2[2]);
+                ClassicAssert.AreEqual(3, arr2.Length);
+                ClassicAssert.AreEqual("abc", (string)arr2[0]);
+                ClassicAssert.AreEqual("def", (string)arr2[1]);
+                ClassicAssert.IsNull((string)arr2[2]);
             }
         }
 
@@ -469,11 +470,11 @@ namespace Tests
 
                 var result1 = conn.HashGetAllAsync("hashkey");
 
-                Assert.AreEqual(0, result0.Result.Length);
+                ClassicAssert.AreEqual(0, result0.Result.Length);
                 var result = result1.Result.ToStringDictionary();
-                Assert.AreEqual(2, result.Count);
-                Assert.AreEqual("abc", result["foo"]);
-                Assert.AreEqual("def", result["bar"]);
+                ClassicAssert.AreEqual(2, result.Count);
+                ClassicAssert.AreEqual("abc", result["foo"]);
+                ClassicAssert.AreEqual("def", result["bar"]);
             }
         }
 
@@ -495,11 +496,11 @@ namespace Tests
 
                 var result1 = conn.HashGetAllAsync("hashkey");
 
-                Assert.AreEqual(0, result0.Result.Length);
+                ClassicAssert.AreEqual(0, result0.Result.Length);
                 var result = result1.Result.ToStringDictionary();
-                Assert.AreEqual(2, result.Count);
-                Assert.AreEqual("abc", result["foo"]);
-                Assert.AreEqual("def", result["bar"]);
+                ClassicAssert.AreEqual(2, result.Count);
+                ClassicAssert.AreEqual("abc", result["foo"]);
+                ClassicAssert.AreEqual("def", result["bar"]);
             }
         }
 

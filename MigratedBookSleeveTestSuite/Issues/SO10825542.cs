@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using StackExchange.Redis;
 
 namespace Tests.Issues
@@ -23,10 +24,10 @@ namespace Tests.Issues
                 var task = con.HashGetAllAsync(key);
                 con.Wait(task);
 
-                Assert.AreEqual(2, task.Result.Length);
+                ClassicAssert.AreEqual(2, task.Result.Length);
                 var dict = task.Result.ToStringDictionary();
-                Assert.AreEqual("hello world", dict["field1"]);
-                Assert.AreEqual("fooobar", dict["field2"]);
+                ClassicAssert.AreEqual("hello world", dict["field1"]);
+                ClassicAssert.AreEqual("fooobar", dict["field2"]);
             }
         }
     }

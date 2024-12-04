@@ -1,4 +1,5 @@
 ﻿using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace Tests.Issues
 {
@@ -17,7 +18,7 @@ namespace Tests.Issues
                 redis.StringSetAsync(uid, "abc");
                 redis.StringSetAsync(uid, expectedTestValue);
                 string testValue = redis.StringGet(uid);
-                Assert.IsNull(testValue);
+                ClassicAssert.IsNull(testValue);
             }
         }
 
@@ -34,7 +35,7 @@ namespace Tests.Issues
                 redis.StringSetAsync(uid, expectedTestValue);
                 string testValue = redis.StringGet(uid);
 
-                Assert.AreEqual(expectedTestValue, testValue);
+                ClassicAssert.AreEqual(expectedTestValue, testValue);
             }
         }
     }

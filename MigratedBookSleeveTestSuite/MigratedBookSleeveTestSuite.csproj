@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <Description>MigratedBookSleeveTestSuite</Description>
-    <TargetFrameworks>net45</TargetFrameworks>
+    <TargetFrameworks>net462</TargetFrameworks>
     <AssemblyName>MigratedBookSleeveTestSuite</AssemblyName>
     <PackageId>MigratedBookSleeveTestSuite</PackageId>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
@@ -28,9 +28,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.0.0" />
-    <PackageReference Include="nunit" Version="3.12.0" />
-    <PackageReference Include="NUnit3TestAdapter" Version="3.16.1" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageReference Include="nunit" Version="4.2.2" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">

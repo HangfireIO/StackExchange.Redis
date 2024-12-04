@@ -1,4 +1,5 @@
 ﻿using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace Tests.Issues
 {
@@ -20,10 +21,10 @@ namespace Tests.Issues
                 conn.ListSetByIndexAsync(Key, 1, "jkl"); // "ghi", "jkl", "abc"
 
                 var contents = conn.Wait(conn.ListRangeAsync(Key, 0, -1));
-                Assert.AreEqual(3, contents.Length);
-                Assert.AreEqual("ghi", (string)contents[0]);
-                Assert.AreEqual("jkl", (string)contents[1]);
-                Assert.AreEqual("abc", (string)contents[2]);
+                ClassicAssert.AreEqual(3, contents.Length);
+                ClassicAssert.AreEqual("ghi", (string)contents[0]);
+                ClassicAssert.AreEqual("jkl", (string)contents[1]);
+                ClassicAssert.AreEqual("abc", (string)contents[2]);
             }
         }
     }

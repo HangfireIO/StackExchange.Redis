@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace Tests
 {
@@ -24,7 +25,7 @@ namespace Tests
                 tasks.Add(batch.SetAddAsync("batch", "b"));
                 tasks.Add(batch.SetAddAsync("batch", "c"));
 
-                Assert.AreEqual("batch-not-sent", (string)conn.StringGet("batch"));
+                ClassicAssert.AreEqual("batch-not-sent", (string)conn.StringGet("batch"));
             }
         }
 
@@ -50,10 +51,10 @@ namespace Tests
 
                 var arr = result.Result;
                 Array.Sort(arr, (x, y) => string.Compare(x, y));
-                Assert.AreEqual(3, arr.Length);
-                Assert.AreEqual("a", (string)arr[0]);
-                Assert.AreEqual("b", (string)arr[1]);
-                Assert.AreEqual("c", (string)arr[2]);
+                ClassicAssert.AreEqual(3, arr.Length);
+                ClassicAssert.AreEqual("a", (string)arr[0]);
+                ClassicAssert.AreEqual("b", (string)arr[1]);
+                ClassicAssert.AreEqual("c", (string)arr[2]);
             }
         }
     }

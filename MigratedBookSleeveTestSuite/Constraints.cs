@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using StackExchange.Redis;
 
 namespace Tests
@@ -11,8 +12,8 @@ namespace Tests
         public void ValueEquals()
         {
             RedisValue x = 1, y = "1";
-            Assert.IsTrue(x.Equals(y), "equals");
-            Assert.IsTrue(x == y, "operator");
+            ClassicAssert.IsTrue(x.Equals(y), "equals");
+            ClassicAssert.IsTrue(x == y, "operator");
             
         }
 
@@ -25,9 +26,9 @@ namespace Tests
                 for (int i = 0; i < 200; i++)
                 {
                     conn.KeyDelete("foo");
-                    Assert.AreEqual(1, conn.Wait(ManualIncr(conn, "foo")));
-                    Assert.AreEqual(2, conn.Wait(ManualIncr(conn, "foo")));
-                    Assert.AreEqual(2, (long)conn.StringGet("foo"));
+                    ClassicAssert.AreEqual(1, conn.Wait(ManualIncr(conn, "foo")));
+                    ClassicAssert.AreEqual(2, conn.Wait(ManualIncr(conn, "foo")));
+                    ClassicAssert.AreEqual(2, (long)conn.StringGet("foo"));
                 }
             }
 

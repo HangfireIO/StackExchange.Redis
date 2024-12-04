@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Threading.Tasks;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using StackExchange.Redis;
 
 namespace Tests
@@ -43,7 +44,7 @@ namespace Tests
                 asyncTimer = (int)timer.ElapsedMilliseconds;
                 Console.WriteLine("async to completion (local): {0}ms", timer.ElapsedMilliseconds);
                 for (int db = 0; db < 5; db++)
-                    Assert.AreEqual(1000, (long)final[db].Result, "async, db:" + db);
+                    ClassicAssert.AreEqual(1000, (long)final[db].Result, "async, db:" + db);
             }
 
             using (var conn = new Redis(Config.LocalHost, 6379))
@@ -82,15 +83,15 @@ namespace Tests
                 sync = (int)timer.ElapsedMilliseconds;
                 Console.WriteLine("sync to completion (local): {0}ms", timer.ElapsedMilliseconds);
                 for (int db = 0; db < 5; db++)
-                    Assert.AreEqual("1000", final[db], "async, db:" + db);
+                    ClassicAssert.AreEqual("1000", final[db], "async, db:" + db);
             }
             int effectiveAsync = ((10 * asyncTimer) + 3) / 10;
             int effectiveSync = ((10 * sync) + (op * 3)) / 10;
             Console.WriteLine("async to completion with assumed 0.3ms LAN latency: " + effectiveAsync);
             Console.WriteLine("sync to completion with assumed 0.3ms LAN latency: " + effectiveSync);
             Console.WriteLine("fire-and-forget: {0}ms sync vs {1}ms async ", syncFaF, asyncFaF);
-            Assert.Less(effectiveAsync, effectiveSync, "Everything");
-            Assert.Less(asyncFaF, syncFaF, "Fire and Forget");
+            ClassicAssert.Less(effectiveAsync, effectiveSync, "Everything");
+            ClassicAssert.Less(asyncFaF, syncFaF, "Fire and Forget");
         }
     }
 }

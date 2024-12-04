@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using StackExchange.Redis;
 
 namespace Tests.Issues
@@ -24,14 +25,14 @@ namespace Tests.Issues
                 using (var muxer = Config.GetUnsecuredConnection())
                 {
                     var conn = muxer.GetDatabase(0);
-                    Assert.AreEqual(i + 1, conn.StringIncrement("lots-trivial"));
+                    ClassicAssert.AreEqual(i + 1, conn.StringIncrement("lots-trivial"));
                 }
             }
             Trace.WriteLine("### close");
             using (var muxer = Config.GetUnsecuredConnection())
             {
                 var conn = muxer.GetDatabase(0);
-                Assert.AreEqual(COUNT, (long)conn.StringGet("lots-trivial"));
+                ClassicAssert.AreEqual(COUNT, (long)conn.StringGet("lots-trivial"));
             }
         }
         [Test]
@@ -51,14 +52,14 @@ namespace Tests.Issues
 
                 var priority = Int32.Parse(taskResult.Result);
 
-                Assert.AreEqual(3, priority);
+                ClassicAssert.AreEqual(3, priority);
             }
         }
 
         [Test]
         public void ExecuteWithNonHashStartingPoint()
         {
-            Assert.Throws<RedisServerException>(() =>
+            ClassicAssert.Throws<RedisServerException>(() =>
             {
                 using (var muxer = Config.GetUnsecuredConnection())
                 {
@@ -73,7 +74,7 @@ namespace Tests.Issues
                     try
                     {
                         conn.Wait(taskResult);
-                        Assert.Fail();
+                        ClassicAssert.Fail();
                     }
                     catch (AggregateException ex)
                     {
