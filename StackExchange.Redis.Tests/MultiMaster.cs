@@ -155,10 +155,11 @@ namespace StackExchange.Redis.Tests
 
             // see what happens
             var sb = new StringBuilder();
-            void AppendLog(string msg) => sb.AppendLine(msg);
+            void AppendLog(string msg) { lock (sb) { sb.AppendLine(msg); } }
             using (var conn = Create(log: AppendLog, tieBreaker: TieBreak))
             {
-                string text = sb.ToString();
+                string text;
+                lock (sb) { text = sb.ToString(); }
                 Console.WriteLine(text);
                 Assert.IsFalse(text.Contains("failed to nominate"), "failed to nominate");
                 if (elected != null)
