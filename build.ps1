@@ -79,7 +79,7 @@ if ($RunTests) {
         #Push-Location ".\tests\$project"
         Push-Location ".\$project"
 
-        dotnet test -c Release -p:TestTfmsInParallel=false
+        dotnet test -c Release -p:TestTfmsInParallel=false --test-adapter-path:. --logger:Appveyor
         if ($LastExitCode -ne 0) {
             Write-Host "Error with tests, aborting build." -Foreground "Red"
             Pop-Location
