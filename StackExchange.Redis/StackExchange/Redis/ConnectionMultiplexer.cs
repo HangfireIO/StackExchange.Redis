@@ -1464,6 +1464,8 @@ namespace StackExchange.Redis
 
                         watch = watch ?? Stopwatch.StartNew();
                         var remaining = RawConfig.ConnectTimeout - checked((int)watch.ElapsedMilliseconds);
+                        if (remaining < 0) remaining = 0;
+
                         LogLocked(log, "Reconfigure: Allowing endpoints {0} to respond...", TimeSpan.FromMilliseconds(remaining));
                         Trace("Allowing endpoints " + TimeSpan.FromMilliseconds(remaining) + " to respond...");
                         WaitAllIgnoreErrors("available", available, remaining, log);
