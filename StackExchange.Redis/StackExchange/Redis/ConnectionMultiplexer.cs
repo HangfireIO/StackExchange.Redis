@@ -1364,6 +1364,7 @@ namespace StackExchange.Redis
                 showStats = false;
             }
             bool ranThisCall = false;
+            var disposableList = new List<IDisposable>();
             try
             {   // note that "activeReconfigs" starts at one; we don't need to set it the first time
                 ranThisCall = first || Interlocked.CompareExchange(ref activeConfigCause, cause, null) == null;
@@ -1447,6 +1448,7 @@ namespace StackExchange.Redis
                             }
 
                             var mre = new ManualResetEvent(false);
+                            disposableList.Add(mre);
                             var source = ResultBox<bool>.Get(mre);
 
                             var tracerMsg = server.GetTracerMessage(false);
@@ -1481,6 +1483,7 @@ namespace StackExchange.Redis
                                 msg = LoggingMessage.Create(log, msg);
 
                                 var tieMre = new ManualResetEvent(false);
+                                disposableList.Add(tieMre);
                                 var tieSource = ResultBox<string>.Get(tieMre);
 
                                 msg.SetSource(ResultProcessor.String, tieSource);
@@ -1686,6 +1689,11 @@ namespace StackExchange.Redis
             }
             finally
             {
+                foreach (var disposable in disposableList)
+                {
+                    disposable.Dispose();
+                }
+
                 LogLocked(log, "Reconfigure: Exiting reconfiguration...");
                 OnTraceLog(log);
                 if (ranThisCall) Interlocked.Exchange(ref activeConfigCause, null);
