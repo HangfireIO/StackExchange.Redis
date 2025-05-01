@@ -53,6 +53,24 @@ namespace StackExchange.Redis
         Version Version { get; }
         
         /// <summary>
+        /// Authenticates the current connection with the credentials specified in the
+        /// <see cref="ConfigurationOptions"/>.
+        /// Primarily for use with token-based authentication to refresh a token before
+        /// it expires.
+        /// </summary>
+        /// <remarks>https://redis.io/commands/auth/</remarks>
+        void Authenticate(CommandFlags flags = CommandFlags.None);
+
+        /// <summary>
+        /// Authenticates the current connection with the credentials specified in the
+        /// <see cref="ConfigurationOptions"/>.
+        /// Primarily for use with token-based authentication to refresh a token before
+        /// it expires.
+        /// </summary>
+        /// <remarks>https://redis.io/commands/auth/</remarks>
+        Task AuthenticateAsync(CommandFlags flags = CommandFlags.None);
+
+        /// <summary>
         /// The CLIENT KILL command closes a given client connection identified by ip:port.
         /// The ip:port should match a line returned by the CLIENT LIST command.
         /// Due to the single-treaded nature of Redis, it is not possible to kill a client connection while it is executing a command.From the client point of view, the connection can never be closed in the middle of the execution of a command.However, the client will notice the connection has been closed only when the next command is sent (and results in network error).

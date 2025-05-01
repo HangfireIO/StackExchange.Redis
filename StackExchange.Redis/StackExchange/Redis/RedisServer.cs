@@ -40,6 +40,28 @@ namespace StackExchange.Redis
 
         public Version Version => server.Version;
 
+        public void Authenticate(CommandFlags flags = CommandFlags.None)
+        {
+            var config = multiplexer.RawConfig;
+
+            var msg = !String.IsNullOrEmpty(config.UserName)
+                ? Message.Create(-1, flags, RedisCommand.AUTH, (RedisValue)config.UserName, (RedisValue)config.Password)
+                : Message.Create(-1, flags, RedisCommand.AUTH, (RedisValue)config.Password);
+
+            ExecuteSync(msg, ResultProcessor.DemandOK);
+        }
+
+        public Task AuthenticateAsync(CommandFlags flags = CommandFlags.None)
+        {
+            var config = multiplexer.RawConfig;
+
+            var msg = !String.IsNullOrEmpty(config.UserName)
+                ? Message.Create(-1, flags, RedisCommand.AUTH, (RedisValue)config.UserName, (RedisValue)config.Password)
+                : Message.Create(-1, flags, RedisCommand.AUTH, (RedisValue)config.Password);
+
+            return ExecuteAsync(msg, ResultProcessor.DemandOK);
+        }
+
         public void ClientKill(EndPoint endpoint, CommandFlags flags = CommandFlags.None)
         {
             var msg = Message.Create(-1, flags, RedisCommand.CLIENT, RedisLiterals.KILL, (RedisValue)Format.ToString(endpoint));
