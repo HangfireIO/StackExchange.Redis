@@ -2022,6 +2022,30 @@ namespace StackExchange.Redis
 
         internal ConfigurationOptions RawConfig { get; }
 
+        /// <summary>
+        /// Gets or sets the username that will be used for next authentication attempts.
+        /// Normally, it should be passed in the constructor, but with token-based authentication
+        /// it's essential to be able to change the password while multiplexer is already
+        /// created.
+        /// </summary>
+        public string UserName
+        {
+            get => RawConfig.UserName;
+            set => RawConfig.UserName = value;
+        }
+
+        /// <summary>
+        /// Gets or sets the password that will be used for next authentication attempts.
+        /// Normally, it should be passed in the constructor, but with token-based authentication
+        /// it's essential to be able to change the password while multiplexer is already
+        /// created.
+        /// </summary>
+        public string Password
+        {
+            get => RawConfig.Password;
+            set => RawConfig.Password = value;
+        }
+
         internal ServerSelectionStrategy ServerSelectionStrategy => serverSelectionStrategy;
 
 
