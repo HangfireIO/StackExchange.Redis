@@ -555,14 +555,14 @@ namespace StackExchange.Redis
         /// </summary>
         /// <remarks>http://redis.io/commands/eval, http://redis.io/commands/evalsha</remarks>
         /// <returns>A dynamic representation of the script's result</returns>
-        RedisResult ScriptEvaluate(string script, RedisKey[] keys = null, RedisValue[] values = null, CommandFlags flags = CommandFlags.None);
+        RedisResult ScriptEvaluate(string script, IReadOnlyCollection<RedisKey> keys = null, IReadOnlyCollection<RedisValue> values = null, CommandFlags flags = CommandFlags.None);
 
         /// <summary>
         /// Execute a Lua script against the server using just the SHA1 hash
         /// </summary>
         /// <remarks>http://redis.io/commands/evalsha</remarks>
         /// <returns>A dynamic representation of the script's result</returns>
-        RedisResult ScriptEvaluate(byte[] hash, RedisKey[] keys = null, RedisValue[] values = null, CommandFlags flags = CommandFlags.None);
+        RedisResult ScriptEvaluate(byte[] hash, IReadOnlyCollection<RedisKey> keys = null, IReadOnlyCollection<RedisValue> values = null, CommandFlags flags = CommandFlags.None);
 
         /// <summary>
         /// Execute a lua script against the server, using previously prepared script.

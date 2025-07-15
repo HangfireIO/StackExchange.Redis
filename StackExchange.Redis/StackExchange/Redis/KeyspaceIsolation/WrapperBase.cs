@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -349,13 +350,13 @@ namespace StackExchange.Redis.KeyspaceIsolation
         public Task<RedisResult> ExecuteAsync(string command, ICollection<object> args, CommandFlags flags = CommandFlags.None)
             => Inner.ExecuteAsync(command, ToInner(args), flags);
 
-        public Task<RedisResult> ScriptEvaluateAsync(byte[] hash, RedisKey[] keys = null, RedisValue[] values = null, CommandFlags flags = CommandFlags.None)
+        public Task<RedisResult> ScriptEvaluateAsync(byte[] hash, IReadOnlyCollection<RedisKey> keys = null, IReadOnlyCollection<RedisValue> values = null, CommandFlags flags = CommandFlags.None)
         {
             // TODO: The return value could contain prefixed keys. It might make sense to 'unprefix' those?
             return Inner.ScriptEvaluateAsync(hash, ToInner(keys), values, flags);
         }
 
-        public Task<RedisResult> ScriptEvaluateAsync(string script, RedisKey[] keys = null, RedisValue[] values = null, CommandFlags flags = CommandFlags.None)
+        public Task<RedisResult> ScriptEvaluateAsync(string script, IReadOnlyCollection<RedisKey> keys = null, IReadOnlyCollection<RedisValue> values = null, CommandFlags flags = CommandFlags.None)
         {
             // TODO: The return value could contain prefixed keys. It might make sense to 'unprefix' those?
             return Inner.ScriptEvaluateAsync(script, ToInner(keys), values, flags);
@@ -755,6 +756,71 @@ namespace StackExchange.Redis.KeyspaceIsolation
                 }
 
                 return inner;
+            }
+        }
+        protected IReadOnlyCollection<RedisKey> ToInner(IReadOnlyCollection<RedisKey> outer)
+        {
+            if (outer == null || outer.Count == 0)
+            {
+                return outer;
+            }
+            else
+            {
+                return new InnerKeyCollection(outer, ToInner);
+            }
+        }
+
+        private sealed class InnerKeyCollection : IReadOnlyCollection<RedisKey>
+        {
+            private readonly IReadOnlyCollection<RedisKey> outer;
+            private readonly Func<RedisKey, RedisKey> selector;
+
+            public InnerKeyCollection(IReadOnlyCollection<RedisKey> outer, Func<RedisKey, RedisKey> selector)
+            {
+                this.outer = outer;
+                this.selector = selector;
+            }
+
+            public IEnumerator<RedisKey> GetEnumerator()
+            {
+                return new InnerKeyCollectionEnumerator(outer.GetEnumerator(), selector);
+            }
+
+            IEnumerator IEnumerable.GetEnumerator()
+            {
+                return GetEnumerator();
+            }
+
+            public int Count => outer.Count;
+
+            private sealed class InnerKeyCollectionEnumerator : IEnumerator<RedisKey>
+            {
+                private readonly IEnumerator<RedisKey> outerEnumerator;
+                private readonly Func<RedisKey, RedisKey> selector;
+
+                public InnerKeyCollectionEnumerator(IEnumerator<RedisKey> outerEnumerator, Func<RedisKey, RedisKey> selector)
+                {
+                    this.outerEnumerator = outerEnumerator;
+                    this.selector = selector;
+                }
+                
+                public bool MoveNext()
+                {
+                    return outerEnumerator.MoveNext();
+                }
+
+                public void Reset()
+                {
+                    outerEnumerator.Reset();
+                }
+
+                public RedisKey Current => selector(outerEnumerator.Current);
+
+                object IEnumerator.Current => Current;
+
+                void IDisposable.Dispose()
+                {
+                }
             }
         }
 

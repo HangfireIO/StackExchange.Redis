@@ -511,7 +511,7 @@ namespace StackExchange.Redis
         /// </summary>
         /// <remarks>http://redis.io/commands/eval, http://redis.io/commands/evalsha</remarks>
         /// <returns>A dynamic representation of the script's result</returns>
-        Task<RedisResult> ScriptEvaluateAsync(string script, RedisKey[] keys = null, RedisValue[] values = null, CommandFlags flags = CommandFlags.None);
+        Task<RedisResult> ScriptEvaluateAsync(string script, IReadOnlyCollection<RedisKey> keys = null, IReadOnlyCollection<RedisValue> values = null, CommandFlags flags = CommandFlags.None);
 
         /// <summary>
         /// Execute an arbitrary command against the server; this is primarily intended for
@@ -535,7 +535,7 @@ namespace StackExchange.Redis
         /// </summary>
         /// <remarks>http://redis.io/commands/evalsha</remarks>
         /// <returns>A dynamic representation of the script's result</returns>
-        Task<RedisResult> ScriptEvaluateAsync(byte[] hash, RedisKey[] keys = null, RedisValue[] values = null, CommandFlags flags = CommandFlags.None);
+        Task<RedisResult> ScriptEvaluateAsync(byte[] hash, IReadOnlyCollection<RedisKey> keys = null, IReadOnlyCollection<RedisValue> values = null, CommandFlags flags = CommandFlags.None);
 
         /// <summary>
         /// Execute a lua script against the server, using previously prepared script.

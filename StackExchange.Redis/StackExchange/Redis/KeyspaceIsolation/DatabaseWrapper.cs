@@ -366,13 +366,13 @@ namespace StackExchange.Redis.KeyspaceIsolation
         public RedisResult Execute(string command, ICollection<object> args, CommandFlags flags = CommandFlags.None)
             => Inner.Execute(command, ToInner(args), flags);
             
-        public RedisResult ScriptEvaluate(byte[] hash, RedisKey[] keys = null, RedisValue[] values = null, CommandFlags flags = CommandFlags.None)
+        public RedisResult ScriptEvaluate(byte[] hash, IReadOnlyCollection<RedisKey> keys = null, IReadOnlyCollection<RedisValue> values = null, CommandFlags flags = CommandFlags.None)
         {
             // TODO: The return value could contain prefixed keys. It might make sense to 'unprefix' those?
             return Inner.ScriptEvaluate(hash, ToInner(keys), values, flags);
         }
 
-        public RedisResult ScriptEvaluate(string script, RedisKey[] keys = null, RedisValue[] values = null, CommandFlags flags = CommandFlags.None)
+        public RedisResult ScriptEvaluate(string script, IReadOnlyCollection<RedisKey> keys = null, IReadOnlyCollection<RedisValue> values = null, CommandFlags flags = CommandFlags.None)
         {
             // TODO: The return value could contain prefixed keys. It might make sense to 'unprefix' those?
             return Inner.ScriptEvaluate(script, ToInner(keys), values, flags);
