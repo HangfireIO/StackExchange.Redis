@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Net;
 using System.Text;
@@ -445,7 +446,7 @@ namespace StackExchange.Redis.Tests
             byte[] hash = new byte[0];
             RedisValue[] values = new RedisValue[0];
             RedisKey[] keys = new RedisKey[] { "a", "b" };
-            Expression<Func<RedisKey[], bool>> valid = _ => _.Length == 2 && _[0] == "prefix:a" && _[1] == "prefix:b";
+            Expression<Func<IReadOnlyCollection<RedisKey>, bool>> valid = _ => _.Count == 2 && _.ElementAt(0) == "prefix:a" && _.ElementAt(1) == "prefix:b";
             wrapper.ScriptEvaluateAsync(hash, keys, values, CommandFlags.HighPriority);
             mock.Verify(_ => _.ScriptEvaluateAsync(hash, It.Is(valid), values, CommandFlags.HighPriority));
         }
@@ -455,7 +456,7 @@ namespace StackExchange.Redis.Tests
         {
             RedisValue[] values = new RedisValue[0];
             RedisKey[] keys = new RedisKey[] { "a", "b" };
-            Expression<Func<RedisKey[], bool>> valid = _ => _.Length == 2 && _[0] == "prefix:a" && _[1] == "prefix:b";
+            Expression<Func<IReadOnlyCollection<RedisKey>, bool>> valid = _ => _.Count == 2 && _.ElementAt(0) == "prefix:a" && _.ElementAt(1) == "prefix:b";
             wrapper.ScriptEvaluateAsync("script", keys, values, CommandFlags.HighPriority);
             mock.Verify(_ => _.ScriptEvaluateAsync("script", It.Is(valid), values, CommandFlags.HighPriority));
         }
